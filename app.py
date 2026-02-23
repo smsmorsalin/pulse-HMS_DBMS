@@ -1,11 +1,13 @@
-
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # Required for session management
 
-# db = sqlite3.connect('hospital.db', check_same_thread=False)
+db = sqlite3.connect('database.db', check_same_thread=False)  # Connect to the SQLite database
 
+db.commit()
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -13,18 +15,23 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    session.clear()  # Clear any existing session data
     if request.method == 'POST':
         # Handle login logic here
-        username = request.form.get('username')
-        password = request.form.get('password')
         # Validate credentials and redirect accordingly
-        if not username or not password:
+        if not request.form.get('username') or not request.form.get('password'):
             return render_template("login.html", error="Please enter both username and password.")
         else:
-            if username == "admin" and password == "password":  # Example validation
-                return redirect(url_for('index'))
-            else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+
+            user_checker = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+            if not user_checker or not check_password_hash(user_checker[2], password):
                 return render_template("login.html", error="Invalid username or password.")
+            
+            session['user_id'] = user_checker[0]  # Store user_id in session
+            return redirect('/')  # Redirect to the home page after successful login
+
     return render_template("login.html")
 
 
