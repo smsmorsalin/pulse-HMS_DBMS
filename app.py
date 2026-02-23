@@ -26,13 +26,13 @@ def login():
             password = request.form.get('password')
 
             user_checker = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-            if not user_checker or not check_password_hash(user_checker[2], password):
+            if user_checker and check_password_hash(user_checker[2], password):
+                session['user_id'] = user_checker[0]  # Store user_id in session
+                return redirect(url_for('index', success="login successful"))  # Redirect to the home page after successful login
+            else:
                 return render_template("login.html", error="Invalid username or password.")
-            
-            session['user_id'] = user_checker[0]  # Store user_id in session
-            return redirect('/')  # Redirect to the home page after successful login
-
-    return render_template("login.html")
+    else:
+        return render_template("login.html")
 
 
 if __name__ == '__main__':

@@ -16,7 +16,9 @@
         <div class="nav">
             <a href="{{ url_for('login') }}" class="btn"><button type="button" class="btn btn-success">Login/signup</button></a>
         </div>
-        
+        {% if request.args.get('success') %}
+            <p class="success-message">{{ request.args.get('success') }}</p>
+        {% endif %}
     </div>
 </body>
 </html>
