@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Welcome to the Dashboard</h1>
+    <p>This is a protected area accessible only to logged-in users.</p>
+    <p>You can add dashboard functionalities here, such as displaying user-specific information, providing access to different sections of the application, etc.</p>
+    <p style="color: green;">
+        {% if user_success %}
+            {{ user_success }}
+        {% endif %}
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal</title>
+</head>
+<body>
+    <h1>Welcome to the Admin Portal</h1>
+    <p>This is a protected area accessible only to the root admin.</p>
+    <p>You can add admin functionalities here, such as user management, system settings, etc.</p>
+    <p style="color: green;">
+        {% if admin_success %}
+            {{ admin_success }}
+        {% endif %}
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
