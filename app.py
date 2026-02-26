@@ -37,7 +37,7 @@ def init_db():
 
 # Initialize database on app startup
 init_db()
-@app.route('/')
+@app.route('/index')
 def index():
     return render_template("index.html")
 
@@ -45,7 +45,7 @@ def index():
 def register():
     return render_template("register.html")
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def login():
     session.clear()  # Clear any existing session data
     if request.method == 'POST':
