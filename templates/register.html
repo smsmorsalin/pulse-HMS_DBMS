@@ -25,5 +25,12 @@
         <input type="password" id="password" name="password" required><br><br>
         
         <button type="submit">Register</button>
+
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+            <p style="color: green;">{{ success }}</p>
+        {% endif %}
 </body>
 </html>

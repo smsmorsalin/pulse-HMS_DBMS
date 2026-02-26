@@ -78,14 +78,14 @@ def register():
                     try:
                         db.execute('INSERT INTO admins (username, password) VALUES (?, ?)', (username, hashed_password))
                         db.commit()
-                        return redirect(url_for('login'))
+                        return redirect(url_for('register', asuccess=f"Admin registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username already exists. Please choose a different username.")
                 else:  # role == 'user'
                     try:
                         db.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
                         db.commit()
-                        return redirect(url_for('login'))
+                        return redirect(url_for('register', success=f"Employee registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username already exists. Please choose a different username.")
 
