@@ -8,6 +8,13 @@
 <body>
     <h1>Register</h1>
     <form action="/register" method="post">
+        <label for="role">choose a role: </label>
+        <select id="role" name="role" required>
+            <option value="">--select--</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select><br><br>
+
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required><br><br>
         
