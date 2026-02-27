@@ -147,6 +147,16 @@ def dashboard():
     else:
         return redirect(url_for('login'))
 
+@app.route('/patient')
+def patient():
+    """Patient information page - only accessible to logged-in users."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+
+    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
+        return render_template("patient.html")
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
