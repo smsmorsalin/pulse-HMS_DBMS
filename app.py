@@ -53,7 +53,29 @@ def init_db():
         ''')
         print("Admins table created successfully.")
     
-    if not users_exists or not admins_exists:
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="patients"')
+    patients_exists = cursor.fetchone() is not None
+
+    if not patients_exists:
+        # Create patients table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE patients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                gender TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT,
+                dob TEXT NOT NULL,
+                blood_group TEXT NOT NULL,
+                address TEXT NOT NULL,
+                emergency_contact_name TEXT NOT NULL,
+                emergency_contact_phone TEXT NOT NULL,
+            )
+        ''')
+        print("Patients table created successfully.")
+    
+    if not users_exists or not admins_exists or not patients_exists:
         db.commit()
         print("Hospital database initialized successfully.")
     else:
