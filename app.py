@@ -71,7 +71,8 @@ def init_db():
                 address TEXT NOT NULL,
                 emergency_contact_name TEXT NOT NULL,
                 emergency_contact_phone TEXT NOT NULL,
-            )
+                medical_history TEXT
+             )
         ''')
         print("Patients table created successfully.")
     
@@ -176,7 +177,8 @@ def patient():
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
 
     if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
-        return render_template("patient.html")
+        patient_list = db.execute('SELECT * FROM patients').fetchall()
+        return render_template("patient.html", patients=patient_list)
     else:
         return redirect(url_for('login'))
 
