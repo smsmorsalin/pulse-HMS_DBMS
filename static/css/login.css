@@ -1,0 +1,475 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+  overflow: hidden;
+  
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.form {
+  border-radius: 52% 48% 33% 67% / 38% 45% 55% 62%;
+   box-shadow:
+    inset 20px 20px 20px #0000000d,
+    25px 35px 20px #0000000d,
+    25px 30px 30px #0000000d,
+    inset -20px -20px 25px #ffffffe6;
+  transition: all ease .5s;
+  position:  relative;
+}
+
+.form::before { 
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 5%;
+    height: 0;
+    padding-bottom: 5%;
+    left: 25%;
+    top: 25%;
+    transform: skew(10deg);
+    border-radius: 50%;
+    opacity: 0.5;
+    transition: all ease .5s;
+}
+
+.form::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 10%;
+    height: 0;
+    padding-bottom: 10%;
+    left: 15%;
+    top: 15%;
+    transform: skew(10deg, 0deg);
+    border-radius: 50%;
+    opacity: 0.9;
+    transition: all ease .5s;
+  }
+  
+.form:hover {
+    border-radius: 50%;
+    &::before{
+      transform: skew(0deg, 0deg) translate(50%, 10%);
+    
+    }
+
+    &::after{
+      transform: skew(0deg, 0deg) translate(50%, 10%);
+    }
+}  
+
+
+.login-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 80px 60px;
+}
+
+.login-box h1  {
+    color: #333;
+    margin: 0;
+  }
+  
+  .login-box form {
+    display: flex ;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    
+}  
+
+
+input {
+  border: none;
+}
+
+input[type="text"] {
+  background-color: transparent;
+  outline: none;
+  color: #333;
+  font-weight: 500;
+  
+
+  &::placeholder{
+    font-size: 12px;
+    color: #0000004d;
+  }
+}
+input[type="password"] {
+  background-color: transparent;
+  outline: none;
+  color: #333;
+  font-weight: 500;
+  
+
+  &::placeholder{
+    font-size: 30px;
+    color: #0000004d;
+  }
+}
+
+.input-box {
+  width: 230px;
+  border-radius: 25px;
+  box-shadow: 
+    15px 15px 10px #0000000d,
+    15px 10px 15px #00000006;
+  overflow: hidden;
+  
+  input {
+    font-size: 16px;
+    padding: 10px 15px;
+    width: 100% ;
+  }
+
+.input-box input[type="password"] {
+    box-shadow: 
+      inset 2px 5px 10px #0000001a,
+      inset -2px -5px 10px #fff;
+  }
+
+.input-box input[type="password"] {
+    background-color: #ff0f5b;
+    color: #fff;
+    box-shadow: 
+      inset 2px 5px 10px #0000001a,
+      15px 15px 10px #0000000d,
+      15px 10px 15px #00000006;
+    font-weight: 600;
+    letter-spacing: 1em;
+    text-transform: uppercase;
+    cursor: pointer;  
+  }
+
+  .input-box.btn {
+    width: 120px;
+    transition: all .3s ease;
+    position: relative;
+  }
+}
+
+/* LOGIN BUTTON */
+
+.input-box.btn {
+  width: 120px;
+  margin: auto;
+}
+
+.input-box.btn input {
+  background: #ff0f5b;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.input-box.btn input:hover {
+  background: #d90d4d;
+}
+
+.right{
+  display: flex;
+  flex-direction: column;
+  justify-content:center;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.satelite {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 550;
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: all .35s ease;
+  position: relative;
+
+  &::before {
+    content: '';
+    width: 14%;
+    height: 0;
+    padding-bottom: 12%;
+    background-color: #fff;
+    opacity: 0.5;
+    position: absolute;
+    top: 20%;
+    left:24%;
+    border-radius: 50%;
+    transform: skew(-10deg, 0deg);
+    transition: all .35s ease;    
+  }
+
+  &:hover {
+    border-radius: 50%;
+
+    &::before {
+      padding-bottom: 14%;
+      left: 20%;
+    }
+  }
+}
+
+
+button {
+  border: none;
+  outline: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  filter: blur(130px);
+  z-index: -1;
+  animation: float 12s infinite alternate ease-in-out;
+}
+
+body::before {
+  background: #1e3cfa; /* Blue */
+  top: -120px;
+  left: -120px;
+}
+
+body::after {
+  background: #ff1e56; /* Red */
+  bottom: -120px;
+  right: -120px;
+}
+
+@keyframes float {
+  from { transform: translateY(0); }
+  to { transform: translateY(50px); }
+}
+
+
+/* =========================
+   SIGN IN HEADING WHITE
+========================= */
+.login-box h1 {
+  color: #ffffff;
+}
+
+/* =========================
+   FLOATING GLASS INPUT
+========================= */
+
+.input-group {
+  position: relative;
+  width: 230px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px 18px; /* slightly increased padding */
+  border-radius: 30px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  font-size: 16px;   /* increased font size */
+  font-weight: 500;  /* optional: makes it clearer */
+  transition: 0.3s ease;
+}
+
+/* Placeholder hidden */
+.input-group input::placeholder {
+  color: transparent;
+}
+
+/* Focus Effect */
+.input-group input:focus {
+  background: rgba(255,255,255,0.2);
+  box-shadow: 0 0 12px rgba(30,60,250,0.6);
+}
+
+/* Floating Label */
+.input-group label {
+  position: absolute;
+  left: 15px;
+  top: 12px;
+  color: rgba(255,255,255,0.7);
+  font-size: 16px;
+  pointer-events: none;
+  transition: 0.3s ease;
+}
+
+/* Float Animation */
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+  top: -10px;
+  left: 12px;
+  font-size: 13px;
+  color: #ff1e56;
+}
+
+
+/* ==========================
+   SMOOTH EYE FADE ANIMATION
+========================== */
+
+.toggle-password {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 15px;
+  transition: color 0.3s ease;
+}
+
+.toggle-password:hover {
+  color: #ff1e56;
+}
+
+.toggle-password i {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toggle-password.fade i {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+/* ==============================
+   SHAKE ANIMATION
+============================== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shake 0.4s ease;
+}
+
+/* ==============================
+   REMEMBER ME GLASS CHECKBOX
+============================== */
+.remember {
+  width: 230px;
+  text-align: left;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-container input {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(10px);
+  transition: 0.3s ease;
+  position: relative;
+}
+
+.checkbox-container input:checked + .checkmark {
+  background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+  border: none;
+}
+
+.checkbox-container input:checked + .checkmark::after {
+  content: "✔";
+  position: absolute;
+  font-size: 12px;
+  color: white;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+}
+
+/* ==============================
+   LOGIN BUTTON + SPINNER
+============================== */
+#loginBtn {
+  width: 120px;
+  height: 40px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+  position: relative;
+  overflow: hidden;
+  transition: 0.3s ease;
+}
+
+#loginBtn:hover {
+  transform: scale(1.05);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.loading .btn-text {
+  visibility: hidden;
+}
+
+.loading .spinner {
+  display: block;
+}

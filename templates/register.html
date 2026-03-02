@@ -3,152 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Pulse HMS</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .register-container {
-            max-width: 500px;
-            width: 100%;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-        }
-        .register-container h1 {
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 28px;
-        }
-        .register-subtitle {
-            text-align: center;
-            color: #999;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        .form-label {
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            padding: 12px 15px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        .btn-register {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            width: 100%;
-            margin-top: 10px;
-            transition: all 0.3s ease;
-        }
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-            color: white;
-        }
-        .alert {
-            border-radius: 8px;
-            border: none;
-            margin-bottom: 20px;
-        }
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        .login-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <title>Register</title>
+
+    <!-- Link your CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+    
 </head>
-<body>
-    <div class="register-container">
-        <h1><i class="fas fa-user-plus"></i> Register</h1>
-        <p class="register-subtitle">Create your Pulse HMS account</p>
-        
-        {% if error %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle"></i> {{ error }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-        
-        {% if success %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle"></i> {{ success }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endif %}
-        
+
+<body class="background-blobs">
+
+<div class="form-container">
+    <div class="glass-form">
+
+        <h2>Create Account</h2>
+
         <form action="/register" method="post">
-            <div class="mb-3">
-                <label for="role" class="form-label">Select Role:</label>
-                <select id="role" name="role" class="form-select" required>
-                    <option value="">-- Choose a role --</option>
-                    <option value="user">Patient/User</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
+            <div class="form-grid">
 
-            <div class="mb-3">
-                <label for="username" class="form-label">Username:</label>
-                <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
-            </div>
+                <!-- Role -->
+                <div class="input-group full-width">
+                    <i class="fas fa-user-tag"></i>
+                    <select id="role" name="role" required>
+                        <option value="" disabled selected></option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <label for="role">Choose Role</label>
+                </div>
+
+                <!-- Username -->
+                <div class="input-group full-width username-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" required>
+                    <label for="username">Username</label>
+                </div>
+
+                <!-- Email -->
+                <div class="input-group full-width email-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" name="email" required>
+                <label for="email">Email</label>
+                </div>
+
+                <!-- Password -->
+               <div class="input-group full-width password-group">
+                        <i class="fa-solid fa-lock"></i>
+
+                      <input type="password" id="password" name="password" required>
+                     <label for="password">Password</label>
+
+                        <span class="toggle-password">
+                            <i class="fa-solid fa-eye"></i>
+                        </span>
+                </div>
+
             
-            <div class="mb-3">
-                <label for="email" class="form-label">Email:</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="password" class="form-label">Password:</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
-            </div>
-            
-            <button type="submit" class="btn btn-register">
-                <i class="fas fa-user-check"></i> Create Account
-            </button>
+
+                <div class="full-width btn-row">
+                   <button type="submit" class="submit-btn">Register</button>
+                </div>
         </form>
-        
-        <div class="login-link">
-            <p>Already have an account? <a href="{{ url_for('index') }}">Login here</a></p>
-        </div>
-    </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
+</div>
+
+<!-- Font Awesome (if not already linked globally) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const toggle = document.querySelector(".toggle-password");
+            const password = document.querySelector("#password");
+            const icon = toggle.querySelector("i");
+
+            toggle.addEventListener("click", function () {
+
+                if (password.type === "password") {
+                    password.type = "text";
+
+                    icon.classList.remove("fa-eye");
+                    icon.classList.add("fa-eye-slash");
+
+                } else {
+                    password.type = "password";
+
+                    icon.classList.remove("fa-eye-slash");
+                    icon.classList.add("fa-eye");
+                }
+
+            });
+
+        });
+        </script>
 </body>
 </html>

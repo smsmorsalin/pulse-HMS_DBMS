@@ -1,0 +1,181 @@
+/* =========================
+   GLOBAL
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+
+    background:
+        radial-gradient(circle at 85% 80%, rgba(255, 30, 86, 0.25), transparent 40%),
+        radial-gradient(circle at 10% 10%, rgba(30, 60, 250, 0.25), transparent 40%),
+        linear-gradient(135deg, #0b1a3a, #162d6b);
+}
+
+/* =========================
+   FLOATING BLOBS
+========================= */
+.background-blobs::before,
+.background-blobs::after {
+    content: "";
+    position: fixed;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(130px);
+    z-index: 0;
+    animation: float 12s infinite alternate ease-in-out;
+}
+
+.background-blobs::before {
+    background: #1e3cfa;
+    top: -120px;
+    left: -120px;
+}
+
+.background-blobs::after {
+    background: #ff1e56;
+    bottom: -120px;
+    right: -120px;
+}
+
+@keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(50px); }
+}
+
+/* =========================
+   DASHBOARD LAYOUT
+========================= */
+.dashboard {
+    display: flex;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* =========================
+   ENTERPRISE SIDEBAR
+========================= */
+.sidebar {
+    width: 260px;
+    min-height: 100vh;
+    padding: 35px 20px;
+    margin: 20px;
+
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(25px);
+
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sidebar Title */
+.sidebar h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    color: #ffffff;
+}
+
+/* Nav list */
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Nav items spacing */
+.sidebar li {
+    margin-bottom: 14px;
+}
+
+/* Sidebar Links */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px 18px;
+    border-radius: 30px;
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 500;
+
+    color: #ffffff;
+
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+
+    transition: all 0.3s ease;
+}
+
+/* Icon styling */
+.nav-link i {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* Hover effect */
+.nav-link:hover {
+    background: rgba(255,255,255,0.18);
+    transform: translateX(6px);
+}
+
+/* Active state */
+.nav-link.active {
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 25px rgba(255,30,86,0.4);
+}
+
+/* Logout special */
+.logout-btn {
+    margin-top: auto;
+    background: rgba(255,0,0,0.12);
+    border: 1px solid rgba(255,0,0,0.4);
+}
+
+.logout-btn:hover {
+    background: linear-gradient(135deg, #ff1e56, #ff0000);
+    color: #ffffff;
+}
+
+/* =========================
+   MAIN CONTENT
+========================= */
+.main-content {
+    flex: 1;
+    padding: 60px;
+}
+
+/* Glass Card */
+.glass-form {
+    backdrop-filter: blur(22px);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.glass-form h2 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+
+.glass-form p {
+    text-align: center;
+    color: rgba(255,255,255,0.85);
+}
