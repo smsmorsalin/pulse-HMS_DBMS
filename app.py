@@ -166,7 +166,11 @@ def dashboard():
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
 
     if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
-        return render_template("dashboard.html")
+        patient_details = db.execute('SELECT * FROM patients').fetchall()
+        patient_count = len(patient_details)
+        if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+            return render_template("dashboard.html", admin=True, patient_count=patient_count)
+        return render_template("dashboard.html", admin=False, patient_count=patient_count)
     else:
         return redirect(url_for('login'))
 

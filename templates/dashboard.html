@@ -25,7 +25,7 @@
   <!-- NAVIGATION -->
   <ul class="nav-list" id="sidebarMenu">
     <li><a class="nav-link active"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-    <li><a class="nav-link"><i class="fas fa-user-injured"></i> <span>Patients</span></a></li>
+    <li><a class="nav-link" href="{{ url_for('patient') }}"><i class="fas fa-user-injured"></i> <span>Patients</span></a></li>
     <li><a class="nav-link"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
     <li><a class="nav-link"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
     <li><a class="nav-link"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
@@ -61,30 +61,37 @@
   <div class="stats-grid">
     <div class="card">
       <i class="fas fa-user-injured"></i>
-      <h3>1,245</h3>
+      <h3>{{ patient_count }}</h3>
       <p>Total Patients</p>
     </div>
 
     <div class="card">
       <i class="fas fa-user-md"></i>
-      <h3>78</h3>
+      <h3>***</h3>
       <p>Doctors</p>
     </div>
 
     <div class="card">
       <i class="fas fa-procedures"></i>
-      <h3>36</h3>
+      <h3>***</h3>
       <p>Active Admissions</p>
     </div>
 
     <div class="card">
       <i class="fas fa-money-bill-wave"></i>
-      <h3>$54,200</h3>
+      <h3>$$$$</h3>
       <p>Monthly Revenue</p>
     </div>
   </div>
-
 </div>
+
+  {% if admin %}
+    <div class="admin-back-wrapper">
+      <a href="{{ url_for('admin_portal') }}" class="admin-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to admin portal
+      </a>
+    </div>
+  {% endif %}
 
 <script>
 

@@ -203,6 +203,34 @@ body {
 }
 
 /* ===============================
+   ADMIN BACK BUTTON
+=============================== */
+.admin-back-wrapper {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1200;
+}
+
+.admin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 30px;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  transition: 0.3s ease;
+}
+
+.admin-back-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* ===============================
    BRAND SECTION
 =============================== */
 
