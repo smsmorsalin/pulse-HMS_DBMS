@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
 import sqlite3
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -148,6 +148,10 @@ def login():
 def logout():
     session.clear()  # Clear the session data
     return redirect(url_for('login'))  # Redirect to the login page after logout
+
+@app.route('/assets/<path:filename>')
+def assets(filename):
+    return send_from_directory('assets', filename)
 
 @app.route('/admin_portal')
 def admin_portal():
