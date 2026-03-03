@@ -149,6 +149,7 @@ def logout():
     session.clear()  # Clear the session data
     return redirect(url_for('login'))  # Redirect to the login page after logout
 
+# Route to serve static assets (CSS, JS, images, etc.)
 @app.route('/assets/<path:filename>')
 def assets(filename):
     return send_from_directory('assets', filename)

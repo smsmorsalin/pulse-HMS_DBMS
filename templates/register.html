@@ -67,6 +67,13 @@
     </div>
 </div>
 
+{% if error %}
+    <div class="error-message" style="color: red;">{{ error }}</div>
+{% endif %}
+{% if success %}
+    <div class="success-message" style="color: green;">{{ success }}</div>
+{% endif %}
+
 <!-- Font Awesome (if not already linked globally) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
         <script>
