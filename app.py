@@ -190,6 +190,17 @@ def patient():
         return render_template("patient.html", patients=patient_list)
     else:
         return redirect(url_for('login'))
+    
+@app.route('/registered_users')
+def registered_users():
+    """Page to display registered users - only accessible to admin."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+        user_list = db.execute('SELECT * FROM users').fetchall()
+        admin_list = db.execute('SELECT * FROM admins').fetchall()
+        return render_template("registered_users.html", users=user_list, admins=admin_list)
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>registered person</title>
+</head>
+<body align="center">
+    <h1>Registered Person</h1>
+    <table border="1" >
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Email</th>
+            <th>Role</th>
+        </tr>
+
+        {% for admin in admins %}
+        <tr>
+            <td>{{ admin[0] }}</td>
+            <td>{{ admin[1] }}</td>
+            <td>{{ admin[3] }}</td>
+            <td>admin</td>
+        </tr>
+        {% endfor %}
+
+        {% for person in users %}
+        <tr>
+            <td>{{ person[0] }}</td>
+            <td>{{ person[1] }}</td>
+            <td>{{ person[3] }}</td>
+            <td>user</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div>
+        <a href="/">Go back to registration form</a>
+    </div>
+</body>
+</html>
