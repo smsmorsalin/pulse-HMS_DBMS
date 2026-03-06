@@ -16,7 +16,7 @@
 
   <!-- BRAND AT TOP -->
   <div class="brand">
-    <a href="#" class="brand-link" id="brandDashboard">
+    <a href="{{ url_for('dashboard') }}" class="brand-link" id="brandDashboard">
       <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
       <span class="brand-text">AJH</span>
     </a>
@@ -24,11 +24,11 @@
 
   <!-- NAVIGATION -->
   <ul class="nav-list" id="sidebarMenu">
-    <li><a class="nav-link active"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+    <li><a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
     <li><a class="nav-link" href="{{ url_for('patient') }}"><i class="fas fa-user-injured"></i> <span>Patients</span></a></li>
-    <li><a class="nav-link"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
-    <li><a class="nav-link"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
-    <li><a class="nav-link"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+    <li><a class="nav-link" href="#"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
+    <li><a class="nav-link" href="#"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
+    <li><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
   </ul>
 
 </div>
@@ -51,7 +51,7 @@
 
       <div class="admin-dropdown" id="adminDropdown">
         <a href="#"><i class="fas fa-cog"></i> Settings</a>
-        <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
       </div>
     </div>
 
