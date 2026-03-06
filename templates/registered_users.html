@@ -3,39 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .admin-back-wrapper {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .admin-back-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .admin-back-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
     <title>registered person</title>
 </head>
-<body align="center">
+<body style="background-color: #f0f0f0; font-family: Arial, sans-serif; padding: 20px;">
+    <form method="post" action="/delete">
     <h1>Registered Person</h1>
-    <table border="1" >
-        <tr>
+
+        {% if delete_message %}
+        <p style="color: green;">{{ delete_message }}</p>
+    {% endif %}
+
+    {% if success %}
+        <p style="color: green;">{{ success }}</p>
+    {% endif %}
+    <table border="1"
+        style="width: 100%; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+        <tr style="background-color: #007BFF; color: #fff;">
             <th>Name</th>
-            <th>Age</th>
             <th>Email</th>
             <th>Role</th>
+            <th>Action</th>
         </tr>
 
         {% for admin in admins %}
-        <tr>
-            <td>{{ admin[0] }}</td>
+        <tr style="background-color: #e9ecef;">
             <td>{{ admin[1] }}</td>
-            <td>{{ admin[3] }}</td>
+            <td>{{ admin[4] }}</td>
             <td>admin</td>
+            <td><button name="delete_admin" value="{{ admin[0] }}">Delete</button></td>
         </tr>
         {% endfor %}
 
-        {% for person in users %}
-        <tr>
-            <td>{{ person[0] }}</td>
-            <td>{{ person[1] }}</td>
-            <td>{{ person[3] }}</td>
+        {% for user in users %}
+        <tr style="background-color: #e9ecef;">
+            <td>{{ user[1] }}</td>
+            <td>{{ user[4] }}</td>
             <td>user</td>
+            <td><button name="delete_user" value="{{ user[0] }}">Delete</button></td>
         </tr>
         {% endfor %}
     </table>
 
-    <div>
-        <a href="/">Go back to registration form</a>
+
+    <div class="admin-back-wrapper">
+        <a href="{{ url_for('register') }}" class= "admin-back-btn">Add user</a>
     </div>
+    
+
+    <div class="admin-back-wrapper">
+      <a href="{{ url_for('admin_portal') }}" class="admin-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to admin portal
+      </a>
+    </div>
+
+    </form>
 </body>
 </html>

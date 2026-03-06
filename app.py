@@ -101,14 +101,14 @@ def register():
                     try:
                         db.execute('INSERT INTO admins (username, password) VALUES (?, ?)', (username, hashed_password))
                         db.commit()
-                        return redirect(url_for('register', asuccess=f"Admin registered successfully."))
+                        return redirect(url_for('registered_users', success=f"Admin registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username already exists. Please choose a different username.")
                 else:  # role == 'user'
                     try:
                         db.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
                         db.commit()
-                        return redirect(url_for('register', success=f"Employee registered successfully."))
+                        return redirect(url_for('registered_users', success=f"Employee registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username already exists. Please choose a different username.")
 
@@ -191,7 +191,7 @@ def patient():
     else:
         return redirect(url_for('login'))
     
-@app.route('/registered_users')
+@app.route('/registered_users', methods=['GET', 'POST'])
 def registered_users():
     """Page to display registered users - only accessible to admin."""
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
@@ -199,6 +199,23 @@ def registered_users():
         user_list = db.execute('SELECT * FROM users').fetchall()
         admin_list = db.execute('SELECT * FROM admins').fetchall()
         return render_template("registered_users.html", users=user_list, admins=admin_list)
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/delete', methods=['POST'])
+def delete_user():
+    if request.method == 'POST':
+        if request.form.get('delete_user'):
+            user_id = request.form.get('delete_user')
+            db.execute('DELETE FROM users WHERE id = ?', (user_id,))
+            db.commit()
+            return redirect(url_for('registered_users', delete_message="Employee deleted successfully."))
+        
+        elif request.form.get('delete_admin'):
+                admin_id = request.form.get('delete_admin')
+                db.execute('DELETE FROM admins WHERE id = ?', (admin_id,))
+                db.commit()
+                return redirect(url_for('registered_users', delete_message="Admin deleted successfully."))
     else:
         return redirect(url_for('login'))
 
