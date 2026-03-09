@@ -250,12 +250,12 @@ body {
   padding: 8px 12px;
   border-radius: 16px;
 
-  background: rgba(255,255,255,0.05);
+  background: transparent;
   transition: 0.3s ease;
 }
 
 .brand-link:hover {
-  background: rgba(255,255,255,0.1);
+  background:transparent;
   transform: scale(1.05);
 }
 
