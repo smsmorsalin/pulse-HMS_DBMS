@@ -173,8 +173,13 @@ def dashboard():
     if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
         patient_details = db.execute('SELECT * FROM patients').fetchall()
         patient_count = len(patient_details)
-        # Show a role label for admins and username for regular users in the dashboard profile dropdown.
-        profile_name = 'admin' if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) else user_checker[1]
+        # Show the authenticated account name in the dashboard profile dropdown.
+        if session.get('user_id') == 'root_admin':
+            profile_name = root_admin_username
+        elif admin_checker and admin_checker[0] == session.get('user_id'):
+            profile_name = admin_checker[1]
+        else:
+            profile_name = user_checker[1]
         if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
             return render_template("dashboard.html", admin=True, patient_count=patient_count, profile_name=profile_name)
         return render_template("dashboard.html", admin=False, patient_count=patient_count, profile_name=profile_name)
