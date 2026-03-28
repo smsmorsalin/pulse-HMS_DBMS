@@ -197,7 +197,19 @@ def patient():
         return render_template("patient.html", patients=patient_list)
     else:
         return redirect(url_for('login'))
-    
+
+@app.route('/add_patient', methods=['GET', 'POST'])
+def add_patient():
+    """Page to add new patient information - only accessible to admin."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+        if request.method == 'POST':
+            # Process the form data and insert into the database
+            pass
+        return render_template("add_patient.html")
+    else:
+        return redirect(url_for('login'))
+
 @app.route('/registered_users', methods=['GET', 'POST'])
 def registered_users():
     """Page to display registered users - only accessible to admin."""
