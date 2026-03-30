@@ -204,8 +204,20 @@ def add_patient():
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
     if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
         if request.method == 'POST':
-            # Process the form data and insert into the database
-            pass
+            name = request.form.get('name')
+            age = request.form.get('age')
+            gender = request.form.get('gender')
+            phone = request.form.get('phone')
+            email = request.form.get('email')
+            dob = request.form.get('dob')
+            blood_group = request.form.get('blood_group')
+            address = request.form.get('address')
+            emergency_contact_name = request.form.get('emergency_contact_name')
+            emergency_contact_phone = request.form.get('emergency_contact_phone')
+            medical_history = request.form.get('medical_history')
+            if not name or not age or not gender or not phone or not dob or not blood_group or not address or not emergency_contact_name or not emergency_contact_phone:
+                return render_template("add_patient.html", error="Please fill in all required fields.")
+            
         return render_template("add_patient.html")
     else:
         return redirect(url_for('login'))
