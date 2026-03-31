@@ -7,9 +7,9 @@
     <title>add patient</title>
 </head>
 <body>
-    { % if error % }
+    {% if error %}
         <p class="error">{{ error }}</p>
-    { % endif % }
+    {% endif %}
     <form action="/add_patient" method="post" class="add-patient-form">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required><br><br>

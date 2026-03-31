@@ -217,7 +217,11 @@ def add_patient():
             medical_history = request.form.get('medical_history')
             if not name or not age or not gender or not phone or not dob or not blood_group or not address or not emergency_contact_name or not emergency_contact_phone:
                 return render_template("add_patient.html", error="Please fill in all required fields.")
-            
+            db.execute('''INSERT INTO patients (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history))
+            db.commit()
+            return redirect(url_for('patient', success="Patient added successfully."))
         return render_template("add_patient.html")
     else:
         return redirect(url_for('login'))
