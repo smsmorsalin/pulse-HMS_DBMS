@@ -1,56 +1,106 @@
-.header{
-    background-color: #4CAF50;
-    color: white;
-    text-align: center;
-    padding: 10px;
-}
-.nav {
-    margin-top: 10px;
-    align-items: right;
-    background-color: blanchedalmond;
-    padding: 10px;
-    
+/* Reset some default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.login-container {
+/* Body styling */
+body {
+    background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+    min-height: 100vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    margin-top: 50px;
+    justify-content: center;
 }
 
+/* Form container */
 .add-patient-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 10px;
+    background: #ffffff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.add-patient-form label {
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-
-.add-patient-form input {
+/* Title (optional if you add <h2>) */
+.add-patient-form h2 {
+    text-align: center;
     margin-bottom: 20px;
-    padding: 10px;
-    width: 300px;
+    color: #333;
+}
+
+/* Labels */
+label {
+    font-weight: 600;
+    color: #444;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Inputs, select, textarea */
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s ease;
 }
 
-.add-patient-form button {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
+/* Focus effect */
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #4facfe;
+    outline: none;
+    box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+}
+
+/* Textarea resize */
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Button */
+button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.add-patient-form button:hover {
-    background-color: #45a049;
+/* Button hover */
+button:hover {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    transform: translateY(-2px);
 }
 
+/* Error message */
+.error {
+    background: #ff4d4d;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+}
 
-
+/* Responsive */
+@media (max-width: 600px) {
+    .add-patient-form {
+        padding: 20px;
+    }
+}

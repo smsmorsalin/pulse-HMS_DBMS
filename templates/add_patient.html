@@ -8,9 +8,10 @@
 </head>
 <body>
     {% if error %}
-        <p class="error">{{ error }}</p>
+    <p class="error">{{ error }}</p>
     {% endif %}
     <form action="/add_patient" method="post" class="add-patient-form">
+        <h2>Add New Patient</h2>
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required><br><br>
 
