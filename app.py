@@ -85,11 +85,17 @@ def init_db():
             CREATE TABLE doctors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                specialization TEXT NOT NULL,
                 phone TEXT NOT NULL,
-                email TEXT NOT NULL
+                email TEXT NOT NULL,
+                specialization TEXT NOT NULL,
+                department TEXT NOT NULL,
+                license_number TEXT NOT NULL,
+                availability TEXT NOT NULL,
+                experience INTEGER NOT NULL,
+                room_number TEXT NOT NULL
             )
         ''')
+        print("Doctors table created successfully.")
         db.commit()
         print("Hospital database initialized successfully.")
     else:
