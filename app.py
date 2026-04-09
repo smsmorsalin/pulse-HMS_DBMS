@@ -278,5 +278,11 @@ def delete_user():
     else:
         return redirect(url_for('login'))
 
+@app.route('/doctors', methods=['GET', 'POST'])
+def doctors():
+    """Page to display doctor information."""
+    doctor_list = db.execute('SELECT * FROM doctors').fetchall()
+    return render_template("doctors.html", doctors=doctor_list)
+
 if __name__ == '__main__':
     app.run(debug=True)
