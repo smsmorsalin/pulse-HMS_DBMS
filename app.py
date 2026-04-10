@@ -284,5 +284,36 @@ def doctors():
     doctor_list = db.execute('SELECT * FROM doctors').fetchall()
     return render_template("doctors.html", doctors=doctor_list)
 
+@app.route('/add_doctor', methods=['GET', 'POST'])
+def add_doctor():
+    """Page to add new doctor information - only accessible to admin."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+        if request.method == 'POST':
+            name = request.form.get('name')
+            phone = request.form.get('phone')
+            email = request.form.get('email')
+            specialization = request.form.get('specialization')
+            department = request.form.get('department')
+            license_number = request.form.get('license_number')
+            availability = request.form.get('availability')
+            experience = request.form.get('experience')
+            room_number = request.form.get('room_number')
+
+            if not name or not phone or not email or not specialization or not department or not license_number or not availability or not experience or not room_number:
+                return render_template("add_doctor.html", error="Please fill in all required fields.")
+            if not phone.isdigit() or len(phone) < 7:
+                return render_template("add_doctor.html", error="Please enter a valid phone number.")
+            if not experience.isdigit() or int(experience) < 0:
+                return render_template("add_doctor.html", error="Please enter a valid number of years of experience.")
+            
+            db.execute('''INSERT INTO doctors (name, phone, email, specialization, department, license_number, availability, experience, room_number) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, phone, email, specialization, department, license_number, availability, experience, room_number))
+            db.commit()
+            return redirect(url_for('doctors', success="Doctor added successfully."))
+        return render_template("add_doctor.html")
+    else:
+        return redirect(url_for('login'))
 if __name__ == '__main__':
     app.run(debug=True)
