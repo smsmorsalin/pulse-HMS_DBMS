@@ -1,4 +1,4 @@
-# 🏥 Pulse HMS DBM
+# 🏥 Pulse HMS DBMS
 A Hospital Management System Database Management project designed to efficiently manage hospital operations including patients, doctors, appointments, and medical records.
 
 ---
