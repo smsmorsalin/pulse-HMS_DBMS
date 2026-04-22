@@ -322,7 +322,7 @@ body::after {
   left: 15px;
   top: 12px;
   color: rgba(255,255,255,0.7);
-  font-size: 16px;
+  font-size: 20px;
   pointer-events: none;
   transition: 0.3s ease;
 }
@@ -330,9 +330,9 @@ body::after {
 /* Float Animation */
 .input-group input:focus + label,
 .input-group input:not(:placeholder-shown) + label {
-  top: -10px;
+  top: -20px;
   left: 12px;
-  font-size: 13px;
+  font-size: 17px;
   color: #ff1e56;
 }
 
