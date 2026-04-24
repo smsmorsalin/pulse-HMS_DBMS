@@ -104,6 +104,16 @@ def init_db():
 # Initialize database on app startup
 init_db()
 
+def isadmin():
+    """Helper function to check if the current user is an admin."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    return session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id'))
+
+def isuser():
+    """Helper function to check if the current user is a regular user."""
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+    return user_checker and user_checker[0] == session.get('user_id')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -189,9 +199,10 @@ def dashboard():
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
 
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
+    if isadmin() or isuser():
         patient_details = db.execute('SELECT * FROM patients').fetchall()
         patient_count = len(patient_details)
+        doctor_count = db.execute('SELECT COUNT(*) FROM doctors').fetchone()[0]
         # Show the authenticated account name in the dashboard profile dropdown.
         if session.get('user_id') == 'root_admin':
             profile_name = root_admin_username
@@ -200,8 +211,8 @@ def dashboard():
         else:
             profile_name = user_checker[1]
         if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
-            return render_template("dashboard.html", admin=True, patient_count=patient_count, profile_name=profile_name)
-        return render_template("dashboard.html", admin=False, patient_count=patient_count, profile_name=profile_name)
+            return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, profile_name=profile_name)
+        return render_template("dashboard.html", admin=False, patient_count=patient_count, doctor_count=doctor_count, profile_name=profile_name)
     else:
         return redirect(url_for('login'))
 
@@ -267,8 +278,7 @@ def add_patient():
 @app.route('/registered_users', methods=['GET', 'POST'])
 def registered_users():
     """Page to display registered users - only accessible to admin."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+    if isadmin():
         user_list = db.execute('SELECT * FROM users').fetchall()
         admin_list = db.execute('SELECT * FROM admins').fetchall()
         return render_template("registered_users.html", users=user_list, admins=admin_list)
@@ -294,15 +304,19 @@ def delete_user():
 
 @app.route('/doctors', methods=['GET', 'POST'])
 def doctors():
+    if not isuser() and not isadmin():
+        return redirect(url_for('login'))
     """Page to display doctor information."""
+    admin_varifier = isadmin()
     doctor_list = db.execute('SELECT * FROM doctors').fetchall()
-    return render_template("doctors.html", doctors=doctor_list)
+    return render_template("doctors.html", doctors=doctor_list, admin=admin_varifier)
 
 @app.route('/add_doctor', methods=['GET', 'POST'])
 def add_doctor():
     """Page to add new doctor information - only accessible to admin."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+    if not isadmin():
+        return redirect(url_for('doctors', message="Only admins can add new doctors."))
+    if isadmin():
         if request.method == 'POST':
             name = request.form.get('name')
             phone = request.form.get('phone')
@@ -329,5 +343,6 @@ def add_doctor():
         return render_template("add_doctor.html")
     else:
         return redirect(url_for('login'))
+    
 if __name__ == '__main__':
     app.run(debug=True)

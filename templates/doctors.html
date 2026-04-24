@@ -7,7 +7,13 @@
 </head>
 <body>
     <h1>Doctors</h1>
-    <table>
+    {% if admin %} <!-- Show add doctor link only to admins -->
+    <a href="{{ url_for('add_doctor') }}">Add Doctor</a>
+    {% endif %}
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+    <table border="1">
         <thead>
             <tr>
                 <th>Name</th>
@@ -15,6 +21,10 @@
                 <th>Email</th>
                 <th>Specialization</th>
                 <th>Department</th>
+                <th>license_number</th>
+                <th>availability</th>
+                <th>experience</th>
+                <th>room_number</th>
             </tr>
         </thead>
         <tbody>
@@ -25,6 +35,10 @@
                 <td>{{ doctor[3] }}</td>
                 <td>{{ doctor[4] }}</td>
                 <td>{{ doctor[5] }}</td>
+                <td>{{ doctor[6] }}</td>
+                <td>{{ doctor[7] }}</td>
+                <td>{{ doctor[8] }}</td>
+                <td>{{ doctor[9] }}</td>
             </tr>
             {% endfor %}
         </tbody>
