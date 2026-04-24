@@ -1,0 +1,198 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+    padding: 40px 15px;
+    color: #fff;
+    overflow-x: hidden;
+}
+
+.background-blobs::before,
+.background-blobs::after {
+    content: "";
+    position: fixed;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(130px);
+    z-index: 0;
+    animation: float 12s infinite alternate ease-in-out;
+}
+
+.background-blobs::before {
+    background: #1e3cfa;
+    top: -120px;
+    left: -120px;
+}
+
+.background-blobs::after {
+    background: #ff1e56;
+    bottom: -120px;
+    right: -120px;
+}
+
+@keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(50px); }
+}
+
+.doctors-page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.doctors-panel {
+    backdrop-filter: blur(22px);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.doctors-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.doctors-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 30px;
+}
+
+.doctors-header p {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.add-doctor-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    padding: 12px 18px;
+    border-radius: 14px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.add-doctor-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    padding: 12px 18px;
+    border-radius: 14px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.back-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+.flash-message {
+    margin-bottom: 14px;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.doctors-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.doctors-table table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #fff;
+}
+
+.doctors-table th,
+.doctors-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: left;
+}
+
+.doctors-table th:first-child,
+.doctors-table td:first-child {
+    white-space: nowrap;
+    min-width: 180px;
+}
+
+.doctors-table thead th {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.doctors-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.doctors-table tbody td[colspan] {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.72);
+    padding: 24px 12px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 24px 12px;
+    }
+
+    .doctors-panel {
+        padding: 20px;
+    }
+
+    .doctors-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        margin-left: 0;
+    }
+
+    .doctors-header h1 {
+        font-size: 26px;
+    }
+
+    .back-btn,
+    .add-doctor-btn {
+        width: fit-content;
+    }
+}

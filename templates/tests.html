@@ -4,32 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tests</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tests.css') }}">
 </head>
-<body>
-    <h2>Available Tests</h2>
+<body data-is-admin="{{ 'true' if admin|default(false) else 'false' }}">
+    <div class="background-blobs"></div>
 
-<table border="1">
-    <tr>
-        <th>Test Name</th>
-        <th>Price</th>
-        {% if admin %}
-        <th>Actions</th>
-        {% endif %}
-    </tr>
+    <main class="tests-page">
+        <section class="tests-panel">
+            <div class="tests-header">
+                <div class="tests-title-row">
+                    <a class="back-btn" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-vial"></i> Available Tests</h2>
+                        <p>AL-JUMIRA HOSPITAL</p>
+                    </div>
+                </div>
 
-    {% for test in tests %}
-    <tr>
-        <td>{{ test[1] }}</td>
-        <td>{{ test[2] }}</td>
+                <div class="tests-tools">
+                    <div class="tests-search">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="testSearchInput" placeholder="Search tests by name or price">
+                    </div>
+                    <button type="button" id="testSearchClearBtn">Clear</button>
+                </div>
+            </div>
 
-        {% if admin %}
-        <td>
-            <!-- <a href="/edit_service/{{ test[0] }}">Edit</a>
-            <a href="/delete_service/{{ test[0] }}">Delete</a> -->
-        </td>
-        {% endif %}
-    </tr>
-    {% endfor %}
-</table>
+            <div class="tests-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Test Name</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="testsTableBody">
+                        {% if tests %}
+                            {% for test in tests %}
+                            <tr data-test-name="{{ test[1] | lower }}" data-test-price="{{ test[2] }}">
+                                <td>{{ test[1] }}</td>
+                                <td>{{ test[2] }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="empty-row">
+                                <td colspan="2">No tests found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const testSearchInput = document.getElementById('testSearchInput');
+        const testSearchClearBtn = document.getElementById('testSearchClearBtn');
+        const testsTableBody = document.getElementById('testsTableBody');
+        const testRows = Array.from(testsTableBody.querySelectorAll('tr[data-test-name]'));
+
+        function filterTests() {
+            const query = testSearchInput.value.trim().toLowerCase();
+
+            testRows.forEach((row) => {
+                const name = row.dataset.testName || '';
+                const price = row.dataset.testPrice || '';
+                const matches = name.includes(query) || price.includes(query);
+                row.style.display = matches ? '' : 'none';
+            });
+
+            const visibleRows = testRows.filter((row) => row.style.display !== 'none');
+            const emptyRow = testsTableBody.querySelector('.empty-row');
+
+            if (emptyRow) {
+                emptyRow.style.display = visibleRows.length === 0 ? '' : 'none';
+            }
+        }
+
+        testSearchInput.addEventListener('input', filterTests);
+        testSearchClearBtn.addEventListener('click', () => {
+            testSearchInput.value = '';
+            filterTests();
+            testSearchInput.focus();
+        });
+    </script>
 </body>
 </html>

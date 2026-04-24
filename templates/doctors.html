@@ -4,44 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doctors.css') }}">
 </head>
 <body>
-    <h1>Doctors</h1>
-    {% if admin %} <!-- Show add doctor link only to admins -->
-    <a href="{{ url_for('add_doctor') }}">Add Doctor</a>
-    {% endif %}
-    {% if message %}
-        <p>{{ message }}</p>
-    {% endif %}
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Specialization</th>
-                <th>Department</th>
-                <th>license_number</th>
-                <th>availability</th>
-                <th>experience</th>
-                <th>room_number</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doctor in doctors %}
-            <tr>
-                <td>{{ doctor[1] }}</td>
-                <td>{{ doctor[2] }}</td>
-                <td>{{ doctor[3] }}</td>
-                <td>{{ doctor[4] }}</td>
-                <td>{{ doctor[5] }}</td>
-                <td>{{ doctor[6] }}</td>
-                <td>{{ doctor[7] }}</td>
-                <td>{{ doctor[8] }}</td>
-                <td>{{ doctor[9] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="background-blobs"></div>
+
+    <main class="doctors-page">
+        <section class="doctors-panel">
+            <div class="doctors-header">
+                <a class="back-btn" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+
+                <div>
+                    <h1><i class="fas fa-user-doctor"></i> Doctors</h1>
+                    <p>Review the registered doctors in the system.</p>
+                </div>
+
+                <div class="header-actions">
+                    {% if admin %}
+                    <a class="add-doctor-btn" href="{{ url_for('add_doctor') }}">
+                        <i class="fas fa-plus"></i>
+                        Add Doctor
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if message %}
+                <p class="flash-message">{{ message }}</p>
+            {% endif %}
+
+            <div class="doctors-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Specialization</th>
+                            <th>Department</th>
+                            <th>License Number</th>
+                            <th>Availability</th>
+                            <th>Experience</th>
+                            <th>Room Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if doctors %}
+                            {% for doctor in doctors %}
+                            <tr>
+                                <td>{{ doctor[1] }}</td>
+                                <td>{{ doctor[2] }}</td>
+                                <td>{{ doctor[3] }}</td>
+                                <td>{{ doctor[4] }}</td>
+                                <td>{{ doctor[5] }}</td>
+                                <td>{{ doctor[6] }}</td>
+                                <td>{{ doctor[7] }}</td>
+                                <td>{{ doctor[8] }}</td>
+                                <td>{{ doctor[9] }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9">No doctors found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
