@@ -195,10 +195,27 @@ def init_db():
 
     else:
         print("Hospital database already exists.")
-        # commit the changes to the database
-        db.commit()
-        print("Hospital database initialized successfully.")
-        
+
+    #Triggers
+    #update total_amount in bills table after inserting a new bill item
+    cursor.execute('''
+        CREATE TRIGGER IF NOT EXISTS update_bill_total
+        AFTER INSERT ON bill_items
+        BEGIN
+            UPDATE bills
+            SET total_amount = (
+                SELECT SUM(price * quantity)
+                FROM bill_items
+                WHERE bill_id = NEW.bill_id
+            )
+            WHERE id = NEW.bill_id;
+        END;
+        ''')
+
+    # commit the changes to the database
+    db.commit()
+    print("Hospital database initialized successfully.")
+
 # Initialize database on app startup
 init_db()
 
@@ -211,6 +228,27 @@ def isuser():
     """Helper function to check if the current user is a regular user."""
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
     return user_checker and user_checker[0] == session.get('user_id')
+
+def add_log(patient_id, action):
+    user_id = session.get('user_id')
+
+    if user_id == 'root_admin':
+        role = 'root_admin'
+        user_id_db = None
+    else:
+        admin_checker = db.execute('SELECT * FROM admins WHERE id=?', (user_id,)).fetchone()
+        if admin_checker:
+            role = 'admin'
+            user_id_db = user_id
+        else:
+            role = 'user'
+            user_id_db = user_id
+
+    db.execute('''
+        INSERT INTO logs (user_id, role, patient_id, action, timestamp)
+        VALUES (?, ?, datetime('now'), ?, ?)
+    ''', (user_id_db, role, patient_id, action))
+    db.commit()
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
