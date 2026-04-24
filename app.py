@@ -6,25 +6,23 @@ root_admin_username = "admin"
 root_admin_password = "admin123"  # In a production environment, use a strong password and consider storing it securely (e.g., in environment variables or a secure vault)
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Required for session management
+app.secret_key = 'xs12a'  # Required for session management
 
 db = sqlite3.connect('hospital.db', check_same_thread=False)  # Connect to the SQLite database
+db.execute("PRAGMA foreign_keys = ON")  # Enable foreign key support
 
 # Function to initialize the database and create tables if they don't exist
 def init_db():
     """Initialize the hospital database with required tables if they don't exist."""
     cursor = db.cursor()
-    
-    # Check if users table exists
+
+    #users table
     cursor.execute('''
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name='users'
     ''')
-    
     users_exists = cursor.fetchone() is not None
-    
     if not users_exists:
-        # Create users table if it doesn't exist
         cursor.execute('''
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,16 +32,13 @@ def init_db():
         ''')
         print("Users table created successfully.")
     
-    # Check if admins table exists
+    #admins table
     cursor.execute('''
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name='admins'
-    ''')
-    
-    admins_exists = cursor.fetchone() is not None
-    
+    ''') 
+    admins_exists = cursor.fetchone() is not None 
     if not admins_exists:
-        # Create admins table if it doesn't exist
         cursor.execute('''
             CREATE TABLE admins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,11 +48,10 @@ def init_db():
         ''')
         print("Admins table created successfully.")
     
+    #patients table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="patients"')
     patients_exists = cursor.fetchone() is not None
-
     if not patients_exists:
-        # Create patients table if it doesn't exist
         cursor.execute('''
             CREATE TABLE patients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,11 +70,10 @@ def init_db():
         ''')
         print("Patients table created successfully.")
     
+    #doctors table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="doctors"')
     doctors_exists = cursor.fetchone() is not None
-
     if not doctors_exists:
-        # Create doctors table if it doesn't exist
         cursor.execute('''
             CREATE TABLE doctors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,11 +89,116 @@ def init_db():
             )
         ''')
         print("Doctors table created successfully.")
-        db.commit()
-        print("Hospital database initialized successfully.")
+
+    #services table
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="services"')
+    services_exists = cursor.fetchone() is not None
+    if not services_exists:
+        cursor.execute('''
+            CREATE TABLE services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                type TEXT CHECK(type IN ('doctor','test')) NOT NULL,
+                price REAL NOT NULL
+            )
+        ''')
+        print("Services table created successfully.")
+
+    #appointments table
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="appointments"')
+    appointments_exists = cursor.fetchone() is not None
+    if not appointments_exists:
+        cursor.execute('''
+            CREATE TABLE appointments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER,
+                doctor_id INTEGER,
+                service_id INTEGER,
+                appointment_date TEXT,
+                created_by INTEGER,
+
+                FOREIGN KEY (patient_id) REFERENCES patients(id),
+                FOREIGN KEY (doctor_id) REFERENCES doctors(id),
+                FOREIGN KEY (service_id) REFERENCES services(id)
+            )
+        ''')
+        print("Appointments table created successfully.")
+    
+    #test_orders table
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="test_orders"')
+    test_orders_exists = cursor.fetchone() is not None
+    if not test_orders_exists:
+        cursor.execute('''
+            CREATE TABLE test_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER,
+                service_id INTEGER,
+                test_date TEXT,
+
+                FOREIGN KEY (patient_id) REFERENCES patients(id),
+                FOREIGN KEY (service_id) REFERENCES services(id)
+            )
+        ''')
+        print("Test Orders table created successfully.")
+
+    #bills table
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="bills"')
+    bills_exists = cursor.fetchone() is not None
+    if not bills_exists:
+        cursor.execute('''
+            CREATE TABLE bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER,
+                created_by INTEGER,
+                total_amount REAL DEFAULT 0,
+                created_at TEXT,
+
+                FOREIGN KEY (patient_id) REFERENCES patients(id)
+            )
+        ''')
+        print("Bills table created successfully.")
+
+    #bill_items table
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="bill_items"')
+    bill_items_exists = cursor.fetchone() is not None
+    if not bill_items_exists:
+        cursor.execute('''
+            CREATE TABLE bill_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bill_id INTEGER,
+                service_id INTEGER,
+                quantity INTEGER,
+                price REAL,
+
+                FOREIGN KEY (bill_id) REFERENCES bills(id),
+                FOREIGN KEY (service_id) REFERENCES services(id)
+            )
+        ''')
+        print("Bill Items table created successfully.")
+
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="logs"')
+    logs_exists = cursor.fetchone() is not None
+
+    #logs table
+    if not logs_exists:
+        cursor.execute('''
+            CREATE TABLE logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                role TEXT CHECK(role IN ('admin','user')) NOT NULL,
+                patient_id INTEGER,
+                action TEXT,
+                timestamp TEXT
+            )
+        ''')
+        print("Logs table created successfully.")
+
     else:
         print("Hospital database already exists.")
-
+        # commit the changes to the database
+        db.commit()
+        print("Hospital database initialized successfully.")
+        
 # Initialize database on app startup
 init_db()
 
@@ -219,12 +317,9 @@ def dashboard():
 @app.route('/patient')
 def patient():
     """Patient information page - only accessible to logged-in users."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
-
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
+    if isadmin() or isuser():
         patient_list = db.execute('SELECT * FROM patients').fetchall()
-        is_admin = session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id'))
+        is_admin = isadmin()
         return render_template("patient.html", patients=patient_list, admin=is_admin)
     else:
         return redirect(url_for('login'))
@@ -232,9 +327,7 @@ def patient():
 @app.route('/add_patient', methods=['GET', 'POST'])
 def add_patient():
     """Page/API to add new patient information - accessible to any logged-in account."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
+    if isadmin() or isuser():
         if request.method == 'POST':
             name = request.form.get('name')
             age = request.form.get('age')
