@@ -2,247 +2,761 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Patient Entry - Liquid Glass</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Information - Pulse HMS</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 20px;
-            color: white !important;
-        }
-        .nav-link {
-            color: rgba(255,255,255,0.8) !important;
-            margin-left: 20px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        .nav-link:hover {
-            color: white !important;
-        }
-        .page-header {
-            padding: 30px 0;
-            margin-bottom: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        .page-header h1 {
-            font-weight: 700;
-            font-size: 32px;
-            margin: 0;
-        }
-        .page-header p {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-        }
-        .table-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
-        }
-        .table {
-            margin: 0;
-        }
-        .table thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            padding: 15px;
-            letter-spacing: 0.5px;
-        }
-        .table tbody td {
-            padding: 12px 15px;
-            vertical-align: middle;
-            border-bottom: 1px solid #e0e0e0;
-            color: #333;
-        }
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        .table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        .btn-custom {
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-        }
-        .btn-back {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-back:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-            color: white;
-        }
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-active {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .badge-inactive {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .container-custom {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        .info-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .info-card strong {
-            color: #667eea;
-        }
-        .table-responsive {
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-    </style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient.css') }}">
 </head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-hospital"></i> Pulse HMS
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('add_patient') }}">
-                            <i class="fas fa-user-injured"></i> Add Patients
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_portal') }}">
-                            <i class="fas fa-cog"></i> Admin
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </li>
-                </ul>
+<body data-is-admin="{{ 'true' if admin|default(false) else 'false' }}">
+
+<div class="background-blobs"></div>
+
+ <div class="dashboard">
+
+    <aside class="sidebar">
+        <h2>HMS</h2>
+        <ul>
+            <li id="dashboardNav"><i class="fas fa-chart-line"></i> Dashboard</li>
+            <li id="newPatientNav"><i class="fas fa-user-plus"></i> New Patient</li>
+            <li id="patientListNav"><i class="fas fa-list"></i> Patient List</li>
+            <li><i class="fas fa-file-invoice"></i> Billing</li>
+            <li><i class="fas fa-cog"></i> Settings</li>
+            <li id="adminNav"><i class="fas fa-user-shield"></i> Admin</li>
+            <li id="logoutNav"><i class="fas fa-right-from-bracket"></i> Logout</li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <section class="patient-list-panel" id="patientListPanel" aria-label="Patient list">
+            <h2><i class="fas fa-list"></i> Patient List</h2>
+            <div class="patient-list-tools">
+                <input type="text" id="patientSearchInput" placeholder="Search by Patient ID or Phone Number">
+                <button type="button" id="patientSearchClearBtn">Clear</button>
             </div>
-        </div>
-    </nav>
+            <div class="patient-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-    <!-- Main Content -->
-    <div class="container-custom">
-        <div class="page-header">
-            <h1><i class="fas fa-user-injured"></i> Patient Information</h1>
-            <p>Manage and view all patient records in the system</p>
-        </div>
+ </div>
 
-        <div class="table-container">
-            {% if patients %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th><i class="fas fa-hashtag"></i> ID</th>
-                                <th><i class="fas fa-user"></i> Name</th>
-                                <th><i class="fas fa-birthday-cake"></i> Age</th>
-                                <th><i class="fas fa-venus-mars"></i> Gender</th>
-                                <th><i class="fas fa-phone"></i> Contact</th>
-                                <th><i class="fas fa-envelope"></i> Email</th>
-                                <th><i class="fas fa-calendar"></i> Date of Birth</th>
-                                <th><i class="fas fa-droplet"></i> Blood Group</th>
-                                <th><i class="fas fa-map-marker-alt"></i> Address</th>
-                                <th><i class="fas fa-exclamation-circle"></i> Emergency Contact</th>
-                                <th><i class="fas fa-phone-alt"></i> Emergency Phone</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for patient in patients %}
-                            <tr>
-                                <td><strong>{{ patient[0] }}</strong></td>
-                                <td>{{ patient[1] }}</td>
-                                <td>{{ patient[2] }}</td>
-                                <td>
-                                    {% if patient[3] == 'M' %}
-                                        <i class="fas fa-mars" style="color: #3498db;"></i> Male
-                                    {% elif patient[3] == 'F' %}
-                                        <i class="fas fa-venus" style="color: #e74c3c;"></i> Female
-                                    {% else %}
-                                        {{ patient[3] }}
-                                    {% endif %}
-                                </td>
-                                <td>{{ patient[4] }}</td>
-                                <td>{{ patient[5] }}</td>
-                                <td>{{ patient[6] }}</td>
-                                <td><span class="status-badge badge-active">{{ patient[7] }}</span></td>
-                                <td><small>{{ patient[8] }}</small></td>
-                                <td>{{ patient[9] }}</td>
-                                <td><strong>{{ patient[10] }}</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="no-data">
-                    <i class="fas fa-inbox" style="font-size: 48px; color: #ddd; margin-bottom: 20px;"></i>
-                    <h3>No Patient Records Found</h3>
-                    <p>There are currently no patient records in the system.</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <div class="text-center mb-4">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-custom btn-back">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
+<div class="form-container">
+    <div class="patient-id-card">
+         <h3>Patient ID</h3>
+         <div class="id-value" id="patientID"></div>
     </div>
+    
+    <form class="glass-form">
+        <h2><i class="fas fa-hospital-user"></i> Patient Entry</h2>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <div class="form-grid">
+
+            <!-- Left Column -->
+
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="fullName" required>
+                <label>Full Name</label>
+            </div>
+
+<!-- Age (Auto Calculated) -->
+        <div class="age-gender-row">      
+              
+             <div class="input-group age-box ">
+                   <i class="fas fa-hashtag"></i>
+                   <input type="number" id="age" required min="0">
+                   <label>Age</label>
+                   
+              </div>
+              
+
+            <div class="input-group gender-box">
+                <i class="fas fa-venus-mars"></i>
+                <select id="gender" required>
+                    <option value="" disabled selected></option>
+                    <option>Female</option>
+                    <option>Male</option>
+                    <option>Other</option>
+                </select>
+                <label>Gender</label>
+            </div>
+        </div>    
+
+            <div class="input-group">
+                <i class="fas fa-phone"></i>
+                <input type="tel" id="phone" required>
+                <label>Phone Number</label>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" required>
+                <label>Email</label>
+            </div>
+
+            <!-- Right Column -->
+
+
+
+<!-- Date of Birth -->
+              <div class="input-group">
+                   <i class="fas fa-calendar"></i>
+                   <input type="date" id="dob" required>
+                   <label>Date of Birth</label>
+              </div>
+              
+
+            <div class="input-group">
+                <i class="fas fa-droplet"></i>
+                <select id="bloodGroup" required>
+                    <option value="" disabled selected></option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>A-</option>
+                    <option>A+</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                    <option>O+</option>
+                    <option>O-</option>
+                </select>
+                <label>Blood Group</label>
+            </div>
+
+            <div class="input-group address-group">
+                <i class="fas fa-location-dot"></i>
+                <textarea id="address" required></textarea>
+                <label>Address</label>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-notes-medical"></i>
+                <textarea id="medicalHistory" required></textarea>
+                <label>Medical History</label>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-user-shield"></i>
+                <input type="text" id="emergencyContactName" required>
+                <label>Emergency Contact Name</label>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-phone-volume"></i>
+                <input type="tel" id="emergencyContactPhone" required>
+                <label>Emergency Contact Phone</label>
+            </div>
+
+        </div>
+
+        <button type="submit" class="submit-btn">
+            <span>Submit</span>
+        </button>
+
+    </form>
+
+</div>
+
+<div class="edit-modal" id="editPatientModal">
+    <div class="edit-modal-content">
+        <h3>Edit Patient</h3>
+        <form id="editPatientForm">
+            <input type="hidden" id="editPatientId">
+
+            <label for="editFullName">Full Name</label>
+            <input type="text" id="editFullName" required>
+
+            <label for="editAge">Age</label>
+            <input type="number" id="editAge" min="0" required>
+
+            <label for="editGender">Gender</label>
+            <select id="editGender" required>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="editPhone">Phone</label>
+            <input type="tel" id="editPhone" required>
+
+            <label for="editEmail">Email</label>
+            <input type="email" id="editEmail" required>
+
+            <label for="editDob">Date of Birth</label>
+            <input type="date" id="editDob" required>
+
+            <label for="editBloodGroup">Blood Group</label>
+            <select id="editBloodGroup" required>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="A-">A-</option>
+                <option value="A+">A+</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+            </select>
+
+            <label for="editAddress">Address</label>
+            <textarea id="editAddress" required></textarea>
+
+            <label for="editMedicalHistory">Medical History</label>
+            <textarea id="editMedicalHistory" required></textarea>
+
+            <label for="editEmergencyContactName">Emergency Contact Name</label>
+            <input type="text" id="editEmergencyContactName" required>
+
+            <label for="editEmergencyContactPhone">Emergency Contact Phone</label>
+            <input type="tel" id="editEmergencyContactPhone" required>
+
+            <div class="edit-modal-actions">
+                <button type="submit">Save Changes</button>
+                <button type="button" id="cancelEditBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <script>
+    const patientIdElement = document.getElementById("patientID");
+    const patientForm = document.querySelector(".glass-form");
+    const patientTableBody = document.getElementById("patientTableBody");
+    const newPatientNav = document.getElementById("newPatientNav");
+    const patientListNav = document.getElementById("patientListNav");
+    const patientListPanel = document.getElementById("patientListPanel");
+    const formContainer = document.querySelector(".form-container");
+    const ageInput = document.getElementById("age");
+    const dobInput = document.getElementById("dob");
+    const submitButton = patientForm.querySelector(".submit-btn");
+    const patientSearchInput = document.getElementById("patientSearchInput");
+    const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
+    const editPatientModal = document.getElementById("editPatientModal");
+    const editPatientForm = document.getElementById("editPatientForm");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const dashboardNav = document.getElementById("dashboardNav");
+    const adminNav = document.getElementById("adminNav");
+    const logoutNav = document.getElementById("logoutNav");
+    const isAdmin = document.body.dataset.isAdmin === "true";
+    const dashboardUrl = "{{ url_for('dashboard') }}";
+    const adminPortalUrl = "{{ url_for('admin_portal') }}";
+    const logoutUrl = "{{ url_for('logout') }}";
+    const addPatientUrl = "{{ url_for('add_patient') }}";
+
+    const SQLITE_DB_KEY = "patient_management_sqlite_db_v1";
+    const LEGACY_STATE_KEY = "patient_management_state_v1";
+    const STARTING_PATIENT_ID = 100;
+    let db = null;
+    let activeSearchTerm = "";
+
+    function uint8ArrayToBase64(uint8Array) {
+        let binary = "";
+        const chunkSize = 32768;
+
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+
+        return btoa(binary);
+    }
+
+    function base64ToUint8Array(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+
+        for (let i = 0; i < binary.length; i += 1) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        return bytes;
+    }
+
+    function persistDatabase() {
+        const exported = db.export();
+        localStorage.setItem(SQLITE_DB_KEY, uint8ArrayToBase64(exported));
+    }
+
+    function setupSchema() {
+        db.exec("CREATE TABLE IF NOT EXISTS patient_sequence (last_id INTEGER NOT NULL);");
+        db.exec("CREATE TABLE IF NOT EXISTS patients (" +
+            "id INTEGER PRIMARY KEY, " +
+            "name TEXT NOT NULL, " +
+            "age INTEGER NOT NULL, " +
+            "gender TEXT NOT NULL, " +
+            "phone TEXT NOT NULL, " +
+            "email TEXT NOT NULL, " +
+            "dob TEXT NOT NULL, " +
+            "blood_group TEXT NOT NULL, " +
+            "address TEXT NOT NULL, " +
+            "medical_history TEXT NOT NULL, " +
+            "emergency_contact_name TEXT NOT NULL, " +
+            "emergency_contact_phone TEXT NOT NULL, " +
+            "created_at TEXT NOT NULL" +
+        ");");
+
+        const sequenceCount = db.exec("SELECT COUNT(*) FROM patient_sequence;")[0].values[0][0];
+        if (sequenceCount === 0) {
+            db.run("INSERT INTO patient_sequence(last_id) VALUES (?);", [STARTING_PATIENT_ID - 1]);
+        }
+    }
+
+    function migrateLegacyStateIfPresent() {
+        const legacyRaw = localStorage.getItem(LEGACY_STATE_KEY);
+        if (!legacyRaw) {
+            return;
+        }
+
+        const patientCount = db.exec("SELECT COUNT(*) FROM patients;")[0].values[0][0];
+        if (patientCount > 0) {
+            localStorage.removeItem(LEGACY_STATE_KEY);
+            return;
+        }
+
+        try {
+            const legacy = JSON.parse(legacyRaw);
+            if (!legacy || !Array.isArray(legacy.patients)) {
+                localStorage.removeItem(LEGACY_STATE_KEY);
+                return;
+            }
+
+            db.exec("BEGIN TRANSACTION;");
+
+            const insertStatement = db.prepare("INSERT INTO patients(" +
+                "id, name, age, gender, phone, email, dob, blood_group, address, medical_history, emergency_contact_name, emergency_contact_phone, created_at" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+
+            legacy.patients.forEach(function (patient) {
+                insertStatement.run([
+                    Number(patient.id),
+                    String(patient.name || "").trim(),
+                    Number(patient.age || 0),
+                    String(patient.gender || "").trim(),
+                    String(patient.phone || "").trim(),
+                    String(patient.email || "").trim(),
+                    String(patient.dob || "").trim(),
+                    String(patient.bloodGroup || "").trim(),
+                    String(patient.address || "").trim(),
+                    String(patient.medicalHistory || "").trim(),
+                    String(patient.emergencyContactName || "").trim(),
+                    String(patient.emergencyContactPhone || "").trim(),
+                    String(patient.createdAt || new Date().toISOString())
+                ]);
+            });
+
+            insertStatement.free();
+
+            const safeLastId = Number.isInteger(legacy.nextId)
+                ? Math.max(legacy.nextId - 1, STARTING_PATIENT_ID - 1)
+                : STARTING_PATIENT_ID - 1;
+
+            db.run("UPDATE patient_sequence SET last_id = ?;", [safeLastId]);
+            db.exec("COMMIT;");
+            localStorage.removeItem(LEGACY_STATE_KEY);
+            persistDatabase();
+        } catch (error) {
+            db.exec("ROLLBACK;");
+        }
+    }
+
+    async function initializeDatabase() {
+        const SQL = await initSqlJs({
+            locateFile: function (fileName) {
+                return "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/" + fileName;
+            }
+        });
+
+        const savedDb = localStorage.getItem(SQLITE_DB_KEY);
+        db = savedDb ? new SQL.Database(base64ToUint8Array(savedDb)) : new SQL.Database();
+
+        setupSchema();
+        migrateLegacyStateIfPresent();
+        persistDatabase();
+    }
+
+    function calculateAgeFromDob(dobValue) {
+        const dob = new Date(dobValue);
+        const today = new Date();
+
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            age -= 1;
+        }
+
+        return Math.max(age, 0);
+    }
+
+    async function savePatientToServer(payload) {
+        const formData = new FormData();
+        Object.keys(payload).forEach(function (key) {
+            formData.append(key, payload[key]);
+        });
+
+        const response = await fetch(addPatientUrl, {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Unable to save patient");
+        }
+    }
+
+    function showPatientFormView() {
+        formContainer.style.display = "block";
+        patientListPanel.style.display = "none";
+    }
+
+    function showPatientListView() {
+        formContainer.style.display = "none";
+        patientListPanel.style.display = "block";
+    }
+
+    function getNextPatientIdPreview() {
+        const result = db.exec("SELECT last_id + 1 FROM patient_sequence LIMIT 1;");
+        return result[0].values[0][0];
+    }
+
+    function fetchPatients(searchTerm) {
+        const normalizedTerm = String(searchTerm || "").trim();
+
+        if (normalizedTerm === "") {
+            const resultAll = db.exec("SELECT id, name, age, gender, phone, address FROM patients ORDER BY id ASC;");
+            return resultAll.length > 0 ? resultAll[0].values : [];
+        }
+
+        const likeTerm = "%" + normalizedTerm + "%";
+        const query = "SELECT id, name, age, gender, phone, address FROM patients " +
+            "WHERE CAST(id AS TEXT) LIKE ? OR phone LIKE ? ORDER BY id ASC;";
+        const statement = db.prepare(query);
+        statement.bind([likeTerm, likeTerm]);
+
+        const rows = [];
+        while (statement.step()) {
+            rows.push(statement.get());
+        }
+        statement.free();
+        return rows;
+    }
+
+    function renderPatients(searchTerm) {
+        patientTableBody.innerHTML = "";
+
+        const patients = fetchPatients(searchTerm);
+
+        if (patients.length === 0) {
+            const emptyRow = document.createElement("tr");
+            emptyRow.innerHTML = "<td colspan='7'>No matching patients found.</td>";
+            patientTableBody.appendChild(emptyRow);
+            return;
+        }
+
+        patients.forEach(function (patientRow) {
+            const row = document.createElement("tr");
+            const id = patientRow[0];
+            row.innerHTML = "<td>" + patientRow[0] + "</td>" +
+                "<td>" + patientRow[1] + "</td>" +
+                "<td>" + patientRow[2] + "</td>" +
+                "<td>" + patientRow[3] + "</td>" +
+                "<td>" + patientRow[4] + "</td>" +
+                "<td>" + patientRow[5] + "</td>" +
+                "<td><button class='table-edit-btn' type='button' data-id='" + id + "'>Edit</button></td>";
+            patientTableBody.appendChild(row);
+        });
+    }
+
+    function showNextPatientID() {
+        patientIdElement.innerText = String(getNextPatientIdPreview());
+    }
+
+    function addPatient(name, age, gender, phone, email, dob, bloodGroup, address, medicalHistory, emergencyContactName, emergencyContactPhone) {
+        db.exec("BEGIN TRANSACTION;");
+
+        const patient = {
+            id: getNextPatientIdPreview(),
+            name: String(name).trim(),
+            age: Number(age),
+            gender: String(gender).trim(),
+            phone: String(phone).trim(),
+            email: String(email).trim(),
+            dob: String(dob).trim(),
+            bloodGroup: String(bloodGroup).trim(),
+            address: String(address).trim(),
+            medicalHistory: String(medicalHistory).trim(),
+            emergencyContactName: String(emergencyContactName).trim(),
+            emergencyContactPhone: String(emergencyContactPhone).trim(),
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            db.run("UPDATE patient_sequence SET last_id = ?;", [patient.id]);
+
+            db.run("INSERT INTO patients(" +
+                "id, name, age, gender, phone, address, dob, blood_group, email, medical_history, emergency_contact_name, emergency_contact_phone, created_at" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", [
+                    patient.id,
+                    patient.name,
+                    patient.age,
+                    patient.gender,
+                    patient.phone,
+                    patient.address,
+                    patient.dob,
+                    patient.bloodGroup,
+                    patient.email,
+                    patient.medicalHistory,
+                    patient.emergencyContactName,
+                    patient.emergencyContactPhone,
+                    patient.createdAt
+                ]);
+
+            db.exec("COMMIT;");
+            persistDatabase();
+            showNextPatientID();
+            renderPatients(activeSearchTerm);
+        } catch (error) {
+            db.exec("ROLLBACK;");
+            throw error;
+        }
+
+        return patient;
+    }
+
+    window.addPatient = addPatient;
+
+    function openEditModal(patientId) {
+        const statement = db.prepare("SELECT id, name, age, gender, phone, email, dob, blood_group, address, medical_history, emergency_contact_name, emergency_contact_phone FROM patients WHERE id = ? LIMIT 1;");
+        statement.bind([Number(patientId)]);
+
+        if (!statement.step()) {
+            statement.free();
+            alert("Patient not found.");
+            return;
+        }
+
+        const patient = statement.get();
+        statement.free();
+
+        document.getElementById("editPatientId").value = patient[0];
+        document.getElementById("editFullName").value = patient[1];
+        document.getElementById("editAge").value = patient[2];
+        document.getElementById("editGender").value = patient[3];
+        document.getElementById("editPhone").value = patient[4];
+        document.getElementById("editEmail").value = patient[5];
+        document.getElementById("editDob").value = patient[6];
+        document.getElementById("editBloodGroup").value = patient[7];
+        document.getElementById("editAddress").value = patient[8];
+        document.getElementById("editMedicalHistory").value = patient[9];
+        document.getElementById("editEmergencyContactName").value = patient[10];
+        document.getElementById("editEmergencyContactPhone").value = patient[11];
+
+        editPatientModal.classList.add("show");
+    }
+
+    function closeEditModal() {
+        editPatientModal.classList.remove("show");
+    }
+
+    function updatePatient(patientData) {
+        db.exec("BEGIN TRANSACTION;");
+
+        try {
+            db.run("UPDATE patients SET name = ?, age = ?, gender = ?, phone = ?, email = ?, dob = ?, blood_group = ?, address = ?, medical_history = ?, emergency_contact_name = ?, emergency_contact_phone = ? WHERE id = ?;", [
+                patientData.name,
+                patientData.age,
+                patientData.gender,
+                patientData.phone,
+                patientData.email,
+                patientData.dob,
+                patientData.bloodGroup,
+                patientData.address,
+                patientData.medicalHistory,
+                patientData.emergencyContactName,
+                patientData.emergencyContactPhone,
+                patientData.id
+            ]);
+
+            db.exec("COMMIT;");
+            persistDatabase();
+            renderPatients(activeSearchTerm);
+        } catch (error) {
+            db.exec("ROLLBACK;");
+            throw error;
+        }
+    }
+
+    dobInput.addEventListener("change", function () {
+        ageInput.value = calculateAgeFromDob(this.value);
+
+        if (ageInput.value !== "") {
+            ageInput.classList.add("has-value");
+        }
+    });
+
+    ageInput.addEventListener("input", function () {
+        if (this.value !== "") {
+            this.classList.add("has-value");
+        } else {
+            this.classList.remove("has-value");
+        }
+    });
+
+    patientForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const payload = {
+            name: document.getElementById("fullName").value.trim(),
+            age: document.getElementById("age").value,
+            gender: document.getElementById("gender").value,
+            phone: document.getElementById("phone").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            dob: document.getElementById("dob").value,
+            blood_group: document.getElementById("bloodGroup").value,
+            address: document.getElementById("address").value.trim(),
+            medical_history: document.getElementById("medicalHistory").value.trim(),
+            emergency_contact_name: document.getElementById("emergencyContactName").value.trim(),
+            emergency_contact_phone: document.getElementById("emergencyContactPhone").value.trim()
+        };
+
+        try {
+            await savePatientToServer(payload);
+
+            const patient = addPatient(
+                payload.name,
+                payload.age,
+                payload.gender,
+                payload.phone,
+                payload.email,
+                payload.dob,
+                payload.blood_group,
+                payload.address,
+                payload.medical_history,
+                payload.emergency_contact_name,
+                payload.emergency_contact_phone
+            );
+
+            patientForm.reset();
+            ageInput.classList.remove("has-value");
+            alert("Patient added successfully. Assigned ID: " + patient.id);
+        } catch (error) {
+            alert(error.message || "Unable to save patient. Please try again.");
+        }
+    });
+
+    patientSearchInput.addEventListener("input", function () {
+        activeSearchTerm = this.value;
+        renderPatients(activeSearchTerm);
+    });
+
+    patientSearchClearBtn.addEventListener("click", function () {
+        patientSearchInput.value = "";
+        activeSearchTerm = "";
+        renderPatients(activeSearchTerm);
+    });
+
+    patientTableBody.addEventListener("click", function (event) {
+        const target = event.target;
+        if (!target.classList.contains("table-edit-btn")) {
+            return;
+        }
+
+        const patientId = target.getAttribute("data-id");
+        openEditModal(patientId);
+    });
+
+    editPatientForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        try {
+            updatePatient({
+                id: Number(document.getElementById("editPatientId").value),
+                name: document.getElementById("editFullName").value.trim(),
+                age: Number(document.getElementById("editAge").value),
+                gender: document.getElementById("editGender").value,
+                phone: document.getElementById("editPhone").value.trim(),
+                email: document.getElementById("editEmail").value.trim(),
+                dob: document.getElementById("editDob").value,
+                bloodGroup: document.getElementById("editBloodGroup").value,
+                address: document.getElementById("editAddress").value.trim(),
+                medicalHistory: document.getElementById("editMedicalHistory").value.trim(),
+                emergencyContactName: document.getElementById("editEmergencyContactName").value.trim(),
+                emergencyContactPhone: document.getElementById("editEmergencyContactPhone").value.trim()
+            });
+
+            closeEditModal();
+            alert("Patient updated successfully.");
+        } catch (error) {
+            alert("Unable to update patient. Please try again.");
+        }
+    });
+
+    cancelEditBtn.addEventListener("click", function () {
+        closeEditModal();
+    });
+
+    editPatientModal.addEventListener("click", function (event) {
+        if (event.target === editPatientModal) {
+            closeEditModal();
+        }
+    });
+
+    newPatientNav.addEventListener("click", function () {
+        showPatientFormView();
+    });
+
+    patientListNav.addEventListener("click", function () {
+        showPatientListView();
+    });
+
+    dashboardNav.addEventListener("click", function () {
+        window.location.href = dashboardUrl;
+    });
+
+    logoutNav.addEventListener("click", function () {
+        window.location.href = logoutUrl;
+    });
+
+    adminNav.addEventListener("click", function () {
+        if (isAdmin) {
+            window.location.href = adminPortalUrl;
+            return;
+        }
+        alert("Only admin can access the admin portal.");
+    });
+
+    submitButton.disabled = true;
+    initializeDatabase().then(function () {
+        showNextPatientID();
+        renderPatients("");
+        showPatientFormView();
+        submitButton.disabled = false;
+    }).catch(function () {
+        patientIdElement.innerText = "DB Error";
+        alert("SQLite failed to initialize. Please refresh and check your internet connection.");
+    });
+    </script> 
+
 </body>
 </html>

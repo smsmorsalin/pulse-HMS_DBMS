@@ -1,0 +1,504 @@
+/* =========================
+   GLOBAL
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+    padding: 40px 15px;
+}
+
+/* =========================
+   LIQUID BLOBS
+========================= */
+.background-blobs::before,
+.background-blobs::after {
+    content: "";
+    position: fixed;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(130px);
+    z-index: 0;
+    animation: float 12s infinite alternate ease-in-out;
+}
+
+.background-blobs::before {
+    background: #1e3cfa;
+    top: -120px;
+    left: -120px;
+}
+
+.background-blobs::after {
+    background: #ff1e56;
+    bottom: -120px;
+    right: -120px;
+}
+
+@keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(50px); }
+}
+
+/* =========================
+   FORM CONTAINER
+========================= */
+.form-container {
+    width: 160%;
+    max-width: 900px;
+    position: relative;
+    left: 15%;
+    margin-top: -100px;
+    transform: translateX(-50%);    
+    z-index: 1;
+}
+
+.glass-form {
+    backdrop-filter: blur(22px);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.glass-form h2 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 30px;
+}
+
+/* =========================
+   TWO COLUMN GRID
+========================= */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 28px;
+}
+
+/* Full width elements */
+.full-width {
+    grid-column: span 2;
+}
+
+/* =========================
+   INPUT GROUP
+========================= */
+.input-group {
+    position: relative;
+}
+
+.input-group i {
+    position: absolute;
+    left: 12px;
+    top: 14px;
+    color: rgba(255,255,255,0.7);
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+    width: 100%;
+    padding: 12px 12px 12px 38px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    outline: none;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.input-group textarea {
+    resize: none;
+    height: 85px;
+}
+
+/* Floating Label */
+.input-group label {
+    position: absolute;
+    left: 38px;
+    top: 13px;
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    transition: 0.3s ease;
+    pointer-events: none;
+}
+
+/* Focus */
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid #1e3cfa;
+    box-shadow: 0 0 12px rgba(30, 60, 250, 0.6);
+    transform: scale(1.02);
+}
+
+.input-group input:focus + label,
+.input-group input:valid + label,
+.input-group textarea:focus + label,
+.input-group textarea:valid + label,
+.input-group select:focus + label,
+.input-group select:valid + label {
+    top: -10px;
+    left: 32px;
+    font-size: 11px;
+    color: #ff1e56;
+}
+
+/* =========================
+   BUTTON
+========================= */
+.submit-btn {
+    width: 100%;
+    margin-top: 30px;
+    padding: 14px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.submit-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 30, 86, 0.7);
+}
+
+.submit-btn:active {
+    transform: scale(0.96);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: span 1;
+    }
+}
+
+/* =========================
+   IMPROVED DROPDOWN STYLE
+========================= */
+
+.input-group select {
+    width: 100%;
+    padding: 12px 38px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    outline: none;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    /* Remove default arrow (for better styling control) */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    /* Custom dropdown arrow */
+    background-image: linear-gradient(45deg, transparent 50%, #ffffff 50%),
+                      linear-gradient(135deg, #ffffff 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(50% - 3px),
+                         calc(100% - 15px) calc(50% - 3px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+/* Dropdown options (important fix) */
+.input-group select option {
+    background: #1a2980;   /* Deep Blue background */
+    color: #ffffff;        /* White text */
+}
+
+/* Hover & Focus */
+.input-group select:focus {
+    background-color: rgba(255,255,255,0.15);
+    border: 1px solid #1e3cfa;
+    box-shadow: 0 0 12px rgba(30, 60, 250, 0.6);
+}
+
+/* Hide default date format text */
+input[type="date"]::-webkit-datetime-edit {
+    color: transparent;
+}
+
+/* Show text when selected */
+input[type="date"]:focus::-webkit-datetime-edit,
+input[type="date"]:valid::-webkit-datetime-edit {
+    color: #ffffff;
+}
+
+/* Hide calendar icon spacing issue */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Fix floating label when value set by JS */
+.input-group input.has-value + label {
+    top: -10px;
+    left: 32px;
+    font-size: 11px;
+    color: #ff1e56;
+}
+
+/* Age & Gender side by side */
+.age-box {
+    grid-column: span 1;
+}
+
+.gender-box {
+    grid-column: span 1;
+}
+
+/* Make Age narrower */
+.age-box input {
+    max-width: 120px;
+}
+
+/* Optional: Make them tighter */
+.age-box,
+.gender-box {
+    align-self: start;
+}
+
+
+/* Age + Gender in same row */
+.age-gender-row {
+    display: flex;
+    gap: 18px;
+}
+
+/* Make Age smaller */
+.age-box {
+    flex: 0 0 120px; /* fixed smaller width */
+}
+
+/* Gender takes remaining space */
+.gender-box {
+    flex: 1;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 28px;
+}
+
+.age-box {
+    max-width: 160px;
+}
+
+
+.patient-id-card {
+    text-align: center;
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.patient-id-card h3 {
+    color: #fff;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.id-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ff1e56;
+}
+
+/*side bar*/
+.dashboard {
+    display: flex;
+    width: 100%;
+}
+
+.sidebar {
+    width: 240px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 25px;
+    color: #fff;
+    min-height: 100vh;
+}
+
+.sidebar ul {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar li {
+    padding: 12px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.sidebar li:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+.main-content {
+    flex: 1;
+    padding: 40px;
+}
+
+.patient-list-panel {
+    display: none;
+    backdrop-filter: blur(22px);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.patient-list-panel h2 {
+    color: #fff;
+    margin-bottom: 16px;
+}
+
+.patient-list-tools {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.patient-list-tools input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    outline: none;
+}
+
+.patient-list-tools input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.patient-list-tools button,
+.table-edit-btn,
+.edit-modal-actions button {
+    border: none;
+    border-radius: 10px;
+    padding: 9px 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    cursor: pointer;
+}
+
+.table-edit-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.edit-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 8, 20, 0.75);
+    z-index: 30;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.edit-modal.show {
+    display: flex;
+}
+
+.edit-modal-content {
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow: auto;
+    border-radius: 18px;
+    padding: 22px;
+    background: rgba(19, 24, 66, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.edit-modal-content h3 {
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.edit-modal-content label {
+    display: block;
+    color: rgba(255, 255, 255, 0.86);
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.edit-modal-content input,
+.edit-modal-content select,
+.edit-modal-content textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    padding: 10px;
+}
+
+.edit-modal-content textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.edit-modal-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+}
+
+/*.......*/
+
+.patient-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    color: #fff;
+}
+
+.patient-table th, 
+.patient-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.patient-table tr:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+

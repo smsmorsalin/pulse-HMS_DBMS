@@ -213,15 +213,17 @@ def patient():
 
     if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
         patient_list = db.execute('SELECT * FROM patients').fetchall()
-        return render_template("patient.html", patients=patient_list)
+        is_admin = session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id'))
+        return render_template("patient.html", patients=patient_list, admin=is_admin)
     else:
         return redirect(url_for('login'))
 
 @app.route('/add_patient', methods=['GET', 'POST'])
 def add_patient():
-    """Page to add new patient information - only accessible to admin."""
+    """Page/API to add new patient information - accessible to any logged-in account."""
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')) or (user_checker and user_checker[0] == session.get('user_id')):
         if request.method == 'POST':
             name = request.form.get('name')
             age = request.form.get('age')
@@ -234,17 +236,29 @@ def add_patient():
             emergency_contact_name = request.form.get('emergency_contact_name')
             emergency_contact_phone = request.form.get('emergency_contact_phone')
             medical_history = request.form.get('medical_history')
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
             if not name or not age or not gender or not phone or not dob or not blood_group or not address or not emergency_contact_name or not emergency_contact_phone:
+                if is_ajax:
+                    return {"success": False, "error": "Please fill in all required fields."}, 400
                 return render_template("add_patient.html", error="Please fill in all required fields.")
             if not age.isdigit() or int(age) <= 0:
+                if is_ajax:
+                    return {"success": False, "error": "Please enter a valid age."}, 400
                 return render_template("add_patient.html", error="Please enter a valid age.")
             if not phone.isdigit() or len(phone) < 7:
+                if is_ajax:
+                    return {"success": False, "error": "Please enter a valid phone number."}, 400
                 return render_template("add_patient.html", error="Please enter a valid phone number.")
             
-            db.execute('''INSERT INTO patients (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history))
+            cursor = db.execute('''INSERT INTO patients (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                (name, age, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history))
             db.commit()
+
+            if is_ajax:
+                return {"success": True, "patient_id": cursor.lastrowid}, 200
+
             return redirect(url_for('patient', success="Patient added successfully."))
         return render_template("add_patient.html")
     else:
