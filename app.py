@@ -219,6 +219,9 @@ def init_db():
 # Initialize database on app startup
 init_db()
 
+#for test print patient table data
+print(db.execute('SELECT * FROM patients').fetchall())
+
 def isadmin():
     """Helper function to check if the current user is an admin."""
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
@@ -336,8 +339,7 @@ def dashboard():
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
 
     if isadmin() or isuser():
-        patient_details = db.execute('SELECT * FROM patients').fetchall()
-        patient_count = len(patient_details)
+        patient_count = db.execute('SELECT COUNT(*) FROM patients').fetchone()[0]
         doctor_count = db.execute('SELECT COUNT(*) FROM doctors').fetchone()[0]
         # Show the authenticated account name in the dashboard profile dropdown.
         if session.get('user_id') == 'root_admin':
@@ -346,7 +348,7 @@ def dashboard():
             profile_name = admin_checker[1]
         else:
             profile_name = user_checker[1]
-        if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+        if isadmin():
             return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, profile_name=profile_name)
         return render_template("dashboard.html", admin=False, patient_count=patient_count, doctor_count=doctor_count, profile_name=profile_name)
     else:
@@ -415,6 +417,7 @@ def registered_users():
         return render_template("registered_users.html", users=user_list, admins=admin_list)
     else:
         return redirect(url_for('login'))
+    
 
 @app.route('/delete', methods=['POST'])
 def delete_user():
@@ -475,5 +478,74 @@ def add_doctor():
     else:
         return redirect(url_for('login'))
     
+@app.route('/services')
+def services():
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    service_list = db.execute('''
+        SELECT id, name, type, price
+        FROM services
+        ORDER BY type, name
+    ''').fetchall()
+
+    is_admin = isadmin()
+
+    return render_template("services.html", services=service_list, admin=is_admin)
+    
+@app.route('/add_service', methods=['GET', 'POST'])
+def add_service():
+    # 🔒 Only admin can access
+    if not isadmin():
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        service_type = request.form.get('type')  # 'doctor' or 'test'
+        price = request.form.get('price')
+
+        # ✅ Validation
+        if not name or not service_type or not price:
+            return render_template("add_service.html", error="All fields are required.")
+
+        if service_type not in ['doctor', 'test']:
+            return render_template("add_service.html", error="Invalid service type.")
+
+        try:
+            price = float(price)
+            if price < 0:
+                return render_template("add_service.html", error="Price must be positive.")
+        except:
+            return render_template("add_service.html", error="Invalid price format.")
+
+        # ✅ Insert into DB
+        db.execute('''
+            INSERT INTO services (name, type, price)
+            VALUES (?, ?, ?)
+        ''', (name, service_type, price))
+        db.commit()
+
+        return redirect(url_for('services', success="Service added successfully."))
+
+    return render_template("add_service.html")
+
+@app.route('/tests')
+def tests():
+    # 🔒 Only logged-in users (admin or user)
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    test_list = db.execute('''
+        SELECT id, name, price
+        FROM services
+        WHERE type = 'test'
+        ORDER BY name ASC
+    ''').fetchall()
+
+    is_admin = isadmin()
+
+    return render_template("tests.html", tests=test_list, admin=is_admin)
+    
 if __name__ == '__main__':
     app.run(debug=True)
+

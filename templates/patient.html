@@ -25,9 +25,6 @@
             <li id="newPatientNav"><i class="fas fa-user-plus"></i> New Patient</li>
             <li id="patientListNav"><i class="fas fa-list"></i> Patient List</li>
             <li><i class="fas fa-file-invoice"></i> Billing</li>
-            <li><i class="fas fa-cog"></i> Settings</li>
-            <li id="adminNav"><i class="fas fa-user-shield"></i> Admin</li>
-            <li id="logoutNav"><i class="fas fa-right-from-bracket"></i> Logout</li>
         </ul>
     </aside>
 
@@ -48,10 +45,26 @@
                             <th>Gender</th>
                             <th>Phone</th>
                             <th>Address</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="patientTableBody"></tbody>
+                    <tbody id="patientTableBody">
+                        {% if patients %}
+                            {% for patient in patients %}
+                            <tr>
+                                <td>{{ patient[0] }}</td>
+                                <td>{{ patient[1] }}</td>
+                                <td>{{ patient[2] }}</td>
+                                <td>{{ patient[3] }}</td>
+                                <td>{{ patient[4] }}</td>
+                                <td>{{ patient[8] }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">No patients found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
                 </table>
             </div>
         </section>
@@ -62,10 +75,10 @@
 <div class="form-container">
     <div class="patient-id-card">
          <h3>Patient ID</h3>
-         <div class="id-value" id="patientID"></div>
+        <div class="id-value" id="patientID">Auto</div>
     </div>
     
-    <form class="glass-form">
+    <form class="glass-form" action="{{ url_for('add_patient') }}" method="POST">
         <h2><i class="fas fa-hospital-user"></i> Patient Entry</h2>
 
         <div class="form-grid">
@@ -74,7 +87,7 @@
 
             <div class="input-group">
                 <i class="fas fa-user"></i>
-                <input type="text" id="fullName" required>
+                <input type="text" id="fullName" name="name" required>
                 <label>Full Name</label>
             </div>
 
@@ -83,7 +96,7 @@
               
              <div class="input-group age-box ">
                    <i class="fas fa-hashtag"></i>
-                   <input type="number" id="age" required min="0">
+                   <input type="number" id="age" name="age" required min="0">
                    <label>Age</label>
                    
               </div>
@@ -91,7 +104,7 @@
 
             <div class="input-group gender-box">
                 <i class="fas fa-venus-mars"></i>
-                <select id="gender" required>
+                <select id="gender" name="gender" required>
                     <option value="" disabled selected></option>
                     <option>Female</option>
                     <option>Male</option>
@@ -103,13 +116,13 @@
 
             <div class="input-group">
                 <i class="fas fa-phone"></i>
-                <input type="tel" id="phone" required>
+                <input type="tel" id="phone" name="phone" required>
                 <label>Phone Number</label>
             </div>
 
             <div class="input-group">
                 <i class="fas fa-envelope"></i>
-                <input type="email" id="email" required>
+                <input type="email" id="email" name="email" required>
                 <label>Email</label>
             </div>
 
@@ -120,14 +133,14 @@
 <!-- Date of Birth -->
               <div class="input-group">
                    <i class="fas fa-calendar"></i>
-                   <input type="date" id="dob" required>
+                   <input type="date" id="dob" name="dob" required>
                    <label>Date of Birth</label>
               </div>
               
 
             <div class="input-group">
                 <i class="fas fa-droplet"></i>
-                <select id="bloodGroup" required>
+                <select id="bloodGroup" name="blood_group" required>
                     <option value="" disabled selected></option>
                     <option>B+</option>
                     <option>B-</option>
@@ -143,24 +156,24 @@
 
             <div class="input-group address-group">
                 <i class="fas fa-location-dot"></i>
-                <textarea id="address" required></textarea>
+                <textarea id="address" name="address" required></textarea>
                 <label>Address</label>
             </div>
             <div class="input-group">
                 <i class="fas fa-notes-medical"></i>
-                <textarea id="medicalHistory" required></textarea>
+                <textarea id="medicalHistory" name="medical_history" required></textarea>
                 <label>Medical History</label>
             </div>
 
             <div class="input-group">
                 <i class="fas fa-user-shield"></i>
-                <input type="text" id="emergencyContactName" required>
+                <input type="text" id="emergencyContactName" name="emergency_contact_name" required>
                 <label>Emergency Contact Name</label>
             </div>
 
             <div class="input-group">
                 <i class="fas fa-phone-volume"></i>
-                <input type="tel" id="emergencyContactPhone" required>
+                <input type="tel" id="emergencyContactPhone" name="emergency_contact_phone" required>
                 <label>Emergency Contact Phone</label>
             </div>
 
@@ -173,70 +186,7 @@
     </form>
 
 </div>
-
-<div class="edit-modal" id="editPatientModal">
-    <div class="edit-modal-content">
-        <h3>Edit Patient</h3>
-        <form id="editPatientForm">
-            <input type="hidden" id="editPatientId">
-
-            <label for="editFullName">Full Name</label>
-            <input type="text" id="editFullName" required>
-
-            <label for="editAge">Age</label>
-            <input type="number" id="editAge" min="0" required>
-
-            <label for="editGender">Gender</label>
-            <select id="editGender" required>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
-            </select>
-
-            <label for="editPhone">Phone</label>
-            <input type="tel" id="editPhone" required>
-
-            <label for="editEmail">Email</label>
-            <input type="email" id="editEmail" required>
-
-            <label for="editDob">Date of Birth</label>
-            <input type="date" id="editDob" required>
-
-            <label for="editBloodGroup">Blood Group</label>
-            <select id="editBloodGroup" required>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="A-">A-</option>
-                <option value="A+">A+</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-            </select>
-
-            <label for="editAddress">Address</label>
-            <textarea id="editAddress" required></textarea>
-
-            <label for="editMedicalHistory">Medical History</label>
-            <textarea id="editMedicalHistory" required></textarea>
-
-            <label for="editEmergencyContactName">Emergency Contact Name</label>
-            <input type="text" id="editEmergencyContactName" required>
-
-            <label for="editEmergencyContactPhone">Emergency Contact Phone</label>
-            <input type="tel" id="editEmergencyContactPhone" required>
-
-            <div class="edit-modal-actions">
-                <button type="submit">Save Changes</button>
-                <button type="button" id="cancelEditBtn">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
     <script>
-    const patientIdElement = document.getElementById("patientID");
     const patientForm = document.querySelector(".glass-form");
     const patientTableBody = document.getElementById("patientTableBody");
     const newPatientNav = document.getElementById("newPatientNav");
@@ -248,148 +198,8 @@
     const submitButton = patientForm.querySelector(".submit-btn");
     const patientSearchInput = document.getElementById("patientSearchInput");
     const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
-    const editPatientModal = document.getElementById("editPatientModal");
-    const editPatientForm = document.getElementById("editPatientForm");
-    const cancelEditBtn = document.getElementById("cancelEditBtn");
     const dashboardNav = document.getElementById("dashboardNav");
-    const adminNav = document.getElementById("adminNav");
-    const logoutNav = document.getElementById("logoutNav");
-    const isAdmin = document.body.dataset.isAdmin === "true";
     const dashboardUrl = "{{ url_for('dashboard') }}";
-    const adminPortalUrl = "{{ url_for('admin_portal') }}";
-    const logoutUrl = "{{ url_for('logout') }}";
-    const addPatientUrl = "{{ url_for('add_patient') }}";
-
-    const SQLITE_DB_KEY = "patient_management_sqlite_db_v1";
-    const LEGACY_STATE_KEY = "patient_management_state_v1";
-    const STARTING_PATIENT_ID = 100;
-    let db = null;
-    let activeSearchTerm = "";
-
-    function uint8ArrayToBase64(uint8Array) {
-        let binary = "";
-        const chunkSize = 32768;
-
-        for (let i = 0; i < uint8Array.length; i += chunkSize) {
-            const chunk = uint8Array.subarray(i, i + chunkSize);
-            binary += String.fromCharCode.apply(null, chunk);
-        }
-
-        return btoa(binary);
-    }
-
-    function base64ToUint8Array(base64) {
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-
-        for (let i = 0; i < binary.length; i += 1) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-
-        return bytes;
-    }
-
-    function persistDatabase() {
-        const exported = db.export();
-        localStorage.setItem(SQLITE_DB_KEY, uint8ArrayToBase64(exported));
-    }
-
-    function setupSchema() {
-        db.exec("CREATE TABLE IF NOT EXISTS patient_sequence (last_id INTEGER NOT NULL);");
-        db.exec("CREATE TABLE IF NOT EXISTS patients (" +
-            "id INTEGER PRIMARY KEY, " +
-            "name TEXT NOT NULL, " +
-            "age INTEGER NOT NULL, " +
-            "gender TEXT NOT NULL, " +
-            "phone TEXT NOT NULL, " +
-            "email TEXT NOT NULL, " +
-            "dob TEXT NOT NULL, " +
-            "blood_group TEXT NOT NULL, " +
-            "address TEXT NOT NULL, " +
-            "medical_history TEXT NOT NULL, " +
-            "emergency_contact_name TEXT NOT NULL, " +
-            "emergency_contact_phone TEXT NOT NULL, " +
-            "created_at TEXT NOT NULL" +
-        ");");
-
-        const sequenceCount = db.exec("SELECT COUNT(*) FROM patient_sequence;")[0].values[0][0];
-        if (sequenceCount === 0) {
-            db.run("INSERT INTO patient_sequence(last_id) VALUES (?);", [STARTING_PATIENT_ID - 1]);
-        }
-    }
-
-    function migrateLegacyStateIfPresent() {
-        const legacyRaw = localStorage.getItem(LEGACY_STATE_KEY);
-        if (!legacyRaw) {
-            return;
-        }
-
-        const patientCount = db.exec("SELECT COUNT(*) FROM patients;")[0].values[0][0];
-        if (patientCount > 0) {
-            localStorage.removeItem(LEGACY_STATE_KEY);
-            return;
-        }
-
-        try {
-            const legacy = JSON.parse(legacyRaw);
-            if (!legacy || !Array.isArray(legacy.patients)) {
-                localStorage.removeItem(LEGACY_STATE_KEY);
-                return;
-            }
-
-            db.exec("BEGIN TRANSACTION;");
-
-            const insertStatement = db.prepare("INSERT INTO patients(" +
-                "id, name, age, gender, phone, email, dob, blood_group, address, medical_history, emergency_contact_name, emergency_contact_phone, created_at" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
-
-            legacy.patients.forEach(function (patient) {
-                insertStatement.run([
-                    Number(patient.id),
-                    String(patient.name || "").trim(),
-                    Number(patient.age || 0),
-                    String(patient.gender || "").trim(),
-                    String(patient.phone || "").trim(),
-                    String(patient.email || "").trim(),
-                    String(patient.dob || "").trim(),
-                    String(patient.bloodGroup || "").trim(),
-                    String(patient.address || "").trim(),
-                    String(patient.medicalHistory || "").trim(),
-                    String(patient.emergencyContactName || "").trim(),
-                    String(patient.emergencyContactPhone || "").trim(),
-                    String(patient.createdAt || new Date().toISOString())
-                ]);
-            });
-
-            insertStatement.free();
-
-            const safeLastId = Number.isInteger(legacy.nextId)
-                ? Math.max(legacy.nextId - 1, STARTING_PATIENT_ID - 1)
-                : STARTING_PATIENT_ID - 1;
-
-            db.run("UPDATE patient_sequence SET last_id = ?;", [safeLastId]);
-            db.exec("COMMIT;");
-            localStorage.removeItem(LEGACY_STATE_KEY);
-            persistDatabase();
-        } catch (error) {
-            db.exec("ROLLBACK;");
-        }
-    }
-
-    async function initializeDatabase() {
-        const SQL = await initSqlJs({
-            locateFile: function (fileName) {
-                return "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/" + fileName;
-            }
-        });
-
-        const savedDb = localStorage.getItem(SQLITE_DB_KEY);
-        db = savedDb ? new SQL.Database(base64ToUint8Array(savedDb)) : new SQL.Database();
-
-        setupSchema();
-        migrateLegacyStateIfPresent();
-        persistDatabase();
-    }
 
     function calculateAgeFromDob(dobValue) {
         const dob = new Date(dobValue);
@@ -405,26 +215,6 @@
         return Math.max(age, 0);
     }
 
-    async function savePatientToServer(payload) {
-        const formData = new FormData();
-        Object.keys(payload).forEach(function (key) {
-            formData.append(key, payload[key]);
-        });
-
-        const response = await fetch(addPatientUrl, {
-            method: "POST",
-            headers: {
-                "X-Requested-With": "XMLHttpRequest"
-            },
-            body: formData
-        });
-
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || "Unable to save patient");
-        }
-    }
-
     function showPatientFormView() {
         formContainer.style.display = "block";
         patientListPanel.style.display = "none";
@@ -433,178 +223,6 @@
     function showPatientListView() {
         formContainer.style.display = "none";
         patientListPanel.style.display = "block";
-    }
-
-    function getNextPatientIdPreview() {
-        const result = db.exec("SELECT last_id + 1 FROM patient_sequence LIMIT 1;");
-        return result[0].values[0][0];
-    }
-
-    function fetchPatients(searchTerm) {
-        const normalizedTerm = String(searchTerm || "").trim();
-
-        if (normalizedTerm === "") {
-            const resultAll = db.exec("SELECT id, name, age, gender, phone, address FROM patients ORDER BY id ASC;");
-            return resultAll.length > 0 ? resultAll[0].values : [];
-        }
-
-        const likeTerm = "%" + normalizedTerm + "%";
-        const query = "SELECT id, name, age, gender, phone, address FROM patients " +
-            "WHERE CAST(id AS TEXT) LIKE ? OR phone LIKE ? ORDER BY id ASC;";
-        const statement = db.prepare(query);
-        statement.bind([likeTerm, likeTerm]);
-
-        const rows = [];
-        while (statement.step()) {
-            rows.push(statement.get());
-        }
-        statement.free();
-        return rows;
-    }
-
-    function renderPatients(searchTerm) {
-        patientTableBody.innerHTML = "";
-
-        const patients = fetchPatients(searchTerm);
-
-        if (patients.length === 0) {
-            const emptyRow = document.createElement("tr");
-            emptyRow.innerHTML = "<td colspan='7'>No matching patients found.</td>";
-            patientTableBody.appendChild(emptyRow);
-            return;
-        }
-
-        patients.forEach(function (patientRow) {
-            const row = document.createElement("tr");
-            const id = patientRow[0];
-            row.innerHTML = "<td>" + patientRow[0] + "</td>" +
-                "<td>" + patientRow[1] + "</td>" +
-                "<td>" + patientRow[2] + "</td>" +
-                "<td>" + patientRow[3] + "</td>" +
-                "<td>" + patientRow[4] + "</td>" +
-                "<td>" + patientRow[5] + "</td>" +
-                "<td><button class='table-edit-btn' type='button' data-id='" + id + "'>Edit</button></td>";
-            patientTableBody.appendChild(row);
-        });
-    }
-
-    function showNextPatientID() {
-        patientIdElement.innerText = String(getNextPatientIdPreview());
-    }
-
-    function addPatient(name, age, gender, phone, email, dob, bloodGroup, address, medicalHistory, emergencyContactName, emergencyContactPhone) {
-        db.exec("BEGIN TRANSACTION;");
-
-        const patient = {
-            id: getNextPatientIdPreview(),
-            name: String(name).trim(),
-            age: Number(age),
-            gender: String(gender).trim(),
-            phone: String(phone).trim(),
-            email: String(email).trim(),
-            dob: String(dob).trim(),
-            bloodGroup: String(bloodGroup).trim(),
-            address: String(address).trim(),
-            medicalHistory: String(medicalHistory).trim(),
-            emergencyContactName: String(emergencyContactName).trim(),
-            emergencyContactPhone: String(emergencyContactPhone).trim(),
-            createdAt: new Date().toISOString()
-        };
-
-        try {
-            db.run("UPDATE patient_sequence SET last_id = ?;", [patient.id]);
-
-            db.run("INSERT INTO patients(" +
-                "id, name, age, gender, phone, address, dob, blood_group, email, medical_history, emergency_contact_name, emergency_contact_phone, created_at" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", [
-                    patient.id,
-                    patient.name,
-                    patient.age,
-                    patient.gender,
-                    patient.phone,
-                    patient.address,
-                    patient.dob,
-                    patient.bloodGroup,
-                    patient.email,
-                    patient.medicalHistory,
-                    patient.emergencyContactName,
-                    patient.emergencyContactPhone,
-                    patient.createdAt
-                ]);
-
-            db.exec("COMMIT;");
-            persistDatabase();
-            showNextPatientID();
-            renderPatients(activeSearchTerm);
-        } catch (error) {
-            db.exec("ROLLBACK;");
-            throw error;
-        }
-
-        return patient;
-    }
-
-    window.addPatient = addPatient;
-
-    function openEditModal(patientId) {
-        const statement = db.prepare("SELECT id, name, age, gender, phone, email, dob, blood_group, address, medical_history, emergency_contact_name, emergency_contact_phone FROM patients WHERE id = ? LIMIT 1;");
-        statement.bind([Number(patientId)]);
-
-        if (!statement.step()) {
-            statement.free();
-            alert("Patient not found.");
-            return;
-        }
-
-        const patient = statement.get();
-        statement.free();
-
-        document.getElementById("editPatientId").value = patient[0];
-        document.getElementById("editFullName").value = patient[1];
-        document.getElementById("editAge").value = patient[2];
-        document.getElementById("editGender").value = patient[3];
-        document.getElementById("editPhone").value = patient[4];
-        document.getElementById("editEmail").value = patient[5];
-        document.getElementById("editDob").value = patient[6];
-        document.getElementById("editBloodGroup").value = patient[7];
-        document.getElementById("editAddress").value = patient[8];
-        document.getElementById("editMedicalHistory").value = patient[9];
-        document.getElementById("editEmergencyContactName").value = patient[10];
-        document.getElementById("editEmergencyContactPhone").value = patient[11];
-
-        editPatientModal.classList.add("show");
-    }
-
-    function closeEditModal() {
-        editPatientModal.classList.remove("show");
-    }
-
-    function updatePatient(patientData) {
-        db.exec("BEGIN TRANSACTION;");
-
-        try {
-            db.run("UPDATE patients SET name = ?, age = ?, gender = ?, phone = ?, email = ?, dob = ?, blood_group = ?, address = ?, medical_history = ?, emergency_contact_name = ?, emergency_contact_phone = ? WHERE id = ?;", [
-                patientData.name,
-                patientData.age,
-                patientData.gender,
-                patientData.phone,
-                patientData.email,
-                patientData.dob,
-                patientData.bloodGroup,
-                patientData.address,
-                patientData.medicalHistory,
-                patientData.emergencyContactName,
-                patientData.emergencyContactPhone,
-                patientData.id
-            ]);
-
-            db.exec("COMMIT;");
-            persistDatabase();
-            renderPatients(activeSearchTerm);
-        } catch (error) {
-            db.exec("ROLLBACK;");
-            throw error;
-        }
     }
 
     dobInput.addEventListener("change", function () {
@@ -623,104 +241,54 @@
         }
     });
 
-    patientForm.addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        const payload = {
-            name: document.getElementById("fullName").value.trim(),
-            age: document.getElementById("age").value,
-            gender: document.getElementById("gender").value,
-            phone: document.getElementById("phone").value.trim(),
-            email: document.getElementById("email").value.trim(),
-            dob: document.getElementById("dob").value,
-            blood_group: document.getElementById("bloodGroup").value,
-            address: document.getElementById("address").value.trim(),
-            medical_history: document.getElementById("medicalHistory").value.trim(),
-            emergency_contact_name: document.getElementById("emergencyContactName").value.trim(),
-            emergency_contact_phone: document.getElementById("emergencyContactPhone").value.trim()
-        };
-
-        try {
-            await savePatientToServer(payload);
-
-            const patient = addPatient(
-                payload.name,
-                payload.age,
-                payload.gender,
-                payload.phone,
-                payload.email,
-                payload.dob,
-                payload.blood_group,
-                payload.address,
-                payload.medical_history,
-                payload.emergency_contact_name,
-                payload.emergency_contact_phone
-            );
-
-            patientForm.reset();
-            ageInput.classList.remove("has-value");
-            alert("Patient added successfully. Assigned ID: " + patient.id);
-        } catch (error) {
-            alert(error.message || "Unable to save patient. Please try again.");
-        }
-    });
-
     patientSearchInput.addEventListener("input", function () {
-        activeSearchTerm = this.value;
-        renderPatients(activeSearchTerm);
+        const searchTerm = this.value.trim().toLowerCase();
+        const rows = patientTableBody.querySelectorAll("tr");
+
+        rows.forEach(function (row) {
+            const idCell = row.cells[0];
+            const phoneCell = row.cells[4];
+
+            if (!idCell || !phoneCell) {
+                row.style.display = "";
+                return;
+            }
+
+            const idText = idCell.textContent.toLowerCase();
+            const phoneText = phoneCell.textContent.toLowerCase();
+            const isMatch = idText.includes(searchTerm) || phoneText.includes(searchTerm);
+            row.style.display = isMatch ? "" : "none";
+        });
     });
 
     patientSearchClearBtn.addEventListener("click", function () {
         patientSearchInput.value = "";
-        activeSearchTerm = "";
-        renderPatients(activeSearchTerm);
+        patientTableBody.querySelectorAll("tr").forEach(function (row) {
+            row.style.display = "";
+        });
     });
 
-    patientTableBody.addEventListener("click", function (event) {
-        const target = event.target;
-        if (!target.classList.contains("table-edit-btn")) {
-            return;
-        }
-
-        const patientId = target.getAttribute("data-id");
-        openEditModal(patientId);
+    patientForm.addEventListener("submit", function () {
+        submitButton.disabled = true;
+        submitButton.querySelector("span").innerText = "Submitting...";
     });
 
-    editPatientForm.addEventListener("submit", function (event) {
-        event.preventDefault();
+    if (dashboardNav) {
+        dashboardNav.addEventListener("click", function () {
+            window.location.href = dashboardUrl;
+        });
+    }
 
-        try {
-            updatePatient({
-                id: Number(document.getElementById("editPatientId").value),
-                name: document.getElementById("editFullName").value.trim(),
-                age: Number(document.getElementById("editAge").value),
-                gender: document.getElementById("editGender").value,
-                phone: document.getElementById("editPhone").value.trim(),
-                email: document.getElementById("editEmail").value.trim(),
-                dob: document.getElementById("editDob").value,
-                bloodGroup: document.getElementById("editBloodGroup").value,
-                address: document.getElementById("editAddress").value.trim(),
-                medicalHistory: document.getElementById("editMedicalHistory").value.trim(),
-                emergencyContactName: document.getElementById("editEmergencyContactName").value.trim(),
-                emergencyContactPhone: document.getElementById("editEmergencyContactPhone").value.trim()
-            });
+    showPatientFormView();
 
-            closeEditModal();
-            alert("Patient updated successfully.");
-        } catch (error) {
-            alert("Unable to update patient. Please try again.");
-        }
+    window.addEventListener("pageshow", function () {
+        submitButton.disabled = false;
+        submitButton.querySelector("span").innerText = "Submit";
     });
 
-    cancelEditBtn.addEventListener("click", function () {
-        closeEditModal();
-    });
-
-    editPatientModal.addEventListener("click", function (event) {
-        if (event.target === editPatientModal) {
-            closeEditModal();
-        }
-    });
+    if (window.location.search.includes("success=")) {
+        showPatientListView();
+    }
 
     newPatientNav.addEventListener("click", function () {
         showPatientFormView();
@@ -730,33 +298,13 @@
         showPatientListView();
     });
 
-    dashboardNav.addEventListener("click", function () {
-        window.location.href = dashboardUrl;
-    });
-
-    logoutNav.addEventListener("click", function () {
-        window.location.href = logoutUrl;
-    });
-
-    adminNav.addEventListener("click", function () {
-        if (isAdmin) {
-            window.location.href = adminPortalUrl;
-            return;
-        }
-        alert("Only admin can access the admin portal.");
-    });
-
-    submitButton.disabled = true;
-    initializeDatabase().then(function () {
-        showNextPatientID();
-        renderPatients("");
-        showPatientFormView();
-        submitButton.disabled = false;
-    }).catch(function () {
-        patientIdElement.innerText = "DB Error";
-        alert("SQLite failed to initialize. Please refresh and check your internet connection.");
-    });
-    </script> 
+    const logoutNav = document.getElementById("logoutNav");
+    if (logoutNav) {
+        logoutNav.addEventListener("click", function () {
+            window.location.href = "{{ url_for('logout') }}";
+        });
+    }
+    </script>
 
 </body>
 </html>
