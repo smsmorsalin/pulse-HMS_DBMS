@@ -62,10 +62,10 @@ The system is designed using relational database concepts:
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/smsmorsalin/pulse-HMS_DBM.git
+git clone https://github.com/smsmorsalin/pulse-HMS_DBMS.git
 ```
 ```bash
-cd pulse-HMS_DBM
+cd pulse-HMS_DBMS
 ```
 ### 2️⃣ Create virtual environment (optional but recommended)    # Windows
 ```bash
