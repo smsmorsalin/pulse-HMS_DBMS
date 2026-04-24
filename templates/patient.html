@@ -10,7 +10,7 @@
 
     <!-- Font Awesome -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static\css', filename='css/patient.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patient.css') }}">
 </head>
 <body data-is-admin="{{ 'true' if admin|default(false) else 'false' }}">
 

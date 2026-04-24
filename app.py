@@ -503,8 +503,9 @@ def services():
     ''').fetchall()
 
     is_admin = isadmin()
+    message = request.args.get('message') or request.args.get('success')
 
-    return render_template("services.html", services=service_list, admin=is_admin)
+    return render_template("services.html", services=service_list, admin=is_admin, message=message)
     
 @app.route('/add_service', methods=['GET', 'POST'])
 def add_service():
@@ -519,17 +520,17 @@ def add_service():
 
         # ✅ Validation
         if not name or not service_type or not price:
-            return render_template("add_service.html", error="All fields are required.")
+            return render_template("add_new_service.html", error="All fields are required.")
 
         if service_type not in ['doctor', 'test']:
-            return render_template("add_service.html", error="Invalid service type.")
+            return render_template("add_new_service.html", error="Invalid service type.")
 
         try:
             price = float(price)
             if price < 0:
-                return render_template("add_service.html", error="Price must be positive.")
+                return render_template("add_new_service.html", error="Price must be positive.")
         except:
-            return render_template("add_service.html", error="Invalid price format.")
+            return render_template("add_new_service.html", error="Invalid price format.")
 
         # ✅ Insert into DB
         db.execute('''
@@ -540,7 +541,7 @@ def add_service():
 
         return redirect(url_for('services', success="Service added successfully."))
 
-    return render_template("add_service.html")
+    return render_template("add_new_service.html")
 
 @app.route('/edit_service/<int:service_id>', methods=['GET', 'POST'])
 def edit_service(service_id):
@@ -582,6 +583,23 @@ def edit_service(service_id):
         return redirect(url_for('services', message="Service updated successfully."))
 
     return render_template("edit_service.html", service=service)
+
+@app.route('/delete_service/<int:service_id>')
+def delete_service(service_id):
+    # Only admin can delete services
+    if not isadmin():
+        return redirect(url_for('dashboard'))
+
+    service = db.execute('SELECT id FROM services WHERE id = ?', (service_id,)).fetchone()
+    if not service:
+        return redirect(url_for('services', message="Service not found."))
+
+    try:
+        db.execute('DELETE FROM services WHERE id = ?', (service_id,))
+        db.commit()
+        return redirect(url_for('services', message="Service deleted successfully."))
+    except sqlite3.IntegrityError:
+        return redirect(url_for('services', message="Cannot delete service because it is in use."))
 
 @app.route('/tests')
 def tests():
