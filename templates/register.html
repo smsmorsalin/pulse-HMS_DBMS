@@ -6,7 +6,8 @@
     <title>Register</title>
 
     <!-- Link your CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static\css', filename='css/register.css') }}">
     
 </head>
 
@@ -15,9 +16,14 @@
 <div class="form-container">
     <div class="glass-form">
 
-        <h2>Create Account</h2>
+        <div class="form-header">
+            <a href="{{ url_for('admin_portal') }}" class="back-admin-btn" aria-label="Back to Admin Portal">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2>Create Account</h2>
+        </div>
 
-        <form action="/register" method="post">
+        <form action="/register" method="post" autocomplete="off">
             <div class="form-grid">
 
                 <!-- Role -->
@@ -34,7 +40,7 @@
                 <!-- Username -->
                 <div class="input-group full-width username-group">
                     <i class="fas fa-user"></i>
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" autocomplete="new-username" required>
                     <label for="username">Username</label>
                 </div>
 
@@ -49,7 +55,7 @@
                <div class="input-group full-width password-group">
                         <i class="fa-solid fa-lock"></i>
 
-                      <input type="password" id="password" name="password" required autocomplete="off">
+                      <input type="password" id="password" name="password" autocomplete="new-password" required>
                      <label for="password">Password</label>
 
                         <span class="toggle-password">

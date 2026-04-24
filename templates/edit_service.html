@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='services.css') }}">
+    <title>Edit Service</title>
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="services-wrapper">
+        <section class="services-card edit-service-card">
+            <div class="services-header">
+                <div class="title-with-back">
+                    <a href="{{ url_for('services') }}" class="back-btn" aria-label="Back to services">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h2>Edit Service</h2>
+                </div>
+            </div>
+
+            <form method="POST" class="service-form">
+                <label for="name">Service Name</label>
+                <input id="name" type="text" name="name" placeholder="Service Name" value="{{ service[1] }}" required>
+
+                <label for="type">Type</label>
+                <select id="type" name="type" required>
+                    <option value="doctor" {% if service[2] == 'doctor' %}selected{% endif %}>Doctor</option>
+                    <option value="test" {% if service[2] == 'test' %}selected{% endif %}>Test</option>
+                </select>
+
+                <label for="price">Price</label>
+                <input id="price" type="text" name="price" placeholder="Price" value="{{ service[3] }}" required>
+
+                <div class="form-actions">
+                    <button class="action-btn" type="submit">Update Service</button>
+                    <a class="row-action" href="{{ url_for('services') }}">Cancel</a>
+                </div>
+            </form>
+
+            {% if error %}
+            <p class="error-message">{{ error }}</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

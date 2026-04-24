@@ -10,7 +10,7 @@
 
     <!-- Font Awesome -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/patient.css') }}">
+<link rel="stylesheet" href="{{ url_for('static\css', filename='css/patient.css') }}">
 </head>
 <body data-is-admin="{{ 'true' if admin|default(false) else 'false' }}">
 
@@ -19,13 +19,25 @@
  <div class="dashboard">
 
     <aside class="sidebar">
-        <h2>HMS</h2>
-        <ul>
-            <li id="dashboardNav"><i class="fas fa-chart-line"></i> Dashboard</li>
-            <li id="newPatientNav"><i class="fas fa-user-plus"></i> New Patient</li>
-            <li id="patientListNav"><i class="fas fa-list"></i> Patient List</li>
-            <li><i class="fas fa-file-invoice"></i> Billing</li>
-        </ul>
+        <a class="sidebar-brand" id="hmsBrand" href="{{ url_for('dashboard') }}">HMS</a>
+        <div class="sidebar-menu" id="patientSidebarMenu">
+            <a id="dashboardNav" class="sidebar-item" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <button type="button" id="newPatientNav" class="sidebar-item">
+                <i class="fas fa-user-plus"></i>
+                <span>New Patient</span>
+            </button>
+            <button type="button" id="patientListNav" class="sidebar-item">
+                <i class="fas fa-list"></i>
+                <span>Patient List</span>
+            </button>
+            <a id="billingNav" class="sidebar-item sidebar-link" href="{{ url_for('services') }}">
+                <i class="fas fa-file-invoice"></i>
+                <span>Billing</span>
+            </a>
+        </div>
     </aside>
 
     <main class="main-content">
@@ -199,7 +211,27 @@
     const patientSearchInput = document.getElementById("patientSearchInput");
     const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
     const dashboardNav = document.getElementById("dashboardNav");
-    const dashboardUrl = "{{ url_for('dashboard') }}";
+    const billingNav = document.getElementById("billingNav");
+    const hmsBrand = document.getElementById("hmsBrand");
+    const sidebarItems = document.querySelectorAll("#patientSidebarMenu .sidebar-item");
+
+    function setActiveSidebarItem(activeItem) {
+        sidebarItems.forEach(function (item) {
+            item.classList.remove("active");
+        });
+
+        if (activeItem) {
+            activeItem.classList.add("active");
+        }
+    }
+
+    function navigateWithActive(linkElement) {
+        const targetUrl = linkElement.getAttribute("href");
+        setActiveSidebarItem(linkElement);
+        window.setTimeout(function () {
+            window.location.href = targetUrl;
+        }, 120);
+    }
 
     function calculateAgeFromDob(dobValue) {
         const dob = new Date(dobValue);
@@ -218,11 +250,13 @@
     function showPatientFormView() {
         formContainer.style.display = "block";
         patientListPanel.style.display = "none";
+        setActiveSidebarItem(newPatientNav);
     }
 
     function showPatientListView() {
         formContainer.style.display = "none";
         patientListPanel.style.display = "block";
+        setActiveSidebarItem(patientListNav);
     }
 
     dobInput.addEventListener("change", function () {
@@ -274,8 +308,23 @@
     });
 
     if (dashboardNav) {
-        dashboardNav.addEventListener("click", function () {
-            window.location.href = dashboardUrl;
+        dashboardNav.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(dashboardNav);
+        });
+    }
+
+    if (billingNav) {
+        billingNav.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(billingNav);
+        });
+    }
+
+    if (hmsBrand) {
+        hmsBrand.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(dashboardNav || hmsBrand);
         });
     }
 
@@ -288,6 +337,12 @@
 
     if (window.location.search.includes("success=")) {
         showPatientListView();
+    } else {
+        showPatientFormView();
+    }
+
+    if (!window.location.search.includes("success=")) {
+        setActiveSidebarItem(newPatientNav);
     }
 
     newPatientNav.addEventListener("click", function () {

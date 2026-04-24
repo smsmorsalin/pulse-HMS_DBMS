@@ -27,10 +27,16 @@ def init_db():
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                email TEXT UNIQUE
             )
         ''')
         print("Users table created successfully.")
+    else:
+        users_columns = [row[1] for row in cursor.execute("PRAGMA table_info(users)").fetchall()]
+        if 'email' not in users_columns:
+            cursor.execute('ALTER TABLE users ADD COLUMN email TEXT')
+            print("Users table migrated: email column added.")
     
     #admins table
     cursor.execute('''
@@ -43,10 +49,16 @@ def init_db():
             CREATE TABLE admins (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                email TEXT UNIQUE
             )
         ''')
         print("Admins table created successfully.")
+    else:
+        admins_columns = [row[1] for row in cursor.execute("PRAGMA table_info(admins)").fetchall()]
+        if 'email' not in admins_columns:
+            cursor.execute('ALTER TABLE admins ADD COLUMN email TEXT')
+            print("Admins table migrated: email column added.")
     
     #patients table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="patients"')
@@ -259,7 +271,8 @@ def register():
         role = request.form.get('role')
         username = request.form.get('username')
         password = request.form.get('password')
-        if not role or not username or not password:
+        email = request.form.get('email')
+        if not role or not username or not password or not email:
             return render_template("register.html", error="Please fill in all fields.")
         else:
             admin_checker = db.execute('SELECT * FROM admins WHERE username = ?', (username,)).fetchone()
@@ -267,18 +280,18 @@ def register():
                 hashed_password = generate_password_hash(password)
                 if role == 'admin':
                     try:
-                        db.execute('INSERT INTO admins (username, password) VALUES (?, ?)', (username, hashed_password))
+                        db.execute('INSERT INTO admins (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
                         db.commit()
                         return redirect(url_for('registered_users', success=f"Admin registered successfully."))
                     except sqlite3.IntegrityError:
-                        return render_template("register.html", error="Username already exists. Please choose a different username.")
+                        return render_template("register.html", error="Username or email already exists. Please use different credentials.")
                 else:  # role == 'user'
                     try:
-                        db.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
+                        db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
                         db.commit()
                         return redirect(url_for('registered_users', success=f"Employee registered successfully."))
                     except sqlite3.IntegrityError:
-                        return render_template("register.html", error="Username already exists. Please choose a different username.")
+                        return render_template("register.html", error="Username or email already exists. Please use different credentials.")
 
     return render_template("register.html")
 
@@ -528,6 +541,47 @@ def add_service():
         return redirect(url_for('services', success="Service added successfully."))
 
     return render_template("add_service.html")
+
+@app.route('/edit_service/<int:service_id>', methods=['GET', 'POST'])
+def edit_service(service_id):
+    # Only admin can edit services
+    if not isadmin():
+        return redirect(url_for('dashboard'))
+
+    service = db.execute(
+        'SELECT id, name, type, price FROM services WHERE id = ?',
+        (service_id,)
+    ).fetchone()
+
+    if not service:
+        return redirect(url_for('services', message="Service not found."))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        service_type = request.form.get('type')
+        price = request.form.get('price')
+
+        if not name or not service_type or not price:
+            return render_template("edit_service.html", service=service, error="All fields are required.")
+
+        if service_type not in ['doctor', 'test']:
+            return render_template("edit_service.html", service=service, error="Invalid service type.")
+
+        try:
+            price = float(price)
+            if price < 0:
+                return render_template("edit_service.html", service=service, error="Price must be positive.")
+        except ValueError:
+            return render_template("edit_service.html", service=service, error="Invalid price format.")
+
+        db.execute(
+            'UPDATE services SET name = ?, type = ?, price = ? WHERE id = ?',
+            (name, service_type, price, service_id)
+        )
+        db.commit()
+        return redirect(url_for('services', message="Service updated successfully."))
+
+    return render_template("edit_service.html", service=service)
 
 @app.route('/tests')
 def tests():

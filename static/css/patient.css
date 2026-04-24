@@ -365,6 +365,60 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: rgba(255,255,255,0.15);
 }
 
+.sidebar-brand {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 14px 12px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(30, 60, 250, 0.35), rgba(255, 30, 86, 0.35));
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.sidebar-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    font: inherit;
+    transition: 0.25s ease;
+}
+
+.sidebar-item:hover {
+    background: rgba(255,255,255,0.14);
+    transform: translateX(4px);
+}
+
+.sidebar-item.active {
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    border-color: rgba(255,255,255,0.24);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.sidebar-item i {
+    width: 18px;
+    text-align: center;
+}
+
 .main-content {
     flex: 1;
     padding: 40px;
