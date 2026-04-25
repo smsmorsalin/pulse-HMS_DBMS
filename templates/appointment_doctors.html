@@ -1,83 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor to Patients</title>
-    <style>
-        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
-        .container { max-width: 800px; margin: auto; }
-        .btn-back { display: inline-block; padding: 8px 15px; margin-bottom: 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #f4f4f4; }
-        a.link-btn { color: #007BFF; text-decoration: none; font-weight: bold; }
-        .search-form { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
-        .search-input { padding: 8px; width: 60%; border: 1px solid #ddd; border-radius: 4px; }
-        .btn-search { padding: 8px 15px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-clear { color: #dc3545; text-decoration: none; font-size: 14px; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/appointment_doctors.css') }}">
 </head>
 <body>
-    <div class="container">
-        {% if view_type == 'list' %}
-            <a href="{{ url_for('appointments_info') }}" class="btn-back">← Back to Options</a>
-            <h2>Select a Doctor</h2>
+    <div class="background-blobs"></div>
 
-            <form method="GET" action="{{ url_for('appointment_doctors') }}" class="search-form">
-                <input type="text" name="search" class="search-input" placeholder="Search by doctor name..." value="{{ search or '' }}">
-                <button type="submit" class="btn-search">Search</button>
-                {% if search %}
-                    <a href="{{ url_for('appointment_doctors') }}" class="btn-clear">Clear Search</a>
-                {% endif %}
-            </form>
+    <main class="appointments-page">
+        <section class="appointments-panel">
+            {% if view_type == 'list' %}
+                <div class="appointments-header">
+                    <a href="{{ url_for('appointments_info') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Options
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-user-doctor"></i> Select a Doctor</h2>
+                        <p>Choose a doctor to see patients they have treated.</p>
+                    </div>
+                </div>
 
-            <table>
-                <tr>
-                    <th>ID</th>
-                    <th>Doctor Name</th>
-                    <th>Specialization</th>
-                    <th>Action</th>
-                </tr>
-                {% for d in doctors %}
-                <tr>
-                    <td>{{ d[0] }}</td>
-                    <td>{{ d[1] }}</td>
-                    <td>{{ d[2] }}</td>
-                    <td><a href="{{ url_for('appointment_doctors', doctor_id=d[0]) }}" class="link-btn">View Cured Patients</a></td>
-                </tr>
+                <form method="GET" action="{{ url_for('appointment_doctors') }}" class="search-form">
+                    <div class="search-input-wrap">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" name="search" class="search-input" placeholder="Search by doctor name..." value="{{ search or '' }}">
+                    </div>
+                    <button type="submit" class="search-btn">Search</button>
+                    {% if search %}
+                        <a href="{{ url_for('appointment_doctors') }}" class="clear-link">Clear</a>
+                    {% endif %}
+                </form>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Doctor Name</th>
+                                <th>Specialization</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in doctors %}
+                            <tr>
+                                <td>{{ d[0] }}</td>
+                                <td>{{ d[1] }}</td>
+                                <td>{{ d[2] }}</td>
+                                <td><a href="{{ url_for('appointment_doctors', doctor_id=d[0]) }}" class="row-link">View Cured Patients</a></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="empty-cell">No doctors found matching your search.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% elif view_type == 'detail' %}
+                <div class="appointments-header">
+                    <a href="{{ url_for('appointment_doctors') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Doctors List
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-notes-medical"></i> Patients Treated by Dr. {{ doctor[0] }}</h2>
+                        <p>Patient records connected to this doctor.</p>
+                    </div>
+                </div>
+
+                {% if patients %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Gender</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in patients %}
+                                <tr>
+                                    <td>{{ p[0] }}</td>
+                                    <td>{{ p[1] }}</td>
+                                    <td>{{ p[2] }}</td>
+                                    <td>{{ p[3] }}</td>
+                                    <td>{{ p[4] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 {% else %}
-                <tr>
-                    <td colspan="4" style="text-align: center; color: #666;">No doctors found matching your search.</td>
-                </tr>
-                {% endfor %}
-            </table>
-            
-        {% elif view_type == 'detail' %}
-            <a href="{{ url_for('appointment_doctors') }}" class="btn-back">← Back to Doctors List</a>
-            <h2>Patients Treated by Dr. {{ doctor[0] }}</h2>
-            
-            {% if patients %}
-                <table>
-                    <tr>
-                        <th>Patient ID</th>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Gender</th>
-                        <th>Age</th>
-                    </tr>
-                    {% for p in patients %}
-                    <tr>
-                        <td>{{ p[0] }}</td>
-                        <td>{{ p[1] }}</td>
-                        <td>{{ p[2] }}</td>
-                        <td>{{ p[3] }}</td>
-                        <td>{{ p[4] }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p>No patients have been recorded for this doctor yet.</p>
+                    <p class="empty-note">No patients have been recorded for this doctor yet.</p>
+                {% endif %}
             {% endif %}
-        {% endif %}
-    </div>
+        </section>
+    </main>
 </body>
 </html>

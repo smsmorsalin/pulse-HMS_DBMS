@@ -1,67 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient to Services</title>
-    <style>
-        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
-        .container { max-width: 800px; margin: auto; }
-        .btn-back { display: inline-block; padding: 8px 15px; margin-bottom: 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #f4f4f4; }
-        a.link-btn { color: #007BFF; text-decoration: none; font-weight: bold; }
-        .search-form { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
-        .search-input { padding: 8px; width: 60%; border: 1px solid #ddd; border-radius: 4px; }
-        .btn-search { padding: 8px 15px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-clear { color: #dc3545; text-decoration: none; font-size: 14px; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/appointment_patients.css') }}">
 </head>
 <body>
-    <div class="container">
-        {% if view_type == 'list' %}
-            <a href="{{ url_for('appointments_info') }}" class="btn-back">← Back to Options</a>
-            <h2>Select a Patient</h2>
+    <div class="background-blobs"></div>
 
-            <!-- Search Form -->
-            <form method="GET" action="{{ url_for('appointment_patients') }}" class="search-form">
-                <input type="text" name="search" class="search-input" placeholder="Search by name or phone..." value="{{ search or '' }}">
-                <button type="submit" class="btn-search">Search</button>
-                {% if search %}
-                    <a href="{{ url_for('appointment_patients') }}" class="btn-clear">Clear Search</a>
+    <main class="appointments-page">
+        <section class="appointments-panel">
+            {% if view_type == 'list' %}
+                <div class="appointments-header">
+                    <a href="{{ url_for('appointments_info') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Options
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-user"></i> Select a Patient</h2>
+                        <p>Pick a patient to see all services and tests they received.</p>
+                    </div>
+                </div>
+
+                <form method="GET" action="{{ url_for('appointment_patients') }}" class="search-form">
+                    <div class="search-input-wrap">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" name="search" class="search-input" placeholder="Search by name or phone..." value="{{ search or '' }}">
+                    </div>
+                    <button type="submit" class="search-btn">Search</button>
+                    {% if search %}
+                        <a href="{{ url_for('appointment_patients') }}" class="clear-link">Clear</a>
+                    {% endif %}
+                </form>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient Name</th>
+                                <th>Phone</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in patients %}
+                            <tr>
+                                <td>{{ p[0] }}</td>
+                                <td>{{ p[1] }}</td>
+                                <td>{{ p[2] }}</td>
+                                <td><a href="{{ url_for('appointment_patients', patient_id=p[0]) }}" class="row-link">View Received Services</a></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="empty-cell">No patients found matching your search.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% elif view_type == 'detail' %}
+                <div class="appointments-header">
+                    <a href="{{ url_for('appointment_patients') }}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Patients List
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-notes-medical"></i> Services Received by {{ patient[0] }}</h2>
+                        <p>Service history for the selected patient.</p>
+                    </div>
+                </div>
+
+                {% if services %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service ID</th>
+                                    <th>Service Name</th>
+                                    <th>Service Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in services %}
+                                <tr>
+                                    <td>{{ s[0] }}</td>
+                                    <td>{{ s[1] }}</td>
+                                    <td class="capitalize">{{ s[2] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="empty-note">This patient has not received any services or tests yet.</p>
                 {% endif %}
-            </form>
-
-            <table>
-                <tr><th>ID</th><th>Patient Name</th><th>Phone</th><th>Action</th></tr>
-                {% for p in patients %}
-                <tr>
-                    <td>{{ p[0] }}</td>
-                    <td>{{ p[1] }}</td>
-                    <td>{{ p[2] }}</td>
-                    <td><a href="{{ url_for('appointment_patients', patient_id=p[0]) }}" class="link-btn">View Received Services</a></td>
-                </tr>
-                {% endfor %}
-            </table>
-            
-        {% elif view_type == 'detail' %}
-            <a href="{{ url_for('appointment_patients') }}" class="btn-back">← Back to Patients List</a>
-            <h2>Services Received by {{ patient[0] }}</h2>
-            
-            {% if services %}
-                <table>
-                    <tr><th>Service ID</th><th>Service Name</th><th>Service Type</th></tr>
-                    {% for s in services %}
-                    <tr>
-                        <td>{{ s[0] }}</td>
-                        <td>{{ s[1] }}</td>
-                        <td style="text-transform: capitalize;">{{ s[2] }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p>This patient has not received any services or tests yet.</p>
             {% endif %}
-        {% endif %}
-    </div>
+        </section>
+    </main>
 </body>
 </html>
