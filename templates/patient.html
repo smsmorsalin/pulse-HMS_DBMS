@@ -25,24 +25,30 @@
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </a>
-            <button type="button" id="newPatientNav" class="sidebar-item">
-                <i class="fas fa-user-plus"></i>
-                <span>New Patient</span>
-            </button>
+
             <button type="button" id="patientListNav" class="sidebar-item">
                 <i class="fas fa-list"></i>
                 <span>Patient List</span>
             </button>
-            <a id="billingNav" class="sidebar-item sidebar-link" href="{{ url_for('services') }}">
-                <i class="fas fa-file-invoice"></i>
-                <span>Billing</span>
-            </a>
+            
+            <button type="button" id="newPatientNav" class="sidebar-item">
+                <i class="fas fa-user-plus"></i>
+                <span>New Patient</span>
+            </button>
+
+
         </div>
     </aside>
 
     <main class="main-content">
         <section class="patient-list-panel" id="patientListPanel" aria-label="Patient list">
-            <h2><i class="fas fa-list"></i> Patient List</h2>
+            <div class="patient-list-header">
+                <h2><i class="fas fa-list"></i> Patient List</h2>
+                <button type="button" id="newPatientHeaderBtn" class="new-patient-btn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>New Patient</span>
+                </button>
+            </div>
             <div class="patient-list-tools">
                 <input type="text" id="patientSearchInput" placeholder="Search by Patient ID or Phone Number">
                 <button type="button" id="patientSearchClearBtn">Clear</button>
@@ -212,6 +218,7 @@
     const patientForm = document.querySelector(".glass-form");
     const patientTableBody = document.getElementById("patientTableBody");
     const newPatientNav = document.getElementById("newPatientNav");
+    const newPatientHeaderBtn = document.getElementById("newPatientHeaderBtn");
     const patientListNav = document.getElementById("patientListNav");
     const patientListPanel = document.getElementById("patientListPanel");
     const formContainer = document.querySelector(".form-container");
@@ -338,26 +345,26 @@
         });
     }
 
-    showPatientFormView();
-
     window.addEventListener("pageshow", function () {
         submitButton.disabled = false;
         submitButton.querySelector("span").innerText = "Submit";
     });
 
+    showPatientListView();
+
     if (window.location.search.includes("success=")) {
         showPatientListView();
-    } else {
-        showPatientFormView();
-    }
-
-    if (!window.location.search.includes("success=")) {
-        setActiveSidebarItem(newPatientNav);
     }
 
     newPatientNav.addEventListener("click", function () {
         showPatientFormView();
     });
+
+    if (newPatientHeaderBtn) {
+        newPatientHeaderBtn.addEventListener("click", function () {
+            showPatientFormView();
+        });
+    }
 
     patientListNav.addEventListener("click", function () {
         showPatientListView();

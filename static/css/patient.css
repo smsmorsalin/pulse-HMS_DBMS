@@ -194,6 +194,16 @@ body {
     .full-width {
         grid-column: span 1;
     }
+
+    .patient-list-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .new-patient-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* =========================
@@ -437,6 +447,43 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .patient-list-panel h2 {
     color: #fff;
     margin-bottom: 16px;
+}
+
+.patient-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.patient-list-header h2 {
+    margin-bottom: 0;
+}
+
+.new-patient-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.new-patient-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(30, 60, 250, 0.32);
+}
+
+.new-patient-btn:active {
+    transform: translateY(0);
 }
 
 .patient-list-tools {
