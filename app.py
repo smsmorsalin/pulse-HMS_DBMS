@@ -751,7 +751,7 @@ def billing():
         ''', (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%")).fetchall()
 
     else:
-        # 🔥 Default: show latest bills
+        # Default: show latest bills
         bills = db.execute('''
             SELECT b.id, p.name, p.phone, b.total_amount, b.created_at
             FROM bills b
