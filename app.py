@@ -245,7 +245,7 @@ def add_log(patient_id, action):
     user_id = session.get('user_id')
 
     if user_id == 'root_admin':
-        role = 'root_admin'
+        role = 'admin'
         user_id_db = None
     else:
         admin_checker = db.execute('SELECT * FROM admins WHERE id=?', (user_id,)).fetchone()
@@ -258,7 +258,7 @@ def add_log(patient_id, action):
 
     db.execute('''
         INSERT INTO logs (user_id, role, patient_id, action, timestamp)
-        VALUES (?, ?, datetime('now'), ?, ?)
+        VALUES (?, ?, ?, ?, datetime('now'))
     ''', (user_id_db, role, patient_id, action))
     db.commit()
 
@@ -676,7 +676,7 @@ def patient_service(patient_id):
         db.commit()
 
         # Redirect to bill print page
-        return redirect(url_for('view_bill', bill_id=bill_id))
+        return redirect(url_for('bill_print', bill_id=bill_id))
 
     # GET REQUEST (SHOW PAGE)
     doctors = db.execute('SELECT id, name FROM doctors').fetchall()
@@ -690,19 +690,6 @@ def patient_service(patient_id):
         doctor_services=doctor_services,
         tests=tests
     )
-
-@app.route('/bill/<int:bill_id>')
-def view_bill(bill_id):
-    items = db.execute('''
-        SELECT s.name, bi.quantity, bi.price
-        FROM bill_items bi
-        JOIN services s ON bi.service_id = s.id
-        WHERE bi.bill_id = ?
-    ''', (bill_id,)).fetchall()
-
-    total = db.execute('SELECT total_amount FROM bills WHERE id=?', (bill_id,)).fetchone()[0]
-
-    return render_template("bill.html", items=items, total=total)
 
 @app.route('/service_desk', methods=['GET', 'POST'])
 def service_desk():
@@ -728,6 +715,72 @@ def service_desk():
 
     return render_template("service_desk.html", patients=patients)
 
+@app.route('/billing', methods=['GET', 'POST'])
+def billing():
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    bills = []
+
+    if request.method == 'POST':
+        keyword = request.form.get('keyword')
+
+        bills = db.execute('''
+            SELECT b.id, p.name, p.phone, b.total_amount, b.created_at
+            FROM bills b
+            JOIN patients p ON b.patient_id = p.id
+            WHERE b.id LIKE ? OR p.name LIKE ? OR p.phone LIKE ?
+            ORDER BY b.id DESC
+        ''', (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%")).fetchall()
+
+    else:
+        # 🔥 Default: show latest bills
+        bills = db.execute('''
+            SELECT b.id, p.name, p.phone, b.total_amount, b.created_at
+            FROM bills b
+            JOIN patients p ON b.patient_id = p.id
+            ORDER BY b.id DESC
+            LIMIT 10
+        ''').fetchall()
+
+    return render_template("billing.html", bills=bills)
+
+@app.route('/bill/<int:bill_id>')
+def bill_print(bill_id):
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    # patient info
+    bill = db.execute('''
+        SELECT b.id, b.total_amount, b.created_at, p.name, p.phone
+        FROM bills b
+        JOIN patients p ON b.patient_id = p.id
+        WHERE b.id = ?
+    ''', (bill_id,)).fetchone()
+
+    # bill items
+    items = db.execute('''
+        SELECT s.name, s.type, bi.price
+        FROM bill_items bi
+        JOIN services s ON bi.service_id = s.id
+        WHERE bi.bill_id = ?
+    ''', (bill_id,)).fetchall()
+
+    # doctor info (if exists)
+    doctor_info = db.execute('''
+        SELECT d.name, d.room_number
+        FROM appointments a
+        JOIN doctors d ON a.doctor_id = d.id
+        WHERE a.patient_id = (
+            SELECT patient_id FROM bills WHERE id = ?
+        )
+        ORDER BY a.id DESC LIMIT 1
+    ''', (bill_id,)).fetchone()
+
+    return render_template("bill_print.html",
+                           bill=bill,
+                           items=items,
+                           doctor=doctor_info)
 
 #debug showing in web browser
 if __name__ == '__main__':

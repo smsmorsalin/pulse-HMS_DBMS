@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>billing</title>
+</head>
+<body>
+    <h2>Billing Section</h2>
+
+<form method="POST">
+    <input type="text" name="keyword" placeholder="Search by Bill ID / Name / Phone">
+    <button type="submit">Search</button>
+</form>
+
+<table border="1">
+<tr>
+    <th>Bill ID</th>
+    <th>Patient</th>
+    <th>Phone</th>
+    <th>Total</th>
+    <th>Date</th>
+    <th>Action</th>
+</tr>
+
+{% for b in bills %}
+<tr>
+    <td>{{ b[0] }}</td>
+    <td>{{ b[1] }}</td>
+    <td>{{ b[2] }}</td>
+    <td>{{ b[3] }}</td>
+    <td>{{ b[4] }}</td>
+    <td>
+        <a href="/bill/{{ b[0] }}">Print</a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

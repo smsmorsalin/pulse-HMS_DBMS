@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bill print</title>
+</head>
+<body>
+    <h2>🏥 Your Hospital Name</h2>
+    <p>Address | Phone | Email</p>
+    <hr>
+
+    <h3>Patient Information</h3>
+    <p>Name: {{ bill[3] }}</p>
+    <p>Phone: {{ bill[4] }}</p>
+    <p>Bill ID: {{ bill[0] }}</p>
+    <p>Date: {{ bill[2] }}</p>
+
+    {% if doctor %}
+    <h3>Doctor Info</h3>
+    <p>Doctor: {{ doctor[0] }}</p>
+    <p>Room: {{ doctor[1] }}</p>
+    {% endif %}
+
+    <h3>Services</h3>
+
+    <table border="1">
+    <tr>
+        <th>Service</th>
+        <th>Type</th>
+        <th>Price</th>
+    </tr>
+
+    {% for item in items %}
+    <tr>
+        <td>{{ item[0] }}</td>
+        <td>{{ item[1] }}</td>
+        <td>{{ item[2] }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+
+    <h3>Total: {{ bill[1] }}</h3>
+
+    <br><br>
+    <p>______________________</p>
+    <p>Authorized Signature</p>
+    
+</body>
+</html>
