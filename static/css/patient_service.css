@@ -1,0 +1,238 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: 'Poppins', sans-serif;
+}
+
+body {
+	min-height: 100vh;
+	background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+	padding: 40px 15px;
+	color: #fff;
+	overflow-x: hidden;
+}
+
+.background-blobs::before,
+.background-blobs::after {
+	content: "";
+	position: fixed;
+	width: 420px;
+	height: 420px;
+	border-radius: 50%;
+	filter: blur(130px);
+	z-index: 0;
+	animation: float 12s infinite alternate ease-in-out;
+}
+
+.background-blobs::before {
+	background: #1e3cfa;
+	top: -120px;
+	left: -120px;
+}
+
+.background-blobs::after {
+	background: #ff1e56;
+	bottom: -120px;
+	right: -120px;
+}
+
+@keyframes float {
+	from { transform: translateY(0); }
+	to { transform: translateY(50px); }
+}
+
+.patient-service-page {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	max-width: 1000px;
+	margin: 0 auto;
+}
+
+.patient-service-panel {
+	backdrop-filter: blur(22px);
+	background: rgba(255, 255, 255, 0.07);
+	border-radius: 24px;
+	padding: 30px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.patient-service-header {
+	margin-bottom: 24px;
+}
+
+.header-top {
+	display: flex;
+	justify-content: flex-start;
+	margin-bottom: 14px;
+}
+
+.back-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border: none;
+	border-radius: 14px;
+	background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+	color: #fff;
+	padding: 12px 22px;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.back-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+.back-btn:active {
+	transform: translateY(0);
+}
+
+.patient-service-header h1 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 30px;
+	color: #fff;
+}
+
+.patient-service-header p {
+	margin-top: 8px;
+	color: rgba(255, 255, 255, 0.78);
+}
+
+.service-form {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.field-group label {
+	color: rgba(255, 255, 255, 0.92);
+	font-weight: 500;
+}
+
+.field-group select {
+	width: 100%;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.08);
+	color: #fff;
+	outline: none;
+	font-size: 14px;
+}
+
+.field-group select:focus {
+	border-color: rgba(30, 60, 250, 0.8);
+	box-shadow: 0 0 0 3px rgba(30, 60, 250, 0.25);
+}
+
+.field-group select option {
+	background: #1a2980;
+	color: #fff;
+}
+
+.service-section {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 16px;
+	padding: 18px;
+	margin-top: 4px;
+}
+
+.service-section h2 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 20px;
+	margin-bottom: 14px;
+	color: #fff;
+}
+
+.tests-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 10px;
+}
+
+.test-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 10px;
+	padding: 10px 12px;
+}
+
+.test-item input[type="checkbox"] {
+	accent-color: #1e3cfa;
+	width: 16px;
+	height: 16px;
+}
+
+.test-item span {
+	color: rgba(255, 255, 255, 0.95);
+	font-size: 14px;
+}
+
+.form-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 8px;
+}
+
+.generate-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border: none;
+	border-radius: 14px;
+	background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+	color: #fff;
+	padding: 12px 22px;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.generate-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+.generate-btn:active {
+	transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+	.patient-service-panel {
+		padding: 22px;
+	}
+
+	.patient-service-header h1 {
+		font-size: 24px;
+	}
+
+	.form-actions {
+		justify-content: stretch;
+	}
+
+	.generate-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}

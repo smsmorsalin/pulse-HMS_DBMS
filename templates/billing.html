@@ -3,38 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>billing</title>
+    <title>Billing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/billing.css') }}">
 </head>
 <body>
-    <h2>Billing Section</h2>
+    <div class="background-blobs"></div>
 
-<form method="POST">
-    <input type="text" name="keyword" placeholder="Search by Bill ID / Name / Phone">
-    <button type="submit">Search</button>
-</form>
+    <main class="billing-page">
+        <section class="billing-panel">
+            <div class="billing-header">
+                <a class="back-btn" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
 
-<table border="1">
-<tr>
-    <th>Bill ID</th>
-    <th>Patient</th>
-    <th>Phone</th>
-    <th>Total</th>
-    <th>Date</th>
-    <th>Action</th>
-</tr>
+                <div>
+                    <h1><i class="fas fa-file-invoice-dollar"></i> Billing</h1>
+                    <p>Search patient bills and open printable invoices.</p>
+                </div>
+            </div>
 
-{% for b in bills %}
-<tr>
-    <td>{{ b[0] }}</td>
-    <td>{{ b[1] }}</td>
-    <td>{{ b[2] }}</td>
-    <td>{{ b[3] }}</td>
-    <td>{{ b[4] }}</td>
-    <td>
-        <a href="/bill/{{ b[0] }}">Print</a>
-    </td>
-</tr>
-{% endfor %}
-</table>
+            <form method="POST" class="search-form">
+                <div class="search-input-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="keyword" placeholder="Search by Bill ID, name or phone">
+                </div>
+                <button type="submit" class="search-btn">Search</button>
+            </form>
+
+            <div class="billing-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Patient</th>
+                            <th>Phone</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if bills %}
+                            {% for b in bills %}
+                            <tr>
+                                <td>{{ b[0] }}</td>
+                                <td>{{ b[1] }}</td>
+                                <td>{{ b[2] }}</td>
+                                <td>{{ b[3] }}</td>
+                                <td>{{ b[4] }}</td>
+                                <td>
+                                    <a class="print-link" href="/bill/{{ b[0] }}">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">No bills found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 </body>
 </html>

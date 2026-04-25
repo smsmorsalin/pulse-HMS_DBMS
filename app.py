@@ -418,6 +418,23 @@ def add_patient():
     else:
         return redirect(url_for('login'))
 
+@app.route('/delete_patient/<int:patient_id>')
+def delete_patient(patient_id):
+    """Delete a patient - only admin can delete."""
+    if not isadmin():
+        return redirect(url_for('dashboard'))
+
+    patient = db.execute('SELECT id FROM patients WHERE id = ?', (patient_id,)).fetchone()
+    if not patient:
+        return redirect(url_for('patient', message="Patient not found."))
+
+    try:
+        db.execute('DELETE FROM patients WHERE id = ?', (patient_id,))
+        db.commit()
+        return redirect(url_for('patient', message="Patient deleted successfully."))
+    except sqlite3.IntegrityError:
+        return redirect(url_for('patient', message="Cannot delete patient because they have associated records."))
+
 @app.route('/registered_users', methods=['GET', 'POST'])
 def registered_users():
     """Page to display registered users - only accessible to admin."""

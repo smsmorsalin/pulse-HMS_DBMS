@@ -3,48 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bill print</title>
+    <title>Bill Print</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bill_print.css') }}">
 </head>
 <body>
-    <h2>🏥 Your Hospital Name</h2>
-    <p>Address | Phone | Email</p>
-    <hr>
+    <div class="background-blobs"></div>
 
-    <h3>Patient Information</h3>
-    <p>Name: {{ bill[3] }}</p>
-    <p>Phone: {{ bill[4] }}</p>
-    <p>Bill ID: {{ bill[0] }}</p>
-    <p>Date: {{ bill[2] }}</p>
+    <main class="bill-page">
+        <section class="bill-panel" id="printArea">
+            <div class="bill-top-actions no-print">
+                <a class="back-btn" href="{{ url_for('billing') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Billing
+                </a>
+                <a class="service-btn" href="{{ url_for('service_desk') }}">
+                    <i class="fas fa-stethoscope"></i>
+                    Patient Services
+                </a>
+                <button type="button" class="print-btn" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Bill
+                </button>
+            </div>
 
-    {% if doctor %}
-    <h3>Doctor Info</h3>
-    <p>Doctor: {{ doctor[0] }}</p>
-    <p>Room: {{ doctor[1] }}</p>
-    {% endif %}
+            <header class="bill-header">
+                <h1><i class="fas fa-hospital"></i> AL-JUMIRA HOSPITAL</h1>
+                <p>Milk VIta Road,Dewla,Near Asa Office,Tangail | Phone: 017767617979 | Email:aljumirahospital@gmail.com</p>
+            </header>
 
-    <h3>Services</h3>
+            <section class="bill-meta">
+                <div class="meta-card">
+                    <h2>Patient Information</h2>
+                    <p><strong>Name:</strong> {{ bill[3] }}</p>
+                    <p><strong>Phone:</strong> {{ bill[4] }}</p>
+                    <p><strong>Bill ID:</strong> {{ bill[0] }}</p>
+                    <p><strong>Date:</strong> {{ bill[2] }}</p>
+                    <p class="printed-time"><strong>Printed At:</strong> <span id="printedTimestamp">--</span></p>
+                </div>
 
-    <table border="1">
-    <tr>
-        <th>Service</th>
-        <th>Type</th>
-        <th>Price</th>
-    </tr>
+                {% if doctor %}
+                <div class="meta-card">
+                    <h2>Doctor Information</h2>
+                    <p><strong>Doctor:</strong> {{ doctor[0] }}</p>
+                    <p><strong>Room:</strong> {{ doctor[1] }}</p>
+                </div>
+                {% endif %}
+            </section>
 
-    {% for item in items %}
-    <tr>
-        <td>{{ item[0] }}</td>
-        <td>{{ item[1] }}</td>
-        <td>{{ item[2] }}</td>
-    </tr>
-    {% endfor %}
-    </table>
+            <section class="services-section">
+                <h2>Services</h2>
+                <div class="bill-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ item[0] }}</td>
+                                <td>{{ item[1] }}</td>
+                                <td>{{ item[2] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-    <h3>Total: {{ bill[1] }}</h3>
+            <div class="bill-total">
+                <span>Total Amount</span>
+                <strong>{{ bill[1] }}</strong>
+            </div>
 
-    <br><br>
-    <p>______________________</p>
-    <p>Authorized Signature</p>
-    
+            <footer class="bill-signature">
+                <p>______________________</p>
+                <p>Authorized Signature</p>
+            </footer>
+        </section>
+    </main>
+
+    <script>
+        function updatePrintedTimestamp() {
+            const timestampElement = document.getElementById("printedTimestamp");
+            if (!timestampElement) {
+                return;
+            }
+
+            const now = new Date();
+            timestampElement.textContent = now.toLocaleString();
+        }
+
+        updatePrintedTimestamp();
+        setInterval(updatePrintedTimestamp, 1000);
+    </script>
 </body>
 </html>

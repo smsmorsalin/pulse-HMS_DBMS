@@ -4,42 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Services</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_service.css') }}">
 </head>
 <body>
-    <form method="POST">
+    <div class="background-blobs"></div>
 
-    <select name="service_type" onchange="toggleForm(this.value)">
-        <option value="">Select Service</option>
-        <option value="doctor">Doctor Appointment</option>
-        <option value="test">Test Services</option>
-    </select>
+    <main class="patient-service-page">
+        <section class="patient-service-panel">
+            <div class="header-top">
+                <button type="button" class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </button>
+            </div>
 
-    <!-- 👨‍⚕️ Doctor Section -->
-    <div id="doctor_section" style="display:none;">
-        <select name="doctor_id">
-            {% for d in doctors %}
-            <option value="{{ d[0] }}">{{ d[1] }}</option>
-            {% endfor %}
-        </select>
+            <div class="patient-service-header">
+                <h1><i class="fas fa-file-invoice-dollar"></i> Patient Services</h1>
+                <p>Select the required service and generate the bill.</p>
+            </div>
 
-        <select name="service_id">
-            {% for s in doctor_services %}
-            <option value="{{ s[0] }}">{{ s[1] }} ({{ s[3] }})</option>
-            {% endfor %}
-        </select>
-    </div>
+            <form method="POST" class="service-form">
+                <div class="field-group">
+                    <label for="service_type">Service Type</label>
+                    <select id="service_type" name="service_type" onchange="toggleForm(this.value)">
+                        <option value="">Select Service</option>
+                        <option value="doctor">Doctor Appointment</option>
+                        <option value="test">Test Services</option>
+                    </select>
+                </div>
 
-    <!-- 🧪 Test Section -->
-    <div id="test_section" style="display:none;">
-        {% for t in tests %}
-        <input type="checkbox" name="test_ids" value="{{ t[0] }}">
-        {{ t[1] }} ({{ t[3] }}) <br>
-        {% endfor %}
-    </div>
+                <div id="doctor_section" class="service-section" style="display:none;">
+                    <h2><i class="fas fa-user-doctor"></i> Doctor Appointment</h2>
 
-    <button type="submit">Generate Bill</button>
+                    <div class="field-group">
+                        <label for="doctor_id">Doctor</label>
+                        <select id="doctor_id" name="doctor_id">
+                            {% for d in doctors %}
+                            <option value="{{ d[0] }}">{{ d[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    </form>
+                    <div class="field-group">
+                        <label for="service_id">Service</label>
+                        <select id="service_id" name="service_id">
+                            {% for s in doctor_services %}
+                            <option value="{{ s[0] }}">{{ s[1] }} ({{ s[3] }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="test_section" class="service-section" style="display:none;">
+                    <h2><i class="fas fa-flask"></i> Test Services</h2>
+                    <div class="tests-list">
+                        {% for t in tests %}
+                        <label class="test-item">
+                            <input type="checkbox" name="test_ids" value="{{ t[0] }}">
+                            <span>{{ t[1] }} ({{ t[3] }})</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="generate-btn">
+                        <i class="fas fa-receipt"></i>
+                        Generate Bill
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
 
 <script>
 function toggleForm(type) {

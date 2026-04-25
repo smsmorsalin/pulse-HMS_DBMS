@@ -51,29 +51,39 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Age</th>
-                            <th>Gender</th>
-                            <th>Phone</th>
-                            <th>Address</th>
+                            <th class="id-col">ID</th>
+                            <th class="name-col">Name</th>
+                            <th class="age-col">Age</th>
+                            <th class="gender-col">Gender</th>
+                            <th class="phone-col">Phone</th>
+                            <th class="address-col">Address</th>
+                            {% if admin %}
+                            <th class="action-col">Action</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody id="patientTableBody">
                         {% if patients %}
                             {% for patient in patients %}
                             <tr>
-                                <td>{{ patient[0] }}</td>
-                                <td>{{ patient[1] }}</td>
-                                <td>{{ patient[2] }}</td>
-                                <td>{{ patient[3] }}</td>
-                                <td>{{ patient[4] }}</td>
-                                <td>{{ patient[8] }}</td>
+                                <td class="id-col">{{ patient[0] }}</td>
+                                <td class="name-col">{{ patient[1] }}</td>
+                                <td class="age-col">{{ patient[2] }}</td>
+                                <td class="gender-col">{{ patient[3] }}</td>
+                                <td class="phone-col">{{ patient[4] }}</td>
+                                <td class="address-col">{{ patient[8] }}</td>
+                                {% if admin %}
+                                <td class="action-col">
+                                    <a href="/delete_patient/{{ patient[0] }}" class="delete-btn" onclick="return confirm('Are you sure you want to delete this patient?');">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="6">No patients found.</td>
+                                <td colspan="{% if admin %}7{% else %}6{% endif %}">No patients found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
