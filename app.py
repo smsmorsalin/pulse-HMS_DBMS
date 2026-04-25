@@ -799,6 +799,70 @@ def bill_print(bill_id):
                            items=items,
                            doctor=doctor_info)
 
+@app.route('/appointments_info')
+def appointments_info():
+    if not isadmin() and not isuser(): return redirect(url_for('login'))
+    return render_template('appointments_info.html')
+
+@app.route('/appointments_info/doctors')
+@app.route('/appointments_info/doctors/<int:doctor_id>')
+def appointment_doctors(doctor_id=None):
+    if not isadmin() and not isuser(): return redirect(url_for('login'))
+    
+    if doctor_id:
+        doctor = db.execute("SELECT name FROM doctors WHERE id = ?", (doctor_id,)).fetchone()
+        patients = db.execute('''
+            SELECT DISTINCT p.id, p.name, p.phone, p.gender, p.age
+            FROM patients p
+            JOIN appointments a ON p.id = a.patient_id
+            WHERE a.doctor_id = ?
+        ''', (doctor_id,)).fetchall()
+        return render_template('appointment_doctors.html', doctor=doctor, patients=patients, view_type='detail')
+    else:
+        # Get the search term and remove any accidental spaces
+        search = request.args.get('search', '').strip()
+        if search:
+            doctors = db.execute("SELECT id, name, specialization FROM doctors WHERE name LIKE ?", (f'%{search}%',)).fetchall()
+        else:
+            doctors = db.execute("SELECT id, name, specialization FROM doctors").fetchall()
+        
+        return render_template('appointment_doctors.html', doctors=doctors, view_type='list', search=search)
+
+@app.route('/appointments_info/patients')
+@app.route('/appointments_info/patients/<int:patient_id>')
+def appointment_patients(patient_id=None):
+    if not isadmin() and not isuser(): return redirect(url_for('login'))
+    
+    if patient_id:
+        patient = db.execute("SELECT name FROM patients WHERE id = ?", (patient_id,)).fetchone()
+        services = db.execute('''
+            SELECT DISTINCT s.id, s.name, s.type
+            FROM services s
+            JOIN bill_items bi ON s.id = bi.service_id
+            JOIN bills b ON bi.bill_id = b.id
+            WHERE b.patient_id = ?
+            UNION
+            SELECT DISTINCT s.id, s.name, s.type
+            FROM services s
+            JOIN appointments a ON s.id = a.service_id
+            WHERE a.patient_id = ?
+            UNION
+            SELECT DISTINCT s.id, s.name, s.type
+            FROM services s
+            JOIN test_orders t ON s.id = t.service_id
+            WHERE t.patient_id = ?
+        ''', (patient_id, patient_id, patient_id)).fetchall()
+        return render_template('appointment_patients.html', patient=patient, services=services, view_type='detail')
+    else:
+        # Get the search term and remove any accidental spaces
+        search = request.args.get('search', '').strip()
+        if search:
+            patients = db.execute("SELECT id, name, phone FROM patients WHERE name LIKE ? OR phone LIKE ?", (f'%{search}%', f'%{search}%')).fetchall()
+        else:
+            patients = db.execute("SELECT id, name, phone FROM patients").fetchall()
+            
+        return render_template('appointment_patients.html', patients=patients, view_type='list', search=search)
+
 #debug showing in web browser
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Appointments Info</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; }
+        .btn { display: inline-block; padding: 10px 20px; margin: 10px 0; background: #007BFF; color: white; text-decoration: none; border-radius: 5px; }
+        .btn-back { background: #6c757d; margin-top: 30px;}
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Appointments Info Dashboard</h2>
+        
+        <div class="card">
+            <h3>1. Doctor to Patients</h3>
+            <p>Select a doctor to view the patients they have cured/treated.</p>
+            <a href="{{ url_for('appointment_doctors') }}" class="btn">View Doctors List</a>
+        </div>
+        
+        <div class="card">
+            <h3>2. Patient to Services</h3>
+            <p>Select a patient to view all the medical services they received.</p>
+            <a href="{{ url_for('appointment_patients') }}" class="btn">View Patients List</a>
+        </div>
+        
+        <a href="/dashboard" class="btn btn-back">← Back to Main Menu</a>
+    </div>
+</body>
+</html>

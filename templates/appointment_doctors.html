@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Doctor to Patients</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 800px; margin: auto; }
+        .btn-back { display: inline-block; padding: 8px 15px; margin-bottom: 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        a.link-btn { color: #007BFF; text-decoration: none; font-weight: bold; }
+        .search-form { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .search-input { padding: 8px; width: 60%; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-search { padding: 8px 15px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-clear { color: #dc3545; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if view_type == 'list' %}
+            <a href="{{ url_for('appointments_info') }}" class="btn-back">← Back to Options</a>
+            <h2>Select a Doctor</h2>
+
+            <form method="GET" action="{{ url_for('appointment_doctors') }}" class="search-form">
+                <input type="text" name="search" class="search-input" placeholder="Search by doctor name..." value="{{ search or '' }}">
+                <button type="submit" class="btn-search">Search</button>
+                {% if search %}
+                    <a href="{{ url_for('appointment_doctors') }}" class="btn-clear">Clear Search</a>
+                {% endif %}
+            </form>
+
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Doctor Name</th>
+                    <th>Specialization</th>
+                    <th>Action</th>
+                </tr>
+                {% for d in doctors %}
+                <tr>
+                    <td>{{ d[0] }}</td>
+                    <td>{{ d[1] }}</td>
+                    <td>{{ d[2] }}</td>
+                    <td><a href="{{ url_for('appointment_doctors', doctor_id=d[0]) }}" class="link-btn">View Cured Patients</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #666;">No doctors found matching your search.</td>
+                </tr>
+                {% endfor %}
+            </table>
+            
+        {% elif view_type == 'detail' %}
+            <a href="{{ url_for('appointment_doctors') }}" class="btn-back">← Back to Doctors List</a>
+            <h2>Patients Treated by Dr. {{ doctor[0] }}</h2>
+            
+            {% if patients %}
+                <table>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Gender</th>
+                        <th>Age</th>
+                    </tr>
+                    {% for p in patients %}
+                    <tr>
+                        <td>{{ p[0] }}</td>
+                        <td>{{ p[1] }}</td>
+                        <td>{{ p[2] }}</td>
+                        <td>{{ p[3] }}</td>
+                        <td>{{ p[4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No patients have been recorded for this doctor yet.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>
