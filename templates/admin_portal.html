@@ -17,17 +17,12 @@
     <h2>Pulse-HMS</h2>
 
     <ul>
-        <li>
-            <a href="{{ url_for('register') }}" class="nav-link" name="register">
-                <i class="fas fa-user-plus"></i>
-                <span>Register</span>
+                <li>
+            <a href="{{ url_for('dashboard') }}" class="nav-link active" name="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
             </a>
-        </li>
-        <li>
-            <a href="{{ url_for('registered_users') }}" class="nav-link" name="registered_users">
-                <i class="fas fa-users"></i>
-                <span>Registered Users</span>
-            </a>
+
         </li>
         <li>
             <a href="{{ url_for('services') }}" class="nav-link" name="services">
@@ -35,13 +30,22 @@
                 <span>Services</span>
             </a>
         </li>
-
-        <li>
-            <a href="{{ url_for('dashboard') }}" class="nav-link active" name="dashboard">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
+               <li>
+            <a href="{{ url_for('register') }}" class="nav-link" name="register">
+                <i class="fas fa-user-plus"></i>
+                <span>Register</span>
             </a>
         </li>
+
+        <li>
+            <a href="{{ url_for('registered_users') }}" class="nav-link" name="registered_users">
+                <i class="fas fa-users"></i>
+                <span>Registered Users</span>
+            </a>
+        </li>
+
+
+ 
 
         <li>
             <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
