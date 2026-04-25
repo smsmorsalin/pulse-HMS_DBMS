@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Services</title>
+</head>
+<body>
+    <form method="POST">
+
+    <select name="service_type" onchange="toggleForm(this.value)">
+        <option value="">Select Service</option>
+        <option value="doctor">Doctor Appointment</option>
+        <option value="test">Test Services</option>
+    </select>
+
+    <!-- 👨‍⚕️ Doctor Section -->
+    <div id="doctor_section" style="display:none;">
+        <select name="doctor_id">
+            {% for d in doctors %}
+            <option value="{{ d[0] }}">{{ d[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="service_id">
+            {% for s in doctor_services %}
+            <option value="{{ s[0] }}">{{ s[1] }} ({{ s[3] }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 🧪 Test Section -->
+    <div id="test_section" style="display:none;">
+        {% for t in tests %}
+        <input type="checkbox" name="test_ids" value="{{ t[0] }}">
+        {{ t[1] }} ({{ t[3] }}) <br>
+        {% endfor %}
+    </div>
+
+    <button type="submit">Generate Bill</button>
+
+    </form>
+
+<script>
+function toggleForm(type) {
+    document.getElementById("doctor_section").style.display = (type === "doctor") ? "block" : "none";
+    document.getElementById("test_section").style.display = (type === "test") ? "block" : "none";
+}
+</script>
+</body>
+</html>

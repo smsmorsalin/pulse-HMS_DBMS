@@ -231,9 +231,6 @@ def init_db():
 # Initialize database on app startup
 init_db()
 
-#for test print patient table data
-print(db.execute('SELECT * FROM patients').fetchall())
-
 def isadmin():
     """Helper function to check if the current user is an admin."""
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
@@ -371,7 +368,7 @@ def dashboard():
 def patient():
     """Patient information page - only accessible to logged-in users."""
     if isadmin() or isuser():
-        patient_list = db.execute('SELECT * FROM patients').fetchall()
+        patient_list = db.execute('SELECT * FROM patients ORDER BY id DESC').fetchall()
         is_admin = isadmin()
         return render_template("patient.html", patients=patient_list, admin=is_admin)
     else:
@@ -509,7 +506,7 @@ def services():
     
 @app.route('/add_service', methods=['GET', 'POST'])
 def add_service():
-    # 🔒 Only admin can access
+    # Only admin can access
     if not isadmin():
         return redirect(url_for('dashboard'))
 
@@ -518,7 +515,7 @@ def add_service():
         service_type = request.form.get('type')  # 'doctor' or 'test'
         price = request.form.get('price')
 
-        # ✅ Validation
+        # Validation
         if not name or not service_type or not price:
             return render_template("add_new_service.html", error="All fields are required.")
 
@@ -532,7 +529,7 @@ def add_service():
         except:
             return render_template("add_new_service.html", error="Invalid price format.")
 
-        # ✅ Insert into DB
+        #  Insert into DB
         db.execute('''
             INSERT INTO services (name, type, price)
             VALUES (?, ?, ?)
@@ -603,7 +600,7 @@ def delete_service(service_id):
 
 @app.route('/tests')
 def tests():
-    # 🔒 Only logged-in users (admin or user)
+    # Only logged-in users (admin or user)
     if not isadmin() and not isuser():
         return redirect(url_for('login'))
 
@@ -617,7 +614,122 @@ def tests():
     is_admin = isadmin()
 
     return render_template("tests.html", tests=test_list, admin=is_admin)
-    
+
+@app.route('/patient_service/<int:patient_id>', methods=['GET', 'POST'])
+def patient_service(patient_id):
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        service_type = request.form.get('service_type')
+
+        #  CREATE BILL FIRST
+        bill_cursor = db.execute('''
+            INSERT INTO bills (patient_id, created_by, total_amount, created_at)
+            VALUES (?, ?, 0, datetime('now'))
+        ''', (patient_id, session.get('user_id')))
+        bill_id = bill_cursor.lastrowid
+
+        #  DOCTOR APPOINTMENT
+        if service_type == 'doctor':
+            doctor_id = request.form.get('doctor_id')
+            service_id = request.form.get('service_id')  # doctor service
+
+            # create appointment
+            db.execute('''
+                INSERT INTO appointments (patient_id, doctor_id, service_id, appointment_date, created_by)
+                VALUES (?, ?, ?, datetime('now'), ?)
+            ''', (patient_id, doctor_id, service_id, session.get('user_id')))
+
+            # get price
+            service = db.execute('SELECT price FROM services WHERE id=?', (service_id,)).fetchone()
+
+            # add to bill
+            db.execute('''
+                INSERT INTO bill_items (bill_id, service_id, quantity, price)
+                VALUES (?, ?, ?, ?)
+            ''', (bill_id, service_id, 1, service[0]))
+
+            add_log(patient_id, "Doctor appointment + bill created")
+
+        # TEST SERVICES
+        elif service_type == 'test':
+            selected_tests = request.form.getlist('test_ids')
+
+            for test_id in selected_tests:
+                service = db.execute('SELECT price FROM services WHERE id=?', (test_id,)).fetchone()
+
+                # add test order
+                db.execute('''
+                    INSERT INTO test_orders (patient_id, service_id, test_date)
+                    VALUES (?, ?, datetime('now'))
+                ''', (patient_id, test_id))
+
+                # add to bill
+                db.execute('''
+                    INSERT INTO bill_items (bill_id, service_id, quantity, price)
+                    VALUES (?, ?, ?, ?)
+                ''', (bill_id, test_id, 1, service[0]))
+
+            add_log(patient_id, "Test services added + bill created")
+
+        db.commit()
+
+        # Redirect to bill print page
+        return redirect(url_for('view_bill', bill_id=bill_id))
+
+    # GET REQUEST (SHOW PAGE)
+    doctors = db.execute('SELECT id, name FROM doctors').fetchall()
+    doctor_services = db.execute("SELECT * FROM services WHERE type='doctor'").fetchall()
+    tests = db.execute("SELECT * FROM services WHERE type='test'").fetchall()
+
+    return render_template(
+        "patient_service.html",
+        patient_id=patient_id,
+        doctors=doctors,
+        doctor_services=doctor_services,
+        tests=tests
+    )
+
+@app.route('/bill/<int:bill_id>')
+def view_bill(bill_id):
+    items = db.execute('''
+        SELECT s.name, bi.quantity, bi.price
+        FROM bill_items bi
+        JOIN services s ON bi.service_id = s.id
+        WHERE bi.bill_id = ?
+    ''', (bill_id,)).fetchall()
+
+    total = db.execute('SELECT total_amount FROM bills WHERE id=?', (bill_id,)).fetchone()[0]
+
+    return render_template("bill.html", items=items, total=total)
+
+@app.route('/service_desk', methods=['GET', 'POST'])
+def service_desk():
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    patients = []
+
+    if request.method == 'POST':
+        keyword = request.form.get('keyword')
+
+        patients = db.execute('''
+            SELECT * FROM patients
+            WHERE name LIKE ? OR phone LIKE ?
+            ORDER BY id DESC
+        ''', (f"%{keyword}%", f"%{keyword}%")).fetchall()
+    else:
+        patients = db.execute('''
+            SELECT * FROM patients
+            ORDER BY id DESC
+            LIMIT 10
+        ''').fetchall()
+
+    return render_template("service_desk.html", patients=patients)
+
+
+#debug showing in web browser
 if __name__ == '__main__':
     app.run(debug=True)
 
