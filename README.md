@@ -1,54 +1,132 @@
-# 🏥 Pulse HMS DBMS
-A Hospital Management System Database Management project designed to efficiently manage hospital operations including patients, doctors, appointments, and medical records.
+# 🏥 Pulse HMS DBMS  
+### Hospital Management System using Flask + SQLite
+
+Pulse HMS DBMS is a full-stack Hospital Management System designed to streamline hospital operations including patient management, doctor scheduling, billing, appointments, diagnostics, and administrative control. Built with **Python Flask**, **SQLite**, **HTML/CSS/JS**, this project provides a centralized solution for small to medium healthcare facilities.
+
+> Developed as a DBMS + Web Engineering project with role-based authentication, billing automation, and patient service workflows. Based on the project structure and features in the main Flask application. :contentReference[oaicite:0]{index=0}
 
 ---
 
-## 📌 Overview
-Pulse HMS DBM is a database-driven system that helps streamline hospital workflows by organizing and managing critical data such as patient information, doctor details, appointments, billing, and more.
+# 🚀 Features
 
-This project focuses on **database design and management**, ensuring data consistency, integrity, and efficient querying.
-
----
-
-## 🚀 Features
-- 👨‍⚕️ Doctor Management (Add, Update, Delete, View)
-- 🧑‍🤝‍🧑 Patient Records Management
-- 📅 Appointment Scheduling System
-- 💊 Medical History Tracking
-- 💰 Billing & Payment Records
-- 🔍 Efficient Data Retrieval using SQL Queries
-- 🔐 Data Integrity using Constraints and Relationships
+## 🔐 Authentication & User Roles
+- Root Admin access
+- Admin registration/login
+- Employee/User registration/login
+- Secure password hashing using `Werkzeug`
+- Session management with Flask
 
 ---
 
-## 🛠️ Tech Stack
-### 🔹 Database
-- SQLite
-### 🔹 Backend
-- Python
-- Flask Framework
-
-### 🔹 Frontend
-- HTML
-- CSS
+## 👨‍⚕️ Patient Management
+- Add new patients
+- View patient records
+- Update patient information
+- Delete patients (Admin only)
+- Emergency contact details
+- Medical history tracking
 
 ---
 
-## 🗂️ Database Structure
-The system is designed using relational database concepts:
+## 🩺 Doctor Management
+- Add doctors
+- Doctor specialization & department
+- License number tracking
+- Room number & availability
+- Experience management
 
-### Main Tables:
-- `Patients`
-- `Doctors`
-- `Appointments`
-- `Medical_Records`
-- `Billing`
-- `Departments`
+---
 
-### Relationships:
-- One-to-Many (Doctor → Patients)
-- One-to-Many (Patient → Appointments)
-- One-to-One (Patient → Medical Records)
+## 🧪 Service & Diagnostic Management
+- Add hospital services
+- Doctor consultation services
+- Diagnostic test services
+- Price management
+- Service categorization (`doctor` / `test`)
+
+---
+
+## 📅 Appointment System
+- Doctor appointment booking
+- Test ordering
+- Patient service desk
+- Appointment tracking by:
+  - Doctor
+  - Patient
+
+---
+
+## 💳 Billing System
+- Automatic bill generation
+- Bill items breakdown
+- Trigger-based total calculation
+- Bill printing
+- Billing search system
+
+---
+
+## 📜 Activity Logs
+- User/Admin action logs
+- Timestamp tracking
+- Patient-specific service logs
+
+---
+
+# 🗄️ Database Structure
+
+## Main Tables:
+- `users`
+- `admins`
+- `patients`
+- `doctors`
+- `services`
+- `appointments`
+- `test_orders`
+- `bills`
+- `bill_items`
+- `logs`
+
+## Special Features:
+- Foreign Key Constraints
+- SQLite Trigger:
+  - `update_bill_total`
+
+---
+
+# 🛠️ Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Python | Backend |
+| Flask | Web Framework |
+| SQLite | Database |
+| HTML5 | Frontend Structure |
+| CSS3 | Styling |
+| JavaScript | Interactivity |
+| Werkzeug | Security |
+
+---
+
+# 📂 Project Structure
+
+```bash
+pulse-HMS_DBMS/
+│
+├── app.py
+├── hospital.db
+├── templates/
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── patient.html
+│   ├── doctors.html
+│   └── ...
+│
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── images/
+│
+└── README.md
 
 ---
 
