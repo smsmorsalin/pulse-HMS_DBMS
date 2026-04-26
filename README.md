@@ -3,7 +3,7 @@
 
 Pulse HMS DBMS is a full-stack Hospital Management System designed to streamline hospital operations including patient management, doctor scheduling, billing, appointments, diagnostics, and administrative control. Built with **Python Flask**, **SQLite**, **HTML/CSS/JS**, this project provides a centralized solution for small to medium healthcare facilities.
 
-> Developed as a DBMS + Web Engineering project with role-based authentication, billing automation, and patient service workflows. Based on the project structure and features in the main Flask application. :contentReference[oaicite:0]{index=0}
+> Developed as a DBMS + Web Engineering project with role-based authentication, billing automation, and patient service workflows. Based on the project structure and features in the main Flask application.
 
 ---
 
