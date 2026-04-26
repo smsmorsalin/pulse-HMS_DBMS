@@ -130,13 +130,6 @@ pulse-HMS_DBMS/
 
 ---
 
-## 📊 ER Diagram
-<p align="center">
-  <img src="assets/images/ERDiagram.jpg" width="800"/>
-</p>
-
-
----
 
 ## ⚙️ Installation & Setup
 
