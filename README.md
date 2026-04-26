@@ -131,7 +131,7 @@ pulse-HMS_DBMS/
 ---
 
 ## 📊 ER Diagram
-*(coming soon)*
+![ER Diagram](assets/images/ER Diagram.jpg)
 
 
 ---
