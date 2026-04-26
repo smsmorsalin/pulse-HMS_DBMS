@@ -128,6 +128,8 @@ pulse-HMS_DBMS/
 │
 └── README.md
 ```
+## ER Diagram
+![ER Diagram](assets/images/ERDiagram.jpg)
 ---
 
 
