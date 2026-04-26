@@ -131,7 +131,9 @@ pulse-HMS_DBMS/
 ---
 
 ## 📊 ER Diagram
-[ER Diagram](assets/images/ERDiagram.jpg)
+<p align="center">
+  <img src="assets/images/ERDiagram.jpg" width="800"/>
+</p>
 
 
 ---
