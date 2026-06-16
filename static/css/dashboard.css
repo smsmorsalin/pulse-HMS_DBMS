@@ -43,26 +43,72 @@ body {
   list-style: none;
 }
 
-.nav-link {
+.nav-link,
+.medicine-toggle {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 15px;
+  border: 0;
   border-radius: 30px;
+  background: transparent;
   text-decoration: none;
   color: rgba(255,255,255,0.85);
+  text-align: left;
   margin-bottom: 10px;
   transition: 0.3s ease;
   cursor: pointer;
 }
 
-.nav-link:hover {
+.nav-link:hover,
+.medicine-toggle:hover,
+.medicine-menu.open .medicine-toggle {
   background: rgba(255,255,255,0.15);
   transform: translateX(6px);
 }
 
 .nav-link.active {
   background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+  color: #fff;
+}
+
+.medicine-toggle .dropdown-icon {
+  margin-left: auto;
+  transition: 0.3s ease;
+}
+
+.medicine-menu.open .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.sub-nav {
+  display: none;
+  gap: 8px;
+  margin: -2px 0 12px 42px;
+}
+
+.medicine-menu.open .sub-nav {
+  display: grid;
+}
+
+.sub-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 14px;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.sub-link:hover,
+.sub-link.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-left-color: #38c172;
   color: #fff;
 }
 
@@ -231,6 +277,30 @@ body {
 }
 
 /* ===============================
+   FOOTER
+=============================== */
+.dashboard-footer {
+  margin: 36px 0 10px 300px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-footer span {
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+/* ===============================
    BRAND SECTION
 =============================== */
 
@@ -259,6 +329,13 @@ body {
   transform: scale(1.05);
 }
 
+@media (max-width: 900px) {
+  .dashboard-footer {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
 /* Adjustable Logo */
 .brand-logo {
   width: 60px;   /* 🔥 Change to resize logo */
@@ -273,7 +350,19 @@ body {
   color: #ffffff;
 }
 
+/* Ticket Menu */
+.nav-link .fa-ticket-alt {
+    color: #ffb347;
+}
 
+
+.ticket-link {
+    background: rgba(255, 179, 71, 0.15);
+}
+
+.ticket-link:hover {
+    background: rgba(255, 179, 71, 0.25);
+}
 
 
 

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Stock Dashboard</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_stock_dashboard.css') }}">
+</head>
+<body>
+
+<div class="sidebar">
+	<div class="brand">
+		<a href="{{ url_for('dashboard') }}" class="brand-link">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+			<span class="brand-text">AJH</span>
+		</a>
+	</div>
+
+	<ul class="nav-list">
+		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		<li class="medicine-menu open" id="medicineMenu">
+			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
+				<i class="fas fa-pills"></i>
+				<span>Medicine</span>
+				<i class="fas fa-chevron-down dropdown-icon"></i>
+			</button>
+			<div class="sub-nav">
+				<a class="sub-link active" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
+				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+			</div>
+		</li>
+		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
+		<li><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+	</ul>
+</div>
+
+<div class="content">
+	<div class="top-header">
+		<div class="title-group">
+			<p class="eyebrow">Inventory Control</p>
+			<h1>Medicine Stock Dashboard</h1>
+			<h2>Track available stock, purchase entry, unit price, and sales movement from one professional view.</h2>
+		</div>
+
+		<a class="header-action" href="#addMedicinePanel">
+			<i class="fas fa-plus"></i>
+			Add Medicine
+		</a>
+
+		<div class="profile">
+			<button class="admin-btn" id="adminBtn">
+				<i class="fas fa-user-circle"></i>
+				{{ profile_name }}
+				<i class="fas fa-chevron-down chevron"></i>
+			</button>
+			<div class="admin-dropdown" id="adminDropdown">
+				<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
+				<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="stats-grid">
+		<div class="card">
+			<i class="fas fa-truck-ramp-box"></i>
+			<h3>{{ total_stock_in }}</h3>
+			<p>Total Stock In</p>
+		</div>
+		<div class="card">
+			<i class="fas fa-truck-arrow-right"></i>
+			<h3>{{ total_stock_out }}</h3>
+			<p>Sold / Issued</p>
+		</div>
+		<div class="card">
+			<i class="fas fa-capsules"></i>
+			<h3>{{ active_medicines }}</h3>
+			<p>Active Medicines</p>
+		</div>
+		{% if admin %}
+		<div class="card">
+			<i class="fas fa-triangle-exclamation"></i>
+			<h3>{{ low_stock_count }}</h3>
+			<p>Low Stock Alerts</p>
+		</div>
+		{% endif %}
+	</div>
+
+	{% if error %}
+	<div class="alert alert-error">{{ error }}</div>
+	{% endif %}
+
+	<div class="stock-overview">
+		<div>
+			<span>Estimated Stock Value</span>
+			<strong>TK {{ '%.2f'|format(inventory_value) }}</strong>
+		</div>
+		<div>
+			<span>Inventory Date</span>
+			<strong>{{ today }}</strong>
+		</div>
+		<div>
+			<span>Deduction Source</span>
+			<strong>Medicine Sales</strong>
+		</div>
+	</div>
+
+	{% if admin %}
+	<div class="forms-grid">
+		<section class="panel accent-in add-medicine-panel" id="addMedicinePanel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Inventory Entry</p>
+					<h3>Add Medicine to Stock</h3>
+				</div>
+				<i class="fas fa-capsules"></i>
+			</div>
+
+			<form class="stock-form" method="POST">
+				<input type="hidden" name="transaction_type" value="in">
+				<div class="field-grid">
+					<label>
+						Medicine Name
+						<input type="text" name="medicine_name" placeholder="Paracetamol 500mg" required>
+					</label>
+					<label>
+						Batch
+						<input type="text" name="batch_no" placeholder="B-1024">
+					</label>
+					<label>
+						Unit
+						<select name="unit_type" required>
+							<option value="strip">Strip</option>
+							<option value="box">Box</option>
+						</select>
+					</label>
+					<label>
+						Quantity
+						<input type="number" name="quantity" min="1" placeholder="100" required>
+					</label>
+					<label>
+						Price per Unit
+						<input type="number" name="price" min="0.01" step="0.01" placeholder="12.50" required>
+					</label>
+					<label>
+						Date
+						<input type="date" name="transaction_date" value="{{ today }}" required>
+					</label>
+				</div>
+				<label>
+					Note
+					<textarea name="note" rows="3" placeholder="Supplier, invoice number, or quality check note"></textarea>
+				</label>
+				<button type="submit" class="action-btn in-btn"><i class="fas fa-plus"></i> Add Medicine Stock</button>
+			</form>
+		</section>
+	</div>
+	{% endif %}
+
+	<div class="tables-grid">
+		<section class="panel table-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Current Stock</p>
+					<h3>Medicine Balance Summary</h3>
+				</div>
+				<i class="fas fa-table-list"></i>
+			</div>
+
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>Medicine</th>
+							<th>Batch</th>
+							<th>Unit</th>
+							<th>Stock In</th>
+							<th>Sold / Issued</th>
+							<th>Balance</th>
+							<th>Latest Price</th>
+							<th>Latest Date</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% if summary_rows %}
+							{% for item in summary_rows %}
+							<tr>
+								<td>{{ item.medicine_name }}</td>
+								<td>{{ item.batch_no }}</td>
+								<td>{{ item.unit_type|title }}</td>
+								<td>{{ item.stock_in }}</td>
+								<td>{{ item.stock_out }}</td>
+								<td>
+									<span class="balance-pill {% if item.balance > 0 %}positive{% elif item.balance < 0 %}negative{% else %}neutral{% endif %}">
+										{{ item.balance }}
+									</span>
+								</td>
+								<td>TK {{ '%.2f'|format(item.latest_price) }}</td>
+								<td>{{ item.latest_date }}</td>
+								<td>
+									<form class="summary-delete-form" method="POST" action="{{ url_for('delete_medicine_balance') }}" onsubmit="return confirm('Delete all stock movements for this medicine batch and unit?');">
+										<input type="hidden" name="medicine_name" value="{{ item.medicine_name }}">
+										<input type="hidden" name="batch_no" value="{{ item.batch_no }}">
+										<input type="hidden" name="unit_type" value="{{ item.unit_type }}">
+										<button class="icon-danger-btn" type="submit" aria-label="Delete medicine"><i class="fas fa-trash"></i></button>
+									</form>
+								</td>
+							</tr>
+							{% endfor %}
+						{% else %}
+							<tr>
+								<td colspan="9" class="empty-state">No medicine transactions yet. Add incoming stock to populate this table.</td>
+							</tr>
+						{% endif %}
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="panel table-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Recent Activity</p>
+					<h3>Latest Stock Movements</h3>
+				</div>
+				<i class="fas fa-clock-rotate-left"></i>
+			</div>
+
+			<div class="movement-columns">
+				<div class="movement-column">
+					<div class="movement-column-head">
+						<span><i class="fas fa-arrow-trend-up"></i> Stock In</span>
+						<strong>{{ recent_stock_in|length }}</strong>
+					</div>
+					<div class="activity-list">
+						{% if recent_stock_in %}
+							{% for item in recent_stock_in %}
+							<article class="activity-item in">
+								<div class="movement-icon">
+									<i class="fas fa-arrow-trend-up"></i>
+								</div>
+								<div class="activity-main">
+									<div class="movement-title">
+										<h4>{{ item.medicine_name }}</h4>
+										<span class="movement-type in">Stock In</span>
+									</div>
+									<div class="movement-tags">
+										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
+										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
+										<span><i class="fas fa-calendar-day"></i> {{ item.transaction_date }}</span>
+									</div>
+									<p>{{ item.note }}</p>
+								</div>
+								<div class="activity-meta">
+									<strong>+{{ item.quantity }}</strong>
+									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
+									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
+									{% if admin %}
+									<div class="movement-actions">
+										<form class="activity-edit-form" method="POST" action="{{ url_for('edit_medicine_transaction', transaction_id=item.id) }}">
+											<label>
+												Qty
+												<input type="number" name="quantity" min="1" value="{{ item.quantity }}" required>
+											</label>
+											<label>
+												Price
+												<input type="number" name="price" min="0.01" step="0.01" value="{{ '%.2f'|format(item.price) }}" required>
+											</label>
+											<button type="submit" class="mini-btn">Update</button>
+										</form>
+										<form class="movement-delete-form" method="POST" action="{{ url_for('delete_medicine_transaction', transaction_id=item.id) }}" onsubmit="return confirm('Delete this stock in movement?');">
+											<button class="danger-btn" type="submit"><i class="fas fa-trash"></i> Delete</button>
+										</form>
+									</div>
+									{% endif %}
+								</div>
+							</article>
+							{% endfor %}
+						{% else %}
+							<div class="empty-card">
+								<p>No stock-in records.</p>
+								<span>Incoming purchases will appear here.</span>
+							</div>
+						{% endif %}
+					</div>
+				</div>
+
+				<div class="movement-column">
+					<div class="movement-column-head out">
+						<span><i class="fas fa-cash-register"></i> Sold / Issued</span>
+						<strong>{{ recent_stock_out|length }}</strong>
+					</div>
+					<div class="activity-list">
+						{% if recent_stock_out %}
+							{% for item in recent_stock_out %}
+							<article class="activity-item out">
+								<div class="movement-icon">
+									<i class="fas fa-cash-register"></i>
+								</div>
+								<div class="activity-main">
+									<div class="movement-title">
+										<h4>{{ item.medicine_name }}</h4>
+										<span class="movement-type out">Sold / Issued</span>
+									</div>
+									<div class="movement-tags">
+										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
+										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
+										<span><i class="fas fa-calendar-day"></i> {{ item.transaction_date }}</span>
+									</div>
+									<p>{{ item.note }}</p>
+								</div>
+								<div class="activity-meta">
+									<strong>-{{ item.quantity }}</strong>
+									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
+									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
+									{% if admin %}
+									<div class="movement-actions">
+										<form class="activity-edit-form" method="POST" action="{{ url_for('edit_medicine_transaction', transaction_id=item.id) }}">
+											<label>
+												Qty
+												<input type="number" name="quantity" min="1" value="{{ item.quantity }}" required>
+											</label>
+											<label>
+												Price
+												<input type="number" name="price" min="0.01" step="0.01" value="{{ '%.2f'|format(item.price) }}" required>
+											</label>
+											<button type="submit" class="mini-btn">Update</button>
+										</form>
+										<form class="movement-delete-form" method="POST" action="{{ url_for('delete_medicine_transaction', transaction_id=item.id) }}" onsubmit="return confirm('Delete this sold / issued movement?');">
+											<button class="danger-btn" type="submit"><i class="fas fa-trash"></i> Delete</button>
+										</form>
+									</div>
+									{% endif %}
+								</div>
+							</article>
+							{% endfor %}
+						{% else %}
+							<div class="empty-card">
+								<p>No sold / issued records.</p>
+								<span>Medicine Sales deductions will appear here.</span>
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+</div>
+
+<script>
+const adminBtn = document.getElementById('adminBtn');
+const adminDropdown = document.getElementById('adminDropdown');
+const chevron = document.querySelector('.chevron');
+const medicineToggle = document.getElementById('medicineToggle');
+const medicineMenu = document.getElementById('medicineMenu');
+
+if (medicineToggle && medicineMenu) {
+	medicineToggle.addEventListener('click', function () {
+		medicineMenu.classList.toggle('open');
+		medicineToggle.setAttribute('aria-expanded', medicineMenu.classList.contains('open'));
+	});
+}
+
+if (adminBtn && adminDropdown && chevron) {
+	adminBtn.addEventListener('click', function () {
+		adminDropdown.classList.toggle('show');
+		chevron.classList.toggle('rotate');
+	});
+
+	window.addEventListener('click', function (e) {
+		if (!document.querySelector('.profile').contains(e.target)) {
+			adminDropdown.classList.remove('show');
+			chevron.classList.remove('rotate');
+		}
+	});
+}
+</script>
+
+</body>
+</html>

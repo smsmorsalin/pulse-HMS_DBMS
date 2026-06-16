@@ -24,12 +24,25 @@
 
   <!-- NAVIGATION -->
   <ul class="nav-list" id="sidebarMenu">
+    
     <li><a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+   
+    <!-- NEW TICKET BUTTON -->
+    <li>
+    <a class="nav-link" href="{{ url_for('tickets') }}">
+        <i class="fas fa-ticket-alt"></i>
+        <span>Ticket</span>
+    </a>
+   </li>
+    
+    
     <li><a class="nav-link" href="{{ url_for('patient') }}"><i class="fas fa-user-injured"></i> <span>Patients</span></a></li>
     <li><a class="nav-link" href="{{ url_for('doctors') }}"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
+    <li><a class="nav-link" href="{{ url_for('admissions') }}"><i class="fas fa-file-medical"></i> <span>Admission</span></a></li>
     <li><a class="nav-link" href="{{ url_for('appointments_info') }}"><i class="fa-solid fa-book-medical"></i> <span>Appointments Info</span></a></li>
     <li><a class="nav-link" href="{{ url_for('tests') }}"><i class="fas fa-vial"></i> <span>View Tests</span></a></li>
     <li><a class="nav-link" href="{{ url_for('service_desk') }}"><i class="fas fa-hand-holding-medical"></i> <span>Services</span></a></li>
+    <li><a class="nav-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-pills"></i> <span>Medicine</span></a></li>
     <li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
     <li><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
   </ul>
@@ -76,7 +89,7 @@
 
     <div class="card">
       <i class="fas fa-procedures"></i>
-      <h3>***</h3>
+      <h3>{{ active_admission_count }}</h3>
       <p>Active Admissions</p>
     </div>
 
@@ -96,6 +109,14 @@
     </div>
   {% endif %}
 
+<footer class="dashboard-footer">
+  <span>©</span>
+  <span>Copyright</span>
+  <span>AL-JUMIRA HOSPITAL</span>
+  <span>Patient Management System</span>
+  <span id="dashboardFooterYear"></span>
+</footer>
+
 <script>
 
 /* ==============================
@@ -109,7 +130,6 @@ navLinks.forEach(link => {
     this.classList.add("active");
   });
 });
-
 
 /* ==============================
    Admin Dropdown
@@ -148,6 +168,11 @@ document.getElementById("brandDashboard").addEventListener("click", function(e) 
   // Optional: Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
+
+const dashboardFooterYear = document.getElementById("dashboardFooterYear");
+if (dashboardFooterYear) {
+  dashboardFooterYear.textContent = new Date().getFullYear();
+}
 
 </script>
 

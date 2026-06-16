@@ -87,6 +87,55 @@ body {
     color: rgba(255, 255, 255, 0.78);
 }
 
+.date-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 20px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.date-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 500;
+}
+
+.date-filter-input {
+    min-width: 180px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    outline: none;
+}
+
+.date-filter-btn,
+.date-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 12px;
+    border: none;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.date-filter-clear {
+    background: rgba(255, 255, 255, 0.12);
+}
+
 .new-patient-btn {
     display: inline-flex;
     align-items: center;
@@ -258,6 +307,16 @@ body {
 
     .search-form {
         flex-direction: column;
+    }
+
+    .date-filter-bar {
+        align-items: stretch;
+    }
+
+    .date-filter-input,
+    .date-filter-btn,
+    .date-filter-clear {
+        width: 100%;
     }
 
     .search-input-wrapper {

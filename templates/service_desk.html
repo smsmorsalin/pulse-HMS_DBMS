@@ -32,6 +32,18 @@
                 </div>
             </div>
 
+            <form class="date-filter-bar" method="GET" action="{{ url_for('service_desk') }}">
+                <div class="date-filter-label">
+                    <i class="fas fa-calendar-day"></i>
+                    <span>Date</span>
+                </div>
+                <input type="date" name="date" value="{{ selected_date or '' }}" class="date-filter-input">
+                <button type="submit" class="date-filter-btn">Show</button>
+                {% if selected_date %}
+                <a class="date-filter-clear" href="{{ url_for('service_desk') }}">Clear</a>
+                {% endif %}
+            </form>
+
             {% if message %}
                 <p class="flash-message">{{ message }}</p>
             {% endif %}

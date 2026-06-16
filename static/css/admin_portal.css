@@ -50,6 +50,37 @@ body {
     to { transform: translateY(50px); }
 }
 
+/* ===============================
+   FOOTER
+=============================== */
+.dashboard-footer {
+  margin: 36px 0 10px 300px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-footer span {
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-footer {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
 /* =========================
    DASHBOARD LAYOUT
 ========================= */

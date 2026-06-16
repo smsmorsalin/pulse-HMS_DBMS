@@ -237,3 +237,76 @@ body::after {
     }
 }
 
+
+/* =========================
+   BACK BUTTON
+========================= */
+
+.back-admin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 45px;
+    height: 45px;
+
+    border-radius: 50%;
+    text-decoration: none;
+
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+
+    backdrop-filter: blur(10px);
+
+    transition: all 0.3s ease;
+
+    /* Glowing Animation */
+    animation: glowPulse 2s infinite alternate;
+}
+
+.back-admin-btn:hover {
+    transform: scale(1.15);
+    color: #fff;
+}
+
+/* Glow Animation */
+@keyframes glowPulse {
+    0% {
+        box-shadow:
+            0 0 5px rgba(30, 60, 250, 0.5),
+            0 0 10px rgba(30, 60, 250, 0.4),
+            0 0 15px rgba(30, 60, 250, 0.3);
+    }
+
+    50% {
+        box-shadow:
+            0 0 10px rgba(255, 30, 86, 0.7),
+            0 0 20px rgba(255, 30, 86, 0.6),
+            0 0 35px rgba(255, 30, 86, 0.5);
+    }
+
+    100% {
+        box-shadow:
+            0 0 15px rgba(30, 60, 250, 0.8),
+            0 0 30px rgba(30, 60, 250, 0.7),
+            0 0 45px rgba(30, 60, 250, 0.6);
+    }
+}
+
+.back-admin-btn i {
+    font-size: 18px;
+    animation: arrowGlow 2s infinite alternate;
+}
+
+@keyframes arrowGlow {
+    from {
+        text-shadow: 0 0 5px #1e3cfa;
+    }
+    to {
+        text-shadow:
+            0 0 10px #ff1e56,
+            0 0 20px #ff1e56,
+            0 0 30px #ff1e56;
+    }
+}

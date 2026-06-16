@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Admission</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission.css') }}">
+</head>
+<body>
+    <main class="admission-page">
+        <section class="admission-panel">
+            <div class="admission-header">
+                <a class="back-btn" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+
+                <div class="title-block">
+                    <h1><i class="fas fa-bed-pulse"></i> Patient Admission</h1>
+                    <p>Select a registered patient and admit them to a ward or cabin.</p>
+                </div>
+
+                <a class="new-patient-btn" href="{{ url_for('patient') }}">
+                    <i class="fas fa-user-plus"></i>
+                    New Patient
+                </a>
+            </div>
+
+            {% if success %}
+                <p class="flash-message success"><i class="fas fa-circle-check"></i> {{ success }}</p>
+            {% endif %}
+            {% if message %}
+                <p class="flash-message error"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+            {% endif %}
+
+            <div class="admission-workspace">
+                <section class="patient-picker" aria-label="Registered patients">
+                    <div class="section-heading">
+                        <h2><i class="fas fa-users"></i> Patients</h2>
+                        <span>{{ patients|length }} registered</span>
+                    </div>
+
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="patientSearchInput" placeholder="Search by ID, name, or phone">
+                        <button type="button" id="patientSearchClearBtn" aria-label="Clear patient search">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="patient-list" id="patientList">
+                        {% if patients %}
+                            {% for patient in patients %}
+                                <button
+                                    type="button"
+                                    class="patient-row"
+                                    data-id="{{ patient[0] }}"
+                                    data-name="{{ patient[1] }}"
+                                    data-phone="{{ patient[5] }}"
+                                    data-search="{{ patient[0] }} {{ patient[1] }} {{ patient[5] }}"
+                                >
+                                    <span class="patient-avatar">{{ patient[1][0]|upper }}</span>
+                                    <span class="patient-info">
+                                        <strong>{{ patient[1] }}</strong>
+                                        <small>ID {{ patient[0] }} | {{ patient[4] }} | {{ patient[2] }} {{ patient[3] or 'Y' }}</small>
+                                    </span>
+                                    <span class="patient-phone">{{ patient[5] }}</span>
+                                </button>
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-state">No registered patients found.</p>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="admit-form-panel" aria-label="Admission form">
+                    <div class="selected-patient-card" id="selectedPatientCard">
+                        <div>
+                            <span>Selected Patient</span>
+                            <strong id="selectedPatientName">Choose from patient list</strong>
+                        </div>
+                        <i class="fas fa-hospital-user"></i>
+                    </div>
+
+                    <form class="admit-form" method="POST" action="{{ url_for('admissions') }}">
+                        <input type="hidden" name="patient_id" id="selectedPatientId" required>
+
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <i class="fas fa-calendar-day"></i>
+                                <input type="date" id="admissionDate" name="admission_date" required>
+                                <label for="admissionDate">Admission Date</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-user-doctor"></i>
+                                <select id="doctorId" name="doctor_id">
+                                    <option value="" selected>Not assigned</option>
+                                    {% for doctor in doctors %}
+                                        <option value="{{ doctor[0] }}">{{ doctor[1] }} - {{ doctor[2] }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label for="doctorId">Doctor</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-hospital"></i>
+                                <select id="ward" name="ward" required>
+                                    <option value="" disabled selected></option>
+                                    <option>General Ward</option>
+                                    <option>Emergency</option>
+                                    <option>Maternity</option>
+                                    <option>NICU</option>
+                                    <option>ICU</option>
+                                    <option>Cabin</option>
+                                </select>
+                                <label for="ward">Ward / Unit</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-door-open"></i>
+                                <input type="text" id="roomNumber" name="room_number">
+                                <label for="roomNumber">Room / Cabin No.</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-bed"></i>
+                                <input type="text" id="bedNumber" name="bed_number" required>
+                                <label for="bedNumber">Bed No.</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-notes-medical"></i>
+                                <input type="text" id="reason" name="reason" required>
+                                <label for="reason">Admission Reason</label>
+                            </div>
+
+                            <div class="input-group full-width">
+                                <i class="fas fa-clipboard"></i>
+                                <textarea id="notes" name="notes" placeholder=" "></textarea>
+                                <label for="notes">Initial Notes</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="admitSubmitBtn">
+                            <i class="fas fa-file-medical"></i>
+                            <span>Admit Patient</span>
+                        </button>
+                    </form>
+                </section>
+            </div>
+        </section>
+
+        <section class="records-panel">
+            <div class="records-header">
+                <div>
+                    <h2><i class="fas fa-clipboard-list"></i> Admission Records</h2>
+                    <p>Showing records created on {{ selected_date }}.</p>
+                </div>
+
+                <form class="date-filter-bar" method="GET" action="{{ url_for('admissions') }}">
+                    <div class="date-filter-label">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Date</span>
+                    </div>
+                    <input type="date" name="date" value="{{ selected_date or '' }}" class="date-filter-input">
+                    <button type="submit" class="date-filter-btn">Show</button>
+                    {% if selected_date %}
+                        <a class="date-filter-clear" href="{{ url_for('admissions') }}">Today</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="table-tools">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="recordSearchInput" placeholder="Search records">
+                    <button type="button" id="recordSearchClearBtn" aria-label="Clear record search">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="records-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Admission ID</th>
+                            <th>Patient</th>
+                            <th>Phone</th>
+                            <th>Ward</th>
+                            <th>Room / Bed</th>
+                            <th>Doctor</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        {% if admissions %}
+                            {% for admission in admissions %}
+                                <tr>
+                                    <td>#{{ admission[0] }}</td>
+                                    <td>{{ admission[2] }}</td>
+                                    <td>{{ admission[3] }}</td>
+                                    <td>{{ admission[8] }}</td>
+                                    <td>{{ admission[9] or '-' }} / {{ admission[10] }}</td>
+                                    <td>{{ admission[11] }}</td>
+                                    <td>{{ admission[12] }}</td>
+                                    <td>
+                                        <span class="status-pill {{ 'discharged' if admission[13] == 'Discharged' else 'active' }}">
+                                            {{ admission[13] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if admission[13] == 'Admitted' %}
+                                            <a class="table-action" href="{{ url_for('discharge_admission', admission_id=admission[0]) }}" onclick="return confirm('Mark this patient as discharged?');">
+                                                <i class="fas fa-right-from-bracket"></i>
+                                                Discharge
+                                            </a>
+                                        {% else %}
+                                            <span class="muted-action">Done</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9">No admission records found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="dashboard-footer">
+        <span>Copyright</span>
+        <span>AL-JUMIRA HOSPITAL</span>
+        <span>Patient Management System</span>
+        <span id="dashboardFooterYear"></span>
+    </footer>
+
+    <script>
+        const patientRows = document.querySelectorAll(".patient-row");
+        const patientSearchInput = document.getElementById("patientSearchInput");
+        const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
+        const selectedPatientId = document.getElementById("selectedPatientId");
+        const selectedPatientName = document.getElementById("selectedPatientName");
+        const selectedPatientCard = document.getElementById("selectedPatientCard");
+        const admissionDate = document.getElementById("admissionDate");
+        const admitForm = document.querySelector(".admit-form");
+        const admitSubmitBtn = document.getElementById("admitSubmitBtn");
+        const recordSearchInput = document.getElementById("recordSearchInput");
+        const recordSearchClearBtn = document.getElementById("recordSearchClearBtn");
+        const recordsTableBody = document.getElementById("recordsTableBody");
+
+        admissionDate.value = new Date().toISOString().slice(0, 10);
+
+        function selectPatient(row) {
+            patientRows.forEach(item => item.classList.remove("selected"));
+            row.classList.add("selected");
+            selectedPatientId.value = row.dataset.id;
+            selectedPatientName.textContent = `${row.dataset.name} (ID ${row.dataset.id})`;
+            selectedPatientCard.classList.add("has-selection");
+        }
+
+        patientRows.forEach(row => {
+            row.addEventListener("click", () => selectPatient(row));
+        });
+
+        patientSearchInput.addEventListener("input", function () {
+            const searchTerm = this.value.trim().toLowerCase();
+            patientRows.forEach(row => {
+                row.style.display = row.dataset.search.toLowerCase().includes(searchTerm) ? "" : "none";
+            });
+        });
+
+        patientSearchClearBtn.addEventListener("click", function () {
+            patientSearchInput.value = "";
+            patientRows.forEach(row => row.style.display = "");
+        });
+
+        admitForm.addEventListener("submit", function (event) {
+            if (!selectedPatientId.value) {
+                event.preventDefault();
+                selectedPatientCard.classList.add("needs-selection");
+                selectedPatientName.textContent = "Please select a patient first";
+                return;
+            }
+
+            admitSubmitBtn.disabled = true;
+            admitSubmitBtn.querySelector("span").textContent = "Admitting...";
+        });
+
+        recordSearchInput.addEventListener("input", function () {
+            const searchTerm = this.value.trim().toLowerCase();
+            recordsTableBody.querySelectorAll("tr").forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(searchTerm) ? "" : "none";
+            });
+        });
+
+        recordSearchClearBtn.addEventListener("click", function () {
+            recordSearchInput.value = "";
+            recordsTableBody.querySelectorAll("tr").forEach(row => row.style.display = "");
+        });
+
+        document.querySelectorAll(".input-group").forEach(group => {
+            const field = group.querySelector("input, select, textarea");
+            const label = group.querySelector("label");
+
+            if (field && field.required && label) {
+                label.innerHTML += ' <span class="required-star">*</span>';
+            }
+        });
+
+        const dashboardFooterYear = document.getElementById("dashboardFooterYear");
+        if (dashboardFooterYear) {
+            dashboardFooterYear.textContent = new Date().getFullYear();
+        }
+    </script>
+</body>
+</html>
