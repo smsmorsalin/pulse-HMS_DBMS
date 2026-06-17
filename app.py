@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, jsonify
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash, generate_password_hash
 
 root_admin_username = "admin"
@@ -506,6 +506,125 @@ def dashboard():
         return render_template("dashboard.html", admin=False, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name)
     else:
         return redirect(url_for('login'))
+
+@app.route('/pathology_dashboard')
+def pathology_dashboard():
+    """Pathology lab dashboard backed by test services and test orders."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+
+    if session.get('user_id') == 'root_admin':
+        profile_name = root_admin_username
+    elif admin_checker and admin_checker[0] == session.get('user_id'):
+        profile_name = admin_checker[1]
+    else:
+        profile_name = user_checker[1]
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    try:
+        selected_day = datetime.strptime(selected_date, '%Y-%m-%d')
+    except ValueError:
+        selected_date = datetime.now().strftime('%Y-%m-%d')
+        selected_day = datetime.strptime(selected_date, '%Y-%m-%d')
+
+    selected_month = selected_date[:7]
+    week_start = (selected_day - timedelta(days=6)).strftime('%Y-%m-%d')
+
+    available_tests = db.execute("SELECT COUNT(*) FROM services WHERE type = 'test'").fetchone()[0]
+    day_orders = db.execute(
+        "SELECT COUNT(*) FROM test_orders WHERE date(test_date) = ?",
+        (selected_date,)
+    ).fetchone()[0]
+    day_patients = db.execute(
+        "SELECT COUNT(DISTINCT patient_id) FROM test_orders WHERE date(test_date) = ?",
+        (selected_date,)
+    ).fetchone()[0]
+    month_orders = db.execute(
+        "SELECT COUNT(*) FROM test_orders WHERE strftime('%Y-%m', test_date) = ?",
+        (selected_month,)
+    ).fetchone()[0]
+    month_revenue = db.execute(
+        '''
+        SELECT COALESCE(SUM(bi.price * bi.quantity), 0)
+        FROM bill_items bi
+        JOIN bills b ON b.id = bi.bill_id
+        JOIN services s ON s.id = bi.service_id
+        WHERE s.type = 'test'
+          AND strftime('%Y-%m', b.created_at) = ?
+        ''',
+        (selected_month,)
+    ).fetchone()[0] or 0
+
+    recent_orders = db.execute(
+        '''
+        SELECT t.id, p.name, p.phone, s.name, s.price, t.test_date
+        FROM test_orders t
+        JOIN patients p ON p.id = t.patient_id
+        JOIN services s ON s.id = t.service_id
+        WHERE date(t.test_date) = ?
+        ORDER BY t.id DESC
+        LIMIT 10
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    popular_tests = db.execute(
+        '''
+        SELECT s.name, s.price, COUNT(t.id) AS order_count
+        FROM services s
+        LEFT JOIN test_orders t
+            ON t.service_id = s.id
+           AND strftime('%Y-%m', t.test_date) = ?
+        WHERE s.type = 'test'
+        GROUP BY s.id, s.name, s.price
+        ORDER BY order_count DESC, s.name ASC
+        LIMIT 6
+        ''',
+        (selected_month,)
+    ).fetchall()
+    max_test_orders = max([row[2] for row in popular_tests], default=0)
+
+    daily_rows = db.execute(
+        '''
+        SELECT date(test_date), COUNT(*)
+        FROM test_orders
+        WHERE date(test_date) BETWEEN ? AND ?
+        GROUP BY date(test_date)
+        ''',
+        (week_start, selected_date)
+    ).fetchall()
+    daily_counts = {row[0]: row[1] for row in daily_rows}
+    day_activity = []
+    max_day_orders = max(daily_counts.values(), default=0)
+    for offset in range(7):
+        current_day = selected_day - timedelta(days=6 - offset)
+        date_key = current_day.strftime('%Y-%m-%d')
+        count = daily_counts.get(date_key, 0)
+        day_activity.append({
+            'label': current_day.strftime('%a'),
+            'date': date_key,
+            'count': count,
+            'percent': round((count / max_day_orders) * 100) if max_day_orders else 0
+        })
+
+    return render_template(
+        'pathology_dashboard.html',
+        profile_name=profile_name,
+        admin=isadmin(),
+        selected_date=selected_date,
+        available_tests=available_tests,
+        day_orders=day_orders,
+        day_patients=day_patients,
+        month_orders=month_orders,
+        month_revenue=month_revenue,
+        recent_orders=recent_orders,
+        popular_tests=popular_tests,
+        max_test_orders=max_test_orders,
+        day_activity=day_activity
+    )
 
 
 @app.route('/medicine_stock_dashboard', methods=['GET', 'POST'])
@@ -1715,4 +1834,3 @@ def appointment_patients(patient_id=None):
 #debug showing in web browser
 if __name__ == '__main__':
     app.run(debug=True)
-

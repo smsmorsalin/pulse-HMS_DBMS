@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pathology Lab Dashboard</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pathology_dashboard.css') }}">
+</head>
+<body>
+<aside class="sidebar">
+	<div class="brand">
+		<a href="{{ url_for('dashboard') }}" class="brand-link">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+			<span class="brand-text">AJH</span>
+		</a>
+	</div>
+
+	<ul class="nav-list">
+		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		<li><a class="nav-link active" href="{{ url_for('pathology_dashboard') }}"><i class="fas fa-microscope"></i> <span>Pathology</span></a></li>
+		<li><a class="nav-link" href="{{ url_for('service_desk') }}"><i class="fas fa-headset"></i> <span>Service Desk</span></a></li>
+		<li><a class="nav-link" href="{{ url_for('tests') }}"><i class="fas fa-vial"></i> <span>Test Catalog</span></a></li>
+		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
+		{% if admin %}
+		<li><a class="nav-link" href="{{ url_for('services') }}"><i class="fas fa-sliders"></i> <span>Services</span></a></li>
+		{% endif %}
+	</ul>
+</aside>
+
+<main class="content">
+	<header class="top-header">
+		<div class="title-group">
+			<p class="eyebrow">Pathology Lab</p>
+			<h1>Pathology Dashboard</h1>
+			<h2>Monitor lab orders, test catalog activity, and billed pathology revenue from one focused workspace.</h2>
+		</div>
+
+		<div class="header-tools">
+			<a class="header-action" href="{{ url_for('service_desk') }}">
+				<i class="fas fa-plus"></i>
+				New Lab Order
+			</a>
+			<div class="profile" id="adminMenu">
+				<button class="admin-btn" id="adminBtn" type="button">
+					<i class="fas fa-user-circle"></i>
+					{{ profile_name }}
+					<i class="fas fa-chevron-down chevron"></i>
+				</button>
+				<div class="admin-dropdown" id="adminDropdown">
+					<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
+					<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<section class="control-strip">
+		<form class="date-filter" method="GET" action="{{ url_for('pathology_dashboard') }}">
+			<label for="pathologyDate"><i class="fas fa-calendar-day"></i> Date</label>
+			<input id="pathologyDate" name="date" type="date" value="{{ selected_date }}">
+			<button type="submit"><i class="fas fa-filter"></i> Show</button>
+		</form>
+		<div class="quick-actions">
+			<a href="{{ url_for('tests') }}"><i class="fas fa-list-check"></i> Tests</a>
+			<a href="{{ url_for('billing') }}"><i class="fas fa-receipt"></i> Billing</a>
+			{% if admin %}
+			<a href="{{ url_for('services') }}"><i class="fas fa-gear"></i> Manage</a>
+			{% endif %}
+		</div>
+	</section>
+
+	<section class="stats-grid">
+		<div class="stat-card">
+			<span class="stat-icon"><i class="fas fa-vials"></i></span>
+			<p>Available Tests</p>
+			<strong>{{ available_tests }}</strong>
+		</div>
+		<div class="stat-card">
+			<span class="stat-icon green"><i class="fas fa-clipboard-list"></i></span>
+			<p>Orders Today</p>
+			<strong>{{ day_orders }}</strong>
+		</div>
+		<div class="stat-card">
+			<span class="stat-icon cyan"><i class="fas fa-users"></i></span>
+			<p>Lab Patients</p>
+			<strong>{{ day_patients }}</strong>
+		</div>
+		<div class="stat-card">
+			<span class="stat-icon amber"><i class="fas fa-sack-dollar"></i></span>
+			<p>Monthly Revenue</p>
+			<strong>Tk {{ '%.2f'|format(month_revenue) }}</strong>
+		</div>
+	</section>
+
+	<section class="dashboard-grid">
+		<div class="panel activity-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Last 7 Days</p>
+					<h3>Lab Activity</h3>
+				</div>
+				<span class="status-pill">{{ month_orders }} monthly orders</span>
+			</div>
+
+			<div class="activity-bars">
+				{% for day in day_activity %}
+				<div class="activity-day">
+					<div class="bar-track">
+						<span class="bar-fill bar-fill-{{ loop.index }}" data-percent="{{ day.percent }}"></span>
+					</div>
+					<strong>{{ day.count }}</strong>
+					<span>{{ day.label }}</span>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+		<div class="panel top-tests-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">This Month</p>
+					<h3>Top Tests</h3>
+				</div>
+			</div>
+
+			<div class="test-list">
+				{% if popular_tests %}
+					{% for test in popular_tests %}
+					<div class="test-row">
+						<div>
+							<strong>{{ test[0] }}</strong>
+							<span>Tk {{ '%.2f'|format(test[1]) }}</span>
+						</div>
+						<div class="test-volume">
+							<progress value="{{ test[2] }}" max="{{ max_test_orders if max_test_orders else 1 }}"></progress>
+							<span>{{ test[2] }} orders</span>
+						</div>
+					</div>
+					{% endfor %}
+				{% else %}
+					<p class="empty-state">No test catalog entries found.</p>
+				{% endif %}
+			</div>
+		</div>
+	</section>
+
+	<section class="panel orders-panel">
+		<div class="panel-header">
+			<div>
+				<p class="panel-kicker">Selected Date</p>
+				<h3>Recent Lab Orders</h3>
+			</div>
+			<a class="panel-link" href="{{ url_for('service_desk') }}"><i class="fas fa-arrow-right"></i> Add Order</a>
+		</div>
+
+		<div class="table-wrap">
+			<table>
+				<thead>
+					<tr>
+						<th>Order</th>
+						<th>Patient</th>
+						<th>Phone</th>
+						<th>Test</th>
+						<th>Price</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% if recent_orders %}
+						{% for order in recent_orders %}
+						<tr>
+							<td>#{{ order[0] }}</td>
+							<td>{{ order[1] }}</td>
+							<td>{{ order[2] }}</td>
+							<td>{{ order[3] }}</td>
+							<td>Tk {{ '%.2f'|format(order[4]) }}</td>
+							<td><span class="order-status">In Queue</span></td>
+						</tr>
+						{% endfor %}
+					{% else %}
+						<tr>
+							<td colspan="6">
+								<div class="empty-table">
+									<i class="fas fa-flask-vial"></i>
+									<span>No pathology orders found for {{ selected_date }}.</span>
+								</div>
+							</td>
+						</tr>
+					{% endif %}
+				</tbody>
+			</table>
+		</div>
+	</section>
+</main>
+
+<script>
+const adminBtn = document.getElementById('adminBtn');
+const adminDropdown = document.getElementById('adminDropdown');
+const chevron = document.querySelector('.chevron');
+
+if (adminBtn && adminDropdown && chevron) {
+	adminBtn.addEventListener('click', function () {
+		adminDropdown.classList.toggle('show');
+		chevron.classList.toggle('rotate');
+	});
+
+	window.addEventListener('click', function (event) {
+		if (!document.getElementById('adminMenu').contains(event.target)) {
+			adminDropdown.classList.remove('show');
+			chevron.classList.remove('rotate');
+		}
+	});
+}
+
+document.querySelectorAll('.bar-fill').forEach(function (bar) {
+	bar.style.height = Math.max(Number(bar.dataset.percent || 0), 4) + '%';
+});
+</script>
+</body>
+</html>
