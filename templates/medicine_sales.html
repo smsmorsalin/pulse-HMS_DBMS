@@ -31,6 +31,9 @@
 				{% endif %}
 				<a class="sub-link active" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
 				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% if admin %}
+				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
+				{% endif %}
 			</div>
 		</li>
 		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
@@ -98,7 +101,18 @@
 					<p class="panel-kicker">Current Invoice</p>
 					<h3>Medicine Sales Cart</h3>
 				</div>
-				<span class="status-pill"><i class="fas fa-circle-check"></i> <span id="cartCount">{{ cart_items|length }}</span> items</span>
+				<span class="status-pill"><i class="fas fa-circle-check"></i> <span id="cartCount">0</span> selected / {{ cart_items|length }} medicines</span>
+			</div>
+
+			<div class="cart-search-bar">
+				<div class="cart-search-field">
+					<i class="fas fa-magnifying-glass"></i>
+					<input id="cartMedicineSearch" type="search" placeholder="Type medicine name or batch number" value="{{ search_query }}" autocomplete="off">
+				</div>
+				<button class="cart-clear-search{% if not search_query %} is-hidden{% endif %}" id="clearCartSearch" type="button">
+					<i class="fas fa-xmark"></i>
+					Clear
+				</button>
 			</div>
 
 			<div class="table-wrap">
@@ -112,7 +126,9 @@
 							<th>Unit Price</th>
 							<th>Discount</th>
 							<th>Line Total</th>
+							{% if admin %}
 							<th>Action</th>
+							{% endif %}
 						</tr>
 					</thead>
 					<tbody>
@@ -145,16 +161,18 @@
 							<td class="money">Tk {{ '%.2f'|format(item.price) }}</td>
 							<td><input class="line-discount" type="number" min="0" step="0.01" value="{{ '%.2f'|format(item.discount) }}"></td>
 							<td class="row-total">Tk {{ '%.2f'|format(item.total) }}</td>
+							{% if admin %}
 							<td>
 								<div class="row-actions">
 									<button class="add-line-btn" type="button" aria-label="Add medicine quantity"><i class="fas fa-plus"></i> Add</button>
 									<button class="remove-btn" type="button" aria-label="Remove item"><i class="fas fa-trash"></i></button>
 								</div>
 							</td>
+							{% endif %}
 						</tr>
 						{% else %}
 						<tr class="empty-row">
-							<td colspan="8">
+							<td colspan="{{ 8 if admin else 7 }}">
 								<div class="cart-empty-message">
 									<i class="fas fa-magnifying-glass-plus"></i>
 									<span>No medicines in cart. Search by medicine name or batch number to start a sale.</span>
@@ -290,6 +308,9 @@ const saleStatus = document.getElementById('saleStatus');
 const customerSelect = document.getElementById('customer');
 const paymentType = document.getElementById('paymentType');
 const savePrintButton = document.getElementById('savePrint');
+const cartMedicineSearch = document.getElementById('cartMedicineSearch');
+const clearCartSearch = document.getElementById('clearCartSearch');
+const cartColumnCount = {{ 8 if admin else 7 }};
 
 function money(value) {
 	return 'Tk ' + Number(value || 0).toFixed(2);
@@ -311,7 +332,7 @@ function getRows() {
 function emptyCartRowHtml() {
 	return `
 		<tr class="empty-row">
-			<td colspan="8">
+			<td colspan="${cartColumnCount}">
 				<div class="cart-empty-message">
 					<i class="fas fa-magnifying-glass-plus"></i>
 					<span>No medicines in cart. Search by medicine name or batch number to start a sale.</span>
@@ -326,6 +347,46 @@ function showEmptyCartIfNeeded() {
 	if (!tbody) return;
 	if (!getRows().length && !tbody.querySelector('.empty-row')) {
 		tbody.insertAdjacentHTML('beforeend', emptyCartRowHtml());
+	}
+}
+
+function filterCartRows() {
+	const query = (cartMedicineSearch ? cartMedicineSearch.value : '').trim().toLowerCase();
+	let visibleRows = 0;
+	const tbody = cartTable ? cartTable.querySelector('tbody') : null;
+	if (!tbody) return;
+
+	getRows().forEach(function (row) {
+		const haystack = [
+			row.dataset.product || '',
+			row.dataset.batch || '',
+			row.dataset.unit || '',
+		].join(' ').toLowerCase();
+		const isMatch = !query || haystack.includes(query);
+		row.hidden = !isMatch;
+		if (isMatch) visibleRows += 1;
+	});
+
+	let noMatchRow = tbody.querySelector('.no-match-row');
+	if (query && visibleRows === 0) {
+		if (!noMatchRow) {
+			tbody.insertAdjacentHTML('beforeend', `
+				<tr class="no-match-row">
+					<td colspan="${cartColumnCount}">
+						<div class="cart-empty-message">
+							<i class="fas fa-magnifying-glass"></i>
+							<span>No matching medicine found. Try another name or batch number.</span>
+						</div>
+					</td>
+				</tr>
+			`);
+		}
+	} else if (noMatchRow) {
+		noMatchRow.remove();
+	}
+
+	if (clearCartSearch) {
+		clearCartSearch.classList.toggle('is-hidden', !query);
 	}
 }
 
@@ -527,6 +588,12 @@ function printReceipt(sale) {
 	return true;
 }
 
+function reloadForNextSale() {
+	setTimeout(function () {
+		window.location.href = '{{ url_for("medicine_sales") }}';
+	}, 900);
+}
+
 if (cartTable) {
 	cartTable.addEventListener('click', function (event) {
 		const button = event.target.closest('button');
@@ -559,6 +626,18 @@ if (cartTable) {
 	});
 
 	cartTable.addEventListener('input', updateSummary);
+}
+
+if (cartMedicineSearch) {
+	cartMedicineSearch.addEventListener('input', filterCartRows);
+}
+
+if (clearCartSearch && cartMedicineSearch) {
+	clearCartSearch.addEventListener('click', function () {
+		cartMedicineSearch.value = '';
+		filterCartRows();
+		cartMedicineSearch.focus();
+	});
 }
 
 [receiveAmount, taxType, taxValue, discountType, discountValue, deliveryCost].forEach(function (control) {
@@ -600,9 +679,12 @@ savePrintButton.addEventListener('click', async function () {
 		resetSaleState({
 			clearCart: true,
 			message: receiptOpened
-				? 'Sale saved and printed. Ready for the next sale.'
+				? 'Sale saved and printed. Reloading for the next sale...'
 				: 'Sale saved. Please allow pop-ups to print the receipt.',
 		});
+		if (receiptOpened) {
+			reloadForNextSale();
+		}
 	} catch (error) {
 		saleStatus.textContent = error.message;
 	} finally {
@@ -611,6 +693,7 @@ savePrintButton.addEventListener('click', async function () {
 });
 
 updateSummary();
+filterCartRows();
 </script>
 </body>
 </html>

@@ -678,6 +678,9 @@ input {
 				{% endif %}
 				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
 				<a class="sub-link active" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% if admin %}
+				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
+				{% endif %}
 			</div>
 		</li>
 		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Monthly Report</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_monthly_report.css') }}?v=1">
+</head>
+<body>
+<aside class="sidebar">
+	<div class="brand">
+		<a href="{{ url_for('dashboard') }}" class="brand-link">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+			<span class="brand-text">AJH</span>
+		</a>
+	</div>
+
+	<ul class="nav-list">
+		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		<li class="medicine-menu open" id="medicineMenu">
+			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
+				<i class="fas fa-pills"></i>
+				<span>Medicine</span>
+				<i class="fas fa-chevron-down dropdown-icon"></i>
+			</button>
+			<div class="sub-nav">
+				<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
+				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				<a class="sub-link active" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
+			</div>
+		</li>
+		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
+		<li><a class="nav-link active" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+	</ul>
+</aside>
+
+<main class="content">
+	<header class="top-header screen-header">
+		<div class="title-group">
+			<p class="eyebrow"><i class="fas fa-chart-column"></i> Pharmacy Analytics</p>
+			<h1>Monthly Sales Report</h1>
+			<h2>Review monthly pharmacy sales, total collection, due amount, and product-wise sold items.</h2>
+		</div>
+		<div class="profile">
+			<button class="admin-btn" id="adminBtn" type="button">
+				<i class="fas fa-user-circle"></i>
+				{{ profile_name }}
+				<i class="fas fa-chevron-down chevron"></i>
+			</button>
+			<div class="admin-dropdown" id="adminDropdown">
+				<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
+				<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+			</div>
+		</div>
+	</header>
+
+	<form class="report-toolbar" method="GET" action="{{ url_for('medicine_monthly_report') }}">
+		<label for="reportMonth">
+			Report Month
+			<input id="reportMonth" type="month" name="month" value="{{ selected_month }}" required>
+		</label>
+		<div class="report-actions">
+			<button class="report-btn primary" type="submit"><i class="fas fa-filter"></i> View Report</button>
+			<button class="report-btn print" type="button" onclick="window.print()"><i class="fas fa-print"></i> Print Report</button>
+		</div>
+	</form>
+
+	<section class="report-document">
+		<div class="print-letterhead">
+			<div>
+				<p class="letterhead-kicker">AL-JUMIRA HOSPITAL</p>
+				<h2>Medicine Monthly Sales Report</h2>
+				<span>Pharmacy Department</span>
+			</div>
+			<div class="letterhead-meta">
+				<strong>{{ report_month_label }}</strong>
+				<span>Generated: {{ generated_at }}</span>
+			</div>
+		</div>
+
+		<section class="report-summary">
+			<div class="summary-tile highlight">
+				<span>Monthly Total Sales</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.net_sales) }}</strong>
+				<small>{{ report_summary.invoice_count }} invoices</small>
+			</div>
+			<div class="summary-tile">
+				<span>Total Received</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.received_amount) }}</strong>
+				<small>Cash, card, mobile banking</small>
+			</div>
+			<div class="summary-tile">
+				<span>Total Due</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.due_amount) }}</strong>
+				<small>Pending collection</small>
+			</div>
+			<div class="summary-tile">
+				<span>Products Sold</span>
+				<strong>{{ report_summary.product_count }}</strong>
+				<small>{{ report_summary.total_units }} total units</small>
+			</div>
+		</section>
+
+		<section class="report-breakdown">
+			<div class="breakdown-item">
+				<span>Gross Sales</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.gross_sales) }}</strong>
+			</div>
+			<div class="breakdown-item">
+				<span>Discount</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.discount_amount) }}</strong>
+			</div>
+			<div class="breakdown-item">
+				<span>Tax</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.tax_amount) }}</strong>
+			</div>
+			<div class="breakdown-item">
+				<span>Delivery</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.delivery_cost) }}</strong>
+			</div>
+		</section>
+
+		<section class="report-panel">
+			<div class="report-panel-head">
+				<div>
+					<p class="panel-kicker">Product Wise</p>
+					<h3>All Products Sold Separately</h3>
+				</div>
+				<span>{{ product_rows|length }} product rows</span>
+			</div>
+			<div class="table-wrap report-table">
+				<table>
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Medicine</th>
+							<th>Batch</th>
+							<th>Unit</th>
+							<th>Invoices</th>
+							<th>Qty Sold</th>
+							<th>Avg Price</th>
+							<th>Gross</th>
+							<th>Discount</th>
+							<th>Net Sales</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% if product_rows %}
+							{% for item in product_rows %}
+							<tr>
+								<td>{{ loop.index }}</td>
+								<td>
+									<strong>{{ item.medicine_name }}</strong>
+									<span class="table-note">Pharmacy sale item</span>
+								</td>
+								<td>{{ item.batch_no or 'General' }}</td>
+								<td>{{ item.unit_type|title }}</td>
+								<td>{{ item.invoice_count }}</td>
+								<td>{{ item.quantity }}</td>
+								<td>Tk {{ '%.2f'|format(item.avg_price) }}</td>
+								<td>Tk {{ '%.2f'|format(item.gross_amount) }}</td>
+								<td>Tk {{ '%.2f'|format(item.discount_amount) }}</td>
+								<td><strong>Tk {{ '%.2f'|format(item.net_amount) }}</strong></td>
+							</tr>
+							{% endfor %}
+						{% else %}
+							<tr>
+								<td colspan="10" class="empty-state">No product sales found for {{ report_month_label }}.</td>
+							</tr>
+						{% endif %}
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="report-panel daily-panel">
+			<div class="report-panel-head">
+				<div>
+					<p class="panel-kicker">Daily Totals</p>
+					<h3>Sales by Date</h3>
+				</div>
+				<span>{{ daily_rows|length }} active days</span>
+			</div>
+			<div class="table-wrap daily-table">
+				<table>
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Invoices</th>
+							<th>Sales</th>
+							<th>Received</th>
+							<th>Due</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% if daily_rows %}
+							{% for day in daily_rows %}
+							<tr>
+								<td>{{ day.sale_day }}</td>
+								<td>{{ day.invoice_count }}</td>
+								<td>Tk {{ '%.2f'|format(day.net_sales) }}</td>
+								<td>Tk {{ '%.2f'|format(day.received_amount) }}</td>
+								<td>Tk {{ '%.2f'|format(day.due_amount) }}</td>
+							</tr>
+							{% endfor %}
+						{% else %}
+							<tr>
+								<td colspan="5" class="empty-state">No daily totals found for this month.</td>
+							</tr>
+						{% endif %}
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<footer class="report-footer">
+			<span>Prepared for admin review</span>
+			<span>Printed report includes monthly totals and product-wise sales details</span>
+		</footer>
+	</section>
+</main>
+
+<script>
+const medicineToggle = document.getElementById('medicineToggle');
+const medicineMenu = document.getElementById('medicineMenu');
+const adminBtn = document.getElementById('adminBtn');
+const adminDropdown = document.getElementById('adminDropdown');
+const chevron = document.querySelector('.chevron');
+
+if (medicineToggle && medicineMenu) {
+	medicineToggle.addEventListener('click', function () {
+		medicineMenu.classList.toggle('open');
+		medicineToggle.setAttribute('aria-expanded', medicineMenu.classList.contains('open'));
+	});
+}
+
+if (adminBtn && adminDropdown && chevron) {
+	adminBtn.addEventListener('click', function () {
+		adminDropdown.classList.toggle('show');
+		chevron.classList.toggle('rotate');
+	});
+
+	window.addEventListener('click', function (event) {
+		if (!document.querySelector('.profile').contains(event.target)) {
+			adminDropdown.classList.remove('show');
+			chevron.classList.remove('rotate');
+		}
+	});
+}
+</script>
+</body>
+</html>

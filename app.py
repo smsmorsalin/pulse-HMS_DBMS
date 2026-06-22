@@ -404,6 +404,60 @@ def add_log(patient_id, action):
     ''', (user_id_db, role, patient_id, action))
     db.commit()
 
+
+def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
+    """Return medicine stock balances using one calculation for stock and sales screens."""
+    transaction_rows = db.execute(
+        '''
+        SELECT id, medicine_name, batch_no, unit_type, transaction_type, quantity, price, transaction_date, note, created_by, created_at
+        FROM medicine_transactions
+        ORDER BY transaction_date ASC, id ASC
+        '''
+    ).fetchall()
+
+    summary = {}
+    for row in transaction_rows:
+        medicine_name = row[1]
+        batch_no = row[2] or 'General'
+        unit_type = row[3] or 'strip'
+        summary_key = (medicine_name, batch_no, unit_type)
+        medicine_summary = summary.setdefault(summary_key, {
+            'medicine_name': medicine_name,
+            'batch_no': batch_no,
+            'unit_type': unit_type,
+            'stock_in': 0,
+            'stock_out': 0,
+            'balance': 0,
+            'latest_price': row[6],
+            'latest_date': row[7],
+        })
+
+        if row[4] == 'in':
+            medicine_summary['stock_in'] += row[5]
+            medicine_summary['balance'] += row[5]
+        else:
+            medicine_summary['stock_out'] += row[5]
+            medicine_summary['balance'] -= row[5]
+
+        medicine_summary['latest_price'] = row[6]
+        medicine_summary['latest_date'] = row[7]
+
+    summary_rows = list(summary.values())
+    if search_query:
+        search_text = search_query.lower()
+        summary_rows = [
+            row for row in summary_rows
+            if search_text in row['medicine_name'].lower() or search_text in row['batch_no'].lower()
+        ]
+    if positive_only:
+        summary_rows = [row for row in summary_rows if row['balance'] > 0]
+
+    summary_rows.sort(key=lambda row: (row['medicine_name'].lower(), row['batch_no'].lower(), row['unit_type'].lower()))
+    if limit is not None:
+        summary_rows = summary_rows[:limit]
+    return summary_rows
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -718,35 +772,7 @@ def medicine_stock_dashboard():
             if not error:
                 error = 'Please enter a valid medicine name, unit, quantity, and price.'
 
-    summary = {}
-    for entry in transactions:
-        medicine_name = entry['medicine_name']
-        batch_no = entry['batch_no'] or 'General'
-        unit_type = entry['unit_type'] or 'strip'
-        summary_key = (medicine_name, batch_no, unit_type)
-        medicine_summary = summary.setdefault(summary_key, {
-            'medicine_name': medicine_name,
-            'batch_no': batch_no,
-            'unit_type': unit_type,
-            'stock_in': 0,
-            'stock_out': 0,
-            'balance': 0,
-            'latest_price': entry['price'],
-            'latest_date': entry['transaction_date'],
-        })
-
-        if entry['transaction_type'] == 'in':
-            medicine_summary['stock_in'] += entry['quantity']
-            medicine_summary['balance'] += entry['quantity']
-        else:
-            medicine_summary['stock_out'] += entry['quantity']
-            medicine_summary['balance'] -= entry['quantity']
-
-        medicine_summary['latest_price'] = entry['price']
-        medicine_summary['latest_date'] = entry['transaction_date']
-
-    summary_rows = list(summary.values())
-    summary_rows.sort(key=lambda row: (row['medicine_name'].lower(), row['batch_no'].lower(), row['unit_type'].lower()))
+    summary_rows = get_medicine_balance_rows()
     total_stock_in = sum(row['stock_in'] for row in summary_rows)
     total_stock_out = sum(row['stock_out'] for row in summary_rows)
     active_medicines = len(summary_rows)
@@ -791,30 +817,7 @@ def medicine_sales():
         profile_name = user_checker[1]
 
     search_query = request.args.get('q', '').strip()
-    search_like = f"%{search_query}%"
-    medicine_params = []
-    medicine_filter = ""
-    if search_query:
-        medicine_filter = "WHERE medicine_name LIKE ? OR batch_no LIKE ?"
-        medicine_params = [search_like, search_like]
-
-    medicine_rows = db.execute(
-        f'''
-        SELECT
-            medicine_name,
-            COALESCE(NULLIF(batch_no, ''), 'General') AS batch_label,
-            unit_type,
-            SUM(CASE WHEN transaction_type = 'in' THEN quantity ELSE -quantity END) AS balance,
-            MAX(price) AS price
-        FROM medicine_transactions
-        {medicine_filter}
-        GROUP BY medicine_name, COALESCE(NULLIF(batch_no, ''), 'General'), unit_type
-        HAVING balance > 0
-        ORDER BY medicine_name ASC
-        LIMIT 6
-        ''',
-        medicine_params
-    ).fetchall()
+    medicine_rows = get_medicine_balance_rows(search_query=search_query, positive_only=True)
 
     customers = [
         {'name': row[0], 'phone': row[1]}
@@ -829,13 +832,13 @@ def medicine_sales():
     ]
 
     cart_items = []
-    for row in medicine_rows[:6]:
-        price = float(row[4] or 0)
+    for row in medicine_rows:
+        price = float(row['latest_price'] or 0)
         cart_items.append({
-            'product': row[0],
-            'batch': row[1],
-            'unit': row[2].title(),
-            'available': row[3],
+            'product': row['medicine_name'],
+            'batch': row['batch_no'],
+            'unit': row['unit_type'].title(),
+            'available': row['balance'],
             'qty': 0,
             'price': price,
             'discount': 0.00,
@@ -1113,6 +1116,145 @@ def medicine_sales_list():
         total_sales=sum(sale['grand_total'] for sale in sales),
         total_due=sum(sale['due_amount'] for sale in sales),
         admin=isadmin(),
+    )
+
+
+@app.route('/medicine_monthly_report')
+def medicine_monthly_report():
+    """Admin-only monthly medicine sales report."""
+    if not isadmin():
+        return redirect(url_for('login'))
+
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    profile_name = root_admin_username if session.get('user_id') == 'root_admin' else admin_checker[1]
+
+    selected_month = request.args.get('month', '').strip() or datetime.now().strftime('%Y-%m')
+    try:
+        month_start = datetime.strptime(selected_month, '%Y-%m')
+    except ValueError:
+        month_start = datetime.now().replace(day=1)
+        selected_month = month_start.strftime('%Y-%m')
+
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    month_start_text = month_start.strftime('%Y-%m-%d')
+    next_month_text = next_month.strftime('%Y-%m-%d')
+    report_month_label = month_start.strftime('%B %Y')
+
+    summary_row = db.execute(
+        '''
+        SELECT
+            COUNT(*) AS invoice_count,
+            COALESCE(SUM(subtotal), 0) AS gross_sales,
+            COALESCE(SUM(discount_amount), 0) AS discount_amount,
+            COALESCE(SUM(tax_amount), 0) AS tax_amount,
+            COALESCE(SUM(delivery_cost), 0) AS delivery_cost,
+            COALESCE(SUM(grand_total), 0) AS net_sales,
+            COALESCE(SUM(received_amount), 0) AS received_amount,
+            COALESCE(SUM(due_amount), 0) AS due_amount
+        FROM medicine_sales
+        WHERE date(sale_date) >= ? AND date(sale_date) < ?
+        ''',
+        (month_start_text, next_month_text)
+    ).fetchone()
+
+    item_summary_row = db.execute(
+        '''
+        SELECT
+            COALESCE(SUM(msi.quantity), 0) AS total_units,
+            COUNT(DISTINCT msi.medicine_name || '|' || msi.batch_no || '|' || msi.unit_type) AS product_count
+        FROM medicine_sale_items msi
+        JOIN medicine_sales ms ON ms.id = msi.sale_id
+        WHERE date(ms.sale_date) >= ? AND date(ms.sale_date) < ?
+        ''',
+        (month_start_text, next_month_text)
+    ).fetchone()
+
+    product_rows_raw = db.execute(
+        '''
+        SELECT
+            msi.medicine_name,
+            msi.batch_no,
+            msi.unit_type,
+            COUNT(DISTINCT ms.id) AS invoice_count,
+            SUM(msi.quantity) AS quantity,
+            AVG(msi.unit_price) AS avg_price,
+            SUM(msi.quantity * msi.unit_price) AS gross_amount,
+            SUM(msi.discount) AS discount_amount,
+            SUM(msi.line_total) AS net_amount
+        FROM medicine_sale_items msi
+        JOIN medicine_sales ms ON ms.id = msi.sale_id
+        WHERE date(ms.sale_date) >= ? AND date(ms.sale_date) < ?
+        GROUP BY msi.medicine_name, msi.batch_no, msi.unit_type
+        ORDER BY net_amount DESC, quantity DESC, msi.medicine_name ASC
+        ''',
+        (month_start_text, next_month_text)
+    ).fetchall()
+
+    daily_rows_raw = db.execute(
+        '''
+        SELECT
+            date(sale_date) AS sale_day,
+            COUNT(*) AS invoice_count,
+            COALESCE(SUM(grand_total), 0) AS net_sales,
+            COALESCE(SUM(received_amount), 0) AS received_amount,
+            COALESCE(SUM(due_amount), 0) AS due_amount
+        FROM medicine_sales
+        WHERE date(sale_date) >= ? AND date(sale_date) < ?
+        GROUP BY date(sale_date)
+        ORDER BY sale_day ASC
+        ''',
+        (month_start_text, next_month_text)
+    ).fetchall()
+
+    report_summary = {
+        'invoice_count': int(summary_row[0] or 0),
+        'gross_sales': float(summary_row[1] or 0),
+        'discount_amount': float(summary_row[2] or 0),
+        'tax_amount': float(summary_row[3] or 0),
+        'delivery_cost': float(summary_row[4] or 0),
+        'net_sales': float(summary_row[5] or 0),
+        'received_amount': float(summary_row[6] or 0),
+        'due_amount': float(summary_row[7] or 0),
+        'total_units': int(item_summary_row[0] or 0),
+        'product_count': int(item_summary_row[1] or 0),
+    }
+
+    product_rows = [
+        {
+            'medicine_name': row[0],
+            'batch_no': row[1],
+            'unit_type': row[2],
+            'invoice_count': int(row[3] or 0),
+            'quantity': int(row[4] or 0),
+            'avg_price': float(row[5] or 0),
+            'gross_amount': float(row[6] or 0),
+            'discount_amount': float(row[7] or 0),
+            'net_amount': float(row[8] or 0),
+        }
+        for row in product_rows_raw
+    ]
+
+    daily_rows = [
+        {
+            'sale_day': row[0],
+            'invoice_count': int(row[1] or 0),
+            'net_sales': float(row[2] or 0),
+            'received_amount': float(row[3] or 0),
+            'due_amount': float(row[4] or 0),
+        }
+        for row in daily_rows_raw
+    ]
+
+    return render_template(
+        "medicine_monthly_report.html",
+        profile_name=profile_name,
+        selected_month=selected_month,
+        report_month_label=report_month_label,
+        generated_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        report_summary=report_summary,
+        product_rows=product_rows,
+        daily_rows=daily_rows,
+        admin=True,
     )
 
 
