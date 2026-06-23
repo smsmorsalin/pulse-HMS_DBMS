@@ -55,7 +55,7 @@ body {
 ========================= */
 .form-container{
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
@@ -217,7 +217,7 @@ body {
 .input-group input:focus + label,
 .input-group input:valid + label,
 .input-group textarea:focus + label,
-.input-group textarea:valid + label,
+.input-group textarea:not(:placeholder-shown) + label,
 .input-group select:focus + label,
 .input-group select:valid + label {
     top: -10px;
@@ -398,11 +398,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     grid-column: span 1;
 }
 
-/* Make Age narrower */
-.age-box input {
-    max-width: 120px;
-}
-
 /* Optional: Make them tighter */
 .age-box,
 .gender-box {
@@ -411,14 +406,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 
 /* Age + Gender in same row */
+
 .age-gender-row {
     display: flex;
-    gap: 18px;
+    gap: 15px;
 }
 
-/* Make Age smaller */
 .age-box {
-    flex: 0 0 120px; /* fixed smaller width */
+    flex: 4;   /* Much bigger */
+}
+
+.gender-box {
+    flex: 5;   /* Smaller */
+}
+
+/* Make Age compact while leaving room for the unit dropdown */
+.age-box {
+    flex: 0 0 220px;
 }
 
 /* Gender takes remaining space */
@@ -427,7 +431,36 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .age-box {
-    max-width: 160px;
+    max-width: 220px;
+}
+
+
+.age-input-wrapper {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+}
+
+.age-input-wrapper input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.age-input-wrapper select {
+    flex: 0 0 64px;
+    min-width: 64px;
+    padding: 12px 24px 12px 10px;
+    text-align: center;
+    background-position: calc(100% - 14px) calc(50% - 3px),
+                         calc(100% - 9px) calc(50% - 3px);
+}
+
+.age-box:focus-within > label,
+.age-box.has-value > label {
+    top: -10px;
+    left: 32px;
+    font-size: 11px;
+    color: #ff1e56;
 }
 
 
@@ -473,6 +506,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.22);
 }
 
 .sidebar::-webkit-scrollbar {
@@ -528,18 +563,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .sidebar-brand {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     text-align: center;
     text-decoration: none;
     color: #fff;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     padding: 14px 12px;
     border-radius: 16px;
     background: linear-gradient(135deg, rgba(30, 60, 250, 0.35), rgba(255, 30, 86, 0.35));
     border: 1px solid rgba(255,255,255,0.14);
     box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    transition: 0.25s ease;
+}
+
+.sidebar-brand:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+}
+
+.sidebar-brand i {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    color: #ffb347;
 }
 
 .sidebar-menu {
@@ -562,6 +616,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     text-decoration: none;
     font: inherit;
+    font-weight: 600;
     transition: 0.25s ease;
 }
 
@@ -577,8 +632,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .sidebar-item i {
-    width: 18px;
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
     text-align: center;
+    color: #ffb347;
+}
+
+.sidebar-item.active i {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
 }
 
 .main-content{
@@ -862,3 +929,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-top: 1px dashed #bbb;
 }
 
+.required-star {
+    color: #ff4d4f;
+    font-weight: bold;
+}

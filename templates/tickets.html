@@ -19,20 +19,23 @@
  <div class="dashboard">
 
     <aside class="sidebar">
-        <a class="sidebar-brand" id="hmsBrand" href="{{ url_for('dashboard') }}">HMS</a>
+        <a class="sidebar-brand" id="hmsBrand" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Tickets</span>
+        </a>
         <div class="sidebar-menu" id="patientSidebarMenu">
             <a id="dashboardNav" class="sidebar-item" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-chart-line"></i>
+                <i class="fas fa-gauge-high"></i>
                 <span>Dashboard</span>
             </a>
 
             <button type="button" id="patientListNav" class="sidebar-item">
-                <i class="fas fa-list"></i>
+                <i class="fas fa-clipboard-list"></i>
                 <span>Patient List</span>
             </button>
             
             <button type="button" id="newPatientNav" class="sidebar-item">
-                <i class="fas fa-user-plus"></i>
+                <i class="fas fa-ticket-alt"></i>
                 <span>New Patient</span>
             </button>
 
@@ -75,7 +78,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="id-col">ID</th>
+                            <th class="id-col">UHID</th>
                             <th class="name-col">Name</th>
                             <th class="age-col">Age</th>
                             <th class="gender-col">Gender</th>
@@ -92,7 +95,8 @@
                             <tr>
                                 <td class="id-col">{{ patient[0] }}</td>
                                 <td class="name-col">{{ patient[1] }}</td>
-                                <td class="age-col">{{ patient[2] }}</td>
+                                {% set age_unit = patient[13] if patient|length > 13 and patient[13] else 'Y' %}
+                                <td class="age-col">{{ patient[2] }} {{ age_unit }}</td>
                                 <td class="gender-col">{{ patient[3] }}</td>
                                 <td class="phone-col">{{ patient[4] }}</td>
                                 <td class="address-col">{{ patient[8] }}</td>
@@ -118,7 +122,7 @@
         <!-- Patient Entry Form -->
         <div class="form-container">
             <div class="patient-id-card">
-                <h3>Patient ID</h3>
+                <h3>Patient UHID</h3>
                 <div class="id-value" id="patientID">Auto</div>
             </div>
 
@@ -141,27 +145,36 @@
                     </div>
 
                     <!-- Age (Auto Calculated) -->
-                    <div class="age-gender-row">
+                        <div class="age-gender-row">
 
-                        <div class="input-group age-box ">
+                            <div class="input-group age-box">
                             <i class="fas fa-hashtag"></i>
-                            <input type="number" id="age" name="age" required min="0">
+
+                            <div class="age-input-wrapper">
+                                <input type="number" id="age" name="age" required min="0">
+
+                                <select id="ageUnit" name="age_unit" aria-label="Age unit" required>
+                                    <option value="Y" selected>Y</option>
+                                    <option value="M">M</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+
                             <label>Age</label>
-
                         </div>
 
+                            <div class="input-group gender-box">
+                                <i class="fas fa-venus-mars"></i>
+                                <select id="gender" name="gender" required>
+                                    <option value="" disabled selected></option>
+                                    <option>Female</option>
+                                    <option>Male</option>
+                                    <option>Other</option>
+                                </select>
+                                <label>Gender</label>
+                            </div>
 
-                        <div class="input-group gender-box">
-                            <i class="fas fa-venus-mars"></i>
-                            <select id="gender" name="gender" required>
-                                <option value="" disabled selected></option>
-                                <option>Female</option>
-                                <option>Male</option>
-                                <option>Other</option>
-                            </select>
-                            <label>Gender</label>
                         </div>
-                    </div>
 
                     <div class="input-group">
                         <i class="fas fa-phone"></i>
@@ -176,9 +189,9 @@
                         <label>Phone Number</label>
                     </div>
                       
-                    <div class="input-group gender-box">
+                    <div class="input-group">
                             <i class="fas fa-user-check"></i>
-                            <select id="gender" name="gender" required>
+                            <select id="patientStatus" name="patient_status" required>
                                 <option value="" disabled selected></option>
                                 <option>OLD</option>
                                 <option>NEW</option>
@@ -217,12 +230,12 @@
 
                     <div class="input-group address-group">
                         <i class="fas fa-location-dot"></i>
-                        <textarea id="address" name="address" required></textarea>
+                        <textarea id="address" name="address" placeholder=" " required></textarea>
                         <label>Address</label>
                     </div>
                     <div class="input-group">
                         <i class="fas fa-notes-medical"></i>
-                        <textarea id="medicalHistory" name="medical_history" required></textarea>
+                        <textarea id="medicalHistory" name="medical_history" placeholder=" "></textarea>
                         <label>Medical History</label>
                     </div>
 
@@ -238,7 +251,7 @@
                         <input
                             type="tel"
                             id="emergencyContactNumber"
-                            name="emergency_contact_number"
+                            name="emergency_contact_phone"
                             maxlength="11"
                             pattern="[0-9]{1,11}"
                             oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)"
@@ -275,6 +288,7 @@
     const patientListPanel = document.getElementById("patientListPanel");
     const formContainer = document.querySelector(".form-container");
     const ageInput = document.getElementById("age");
+    const ageUnitSelect = document.getElementById("ageUnit");
     const dobInput = document.getElementById("dob");
     const submitButton = patientForm.querySelector(".submit-btn");
     const patientSearchInput = document.getElementById("patientSearchInput");
@@ -302,9 +316,13 @@
         }, 120);
     }
 
-    function calculateAgeFromDob(dobValue) {
+    function calculateAgeFromDob(dobValue, unit) {
         const dob = new Date(dobValue);
         const today = new Date();
+
+        if (Number.isNaN(dob.getTime())) {
+            return "";
+        }
 
         let age = today.getFullYear() - dob.getFullYear();
         const monthDiff = today.getMonth() - dob.getMonth();
@@ -313,7 +331,43 @@
             age -= 1;
         }
 
+        const totalMonths = Math.max(
+            (today.getFullYear() - dob.getFullYear()) * 12 +
+            (today.getMonth() - dob.getMonth()) -
+            (today.getDate() < dob.getDate() ? 1 : 0),
+            0
+        );
+        const totalDays = Math.max(Math.floor((today - dob) / 86400000), 0);
+
+        if (unit === "M") {
+            return totalMonths;
+        }
+
+        if (unit === "D") {
+            return totalDays;
+        }
+
         return Math.max(age, 0);
+    }
+
+    function updateAgeFromDob() {
+        if (!dobInput.value) {
+            return;
+        }
+
+        ageInput.value = calculateAgeFromDob(dobInput.value, ageUnitSelect.value);
+        updateAgeState();
+    }
+
+    function updateAgeState() {
+        const ageBox = ageInput.closest(".age-box");
+        if (ageInput.value !== "") {
+            ageInput.classList.add("has-value");
+            if (ageBox) ageBox.classList.add("has-value");
+        } else {
+            ageInput.classList.remove("has-value");
+            if (ageBox) ageBox.classList.remove("has-value");
+        }
     }
 
     function showPatientFormView() {
@@ -328,20 +382,12 @@
         setActiveSidebarItem(patientListNav);
     }
 
-    dobInput.addEventListener("change", function () {
-        ageInput.value = calculateAgeFromDob(this.value);
+    dobInput.addEventListener("change", updateAgeFromDob);
 
-        if (ageInput.value !== "") {
-            ageInput.classList.add("has-value");
-        }
-    });
+    ageUnitSelect.addEventListener("change", updateAgeFromDob);
 
     ageInput.addEventListener("input", function () {
-        if (this.value !== "") {
-            this.classList.add("has-value");
-        } else {
-            this.classList.remove("has-value");
-        }
+        updateAgeState();
     });
 
     patientSearchInput.addEventListener("input", function () {
@@ -373,6 +419,7 @@
 
         patientForm.addEventListener("submit", function () {
             submitButton.innerHTML = "<span>Submitting...</span>";
+            submitButton.disabled = true;
         });
 
     if (dashboardNav) {
@@ -428,14 +475,25 @@
         });
     }
 
-    function updatePrintedTimestamp() {
-        const timestampElement = document.getElementById("printedTimestamp");
-        if (!timestampElement) {
-            return;
-        }
+ function updatePrintedTimestamp() {
+    const timestampElement = document.getElementById("printedTimestamp");
+    if (!timestampElement) return;
 
-        timestampElement.textContent = new Date().toLocaleString();
-    }
+    const now = new Date();
+
+    const options = {
+        weekday: 'short',   // Tue
+        day: 'numeric',    // 16
+        month: 'long',     // June
+        year: 'numeric',   // 2026
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    };
+
+    timestampElement.textContent = now.toLocaleString('en-GB', options);
+}
 
     updatePrintedTimestamp();
     window.setInterval(updatePrintedTimestamp, 1000);
@@ -446,6 +504,15 @@ if (dashboardFooterYear) {
 
 }
 
+
+document.querySelectorAll('.input-group').forEach(group => {
+    const field = group.querySelector('input, select, textarea');
+    const label = group.querySelector('label');
+
+    if (field && field.required && label) {
+        label.innerHTML += ' <span class="required-star">*</span>';
+    }
+});
 
     </script>
 

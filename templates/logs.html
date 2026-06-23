@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="background-blobs">
+<div class="dashboard">
+    <aside class="sidebar">
+        <h2>Pulse-HMS</h2>
+        <ul>
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('services') }}" class="nav-link">
+                    <i class="fas fa-procedures"></i>
+                    <span>Services</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('register') }}" class="nav-link">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Register</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('registered_users') }}" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Registered Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('logs') }}" class="nav-link active">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span>Logs</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="logs-header">
+            <div>
+                <p class="eyebrow"><i class="fas fa-shield-halved"></i> Admin Audit</p>
+                <h1>System Logs</h1>
+                <p>Track patient, employee, and admin account activity across the hospital system.</p>
+            </div>
+            <div class="logs-count">
+                <span>Total Logs</span>
+                <strong>{{ total_logs }}</strong>
+            </div>
+        </header>
+
+        <section class="logs-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Latest Activity</p>
+                    <h2>Activity Timeline</h2>
+                </div>
+                <span>Showing latest 300 entries</span>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Time</th>
+                            <th>Actor</th>
+                            <th>Role</th>
+                            <th>Patient</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if logs %}
+                            {% for item in logs %}
+                            <tr>
+                                <td>{{ item.id }}</td>
+                                <td>{{ item.timestamp }}</td>
+                                <td>
+                                    <strong>{{ item.actor_name }}</strong>
+                                    {% if item.user_id %}
+                                    <span>ID: {{ item.user_id }}</span>
+                                    {% else %}
+                                    <span>Root account</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="role-pill {{ item.role }}">{{ item.role|title }}</span>
+                                </td>
+                                <td>
+                                    {% if item.patient_id %}
+                                    <strong>{{ item.patient_name }}</strong>
+                                    <span>Patient ID: {{ item.patient_id }}</span>
+                                    {% else %}
+                                    <span class="muted">Not patient-specific</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.action }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="empty-state">No logs found yet. New patient and account actions will appear here.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

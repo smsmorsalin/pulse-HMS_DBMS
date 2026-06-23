@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=4">
 
 </head>
-<body>
+<body data-cart-column-count="{{ 8 if admin else 7 }}">
 <aside class="sidebar">
 	<div class="brand">
 		<a href="{{ url_for('dashboard') }}" class="brand-link">
@@ -36,8 +36,7 @@
 				{% endif %}
 			</div>
 		</li>
-		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
-		<li><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+
 	</ul>
 </aside>
 
@@ -310,7 +309,7 @@ const paymentType = document.getElementById('paymentType');
 const savePrintButton = document.getElementById('savePrint');
 const cartMedicineSearch = document.getElementById('cartMedicineSearch');
 const clearCartSearch = document.getElementById('clearCartSearch');
-const cartColumnCount = {{ 8 if admin else 7 }};
+const cartColumnCount = Number(document.body.dataset.cartColumnCount || 7);
 
 function money(value) {
 	return 'Tk ' + Number(value || 0).toFixed(2);

@@ -340,6 +340,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 role TEXT CHECK(role IN ('admin','user')) NOT NULL,
+                actor_name TEXT,
                 patient_id INTEGER,
                 action TEXT,
                 timestamp TEXT
@@ -348,6 +349,11 @@ def init_db():
         print("Logs table created successfully.")
 
     else:
+        cursor.execute('PRAGMA table_info(logs)')
+        logs_columns = {row[1] for row in cursor.fetchall()}
+        if 'actor_name' not in logs_columns:
+            cursor.execute("ALTER TABLE logs ADD COLUMN actor_name TEXT")
+            print("Logs table migrated: actor_name column added.")
         print("Hospital database already exists.")
 
     #Triggers
@@ -383,26 +389,37 @@ def isuser():
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
     return user_checker and user_checker[0] == session.get('user_id')
 
-def add_log(patient_id, action):
+def get_current_actor():
+    """Return the current actor id, role, and display name for audit logs."""
     user_id = session.get('user_id')
 
     if user_id == 'root_admin':
-        role = 'admin'
-        user_id_db = None
-    else:
-        admin_checker = db.execute('SELECT * FROM admins WHERE id=?', (user_id,)).fetchone()
-        if admin_checker:
-            role = 'admin'
-            user_id_db = user_id
-        else:
-            role = 'user'
-            user_id_db = user_id
+        return None, 'admin', root_admin_username
+
+    admin_checker = db.execute('SELECT username FROM admins WHERE id=?', (user_id,)).fetchone()
+    if admin_checker:
+        return user_id, 'admin', admin_checker[0]
+
+    user_checker = db.execute('SELECT username FROM users WHERE id=?', (user_id,)).fetchone()
+    if user_checker:
+        return user_id, 'user', user_checker[0]
+
+    return user_id, 'user', 'Unknown user'
+
+
+def add_log(patient_id, action, actor=None):
+    user_id_db, role, actor_name = actor or get_current_actor()
 
     db.execute('''
-        INSERT INTO logs (user_id, role, patient_id, action, timestamp)
-        VALUES (?, ?, ?, ?, datetime('now', '+6 hours'))
-    ''', (user_id_db, role, patient_id, action))
+        INSERT INTO logs (user_id, role, actor_name, patient_id, action, timestamp)
+        VALUES (?, ?, ?, ?, ?, datetime('now', '+6 hours'))
+    ''', (user_id_db, role, actor_name, patient_id, action))
     db.commit()
+
+
+def add_system_log(action, patient_id=None, actor=None):
+    """Record an admin/user activity in the existing logs table."""
+    add_log(patient_id, action, actor)
 
 
 def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
@@ -460,6 +477,9 @@ def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if not isadmin():
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         role = request.form.get('role')
         username = request.form.get('username')
@@ -468,13 +488,13 @@ def register():
         if not role or not username or not password or not email:
             return render_template("register.html", error="Please fill in all fields.")
         else:
-            admin_checker = db.execute('SELECT * FROM admins WHERE username = ?', (username,)).fetchone()
-            if session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id')):
+            if isadmin():
                 hashed_password = generate_password_hash(password)
                 if role == 'admin':
                     try:
                         db.execute('INSERT INTO admins (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
                         db.commit()
+                        add_system_log(f"Admin account created: {username} ({email})")
                         return redirect(url_for('registered_users', success=f"Admin registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username or email already exists. Please use different credentials.")
@@ -482,6 +502,7 @@ def register():
                     try:
                         db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
                         db.commit()
+                        add_system_log(f"Employee account created: {username} ({email})")
                         return redirect(url_for('registered_users', success=f"Employee registered successfully."))
                     except sqlite3.IntegrityError:
                         return render_template("register.html", error="Username or email already exists. Please use different credentials.")
@@ -536,6 +557,52 @@ def admin_portal():
         return render_template("admin_portal.html")
     else:
         return redirect(url_for('login'))
+
+
+@app.route('/logs')
+def logs():
+    """Admin activity logs page."""
+    if not isadmin():
+        return redirect(url_for('login'))
+
+    log_rows = db.execute(
+        '''
+        SELECT
+            l.id,
+            l.user_id,
+            l.role,
+            l.actor_name,
+            l.patient_id,
+            l.action,
+            l.timestamp,
+            COALESCE(a.username, u.username) AS actor_name,
+            p.name AS patient_name
+        FROM logs l
+        LEFT JOIN admins a ON l.role = 'admin' AND l.user_id = a.id
+        LEFT JOIN users u ON l.role = 'user' AND l.user_id = u.id
+        LEFT JOIN patients p ON l.patient_id = p.id
+        ORDER BY l.id DESC
+        LIMIT 300
+        '''
+    ).fetchall()
+
+    logs_list = []
+    for row in log_rows:
+        actor_name = row[3] or row[7]
+        if not actor_name and row[2] == 'admin' and row[1] is None:
+            actor_name = root_admin_username
+        logs_list.append({
+            'id': row[0],
+            'user_id': row[1],
+            'role': row[2],
+            'patient_id': row[4],
+            'action': row[5],
+            'timestamp': row[6],
+            'actor_name': actor_name or 'Unknown user',
+            'patient_name': row[8] or ('Deleted patient' if row[4] else ''),
+        })
+
+    return render_template("logs.html", logs=logs_list, total_logs=len(logs_list))
 
 
 @app.route('/dashboard')
@@ -1406,9 +1473,11 @@ def add_patient():
                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))''',
                                 (name, age, age_unit, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history))
             db.commit()
+            patient_id = cursor.lastrowid
+            add_system_log(f"Patient created: {name} ({phone})", patient_id)
 
             if is_ajax:
-                return {"success": True, "patient_id": cursor.lastrowid}, 200
+                return {"success": True, "patient_id": patient_id}, 200
 
             return redirect(url_for('patient', success="Patient added successfully."))
         return redirect(url_for('patient'))
@@ -1421,13 +1490,14 @@ def delete_patient(patient_id):
     if not isadmin():
         return redirect(url_for('dashboard'))
 
-    patient = db.execute('SELECT id FROM patients WHERE id = ?', (patient_id,)).fetchone()
+    patient = db.execute('SELECT id, name, phone FROM patients WHERE id = ?', (patient_id,)).fetchone()
     if not patient:
         return redirect(url_for('patient', message="Patient not found."))
 
     try:
         db.execute('DELETE FROM patients WHERE id = ?', (patient_id,))
         db.commit()
+        add_system_log(f"Patient deleted: {patient[1]} ({patient[2]})", patient_id)
         return redirect(url_for('patient', message="Patient deleted successfully."))
     except sqlite3.IntegrityError:
         return redirect(url_for('patient', message="Cannot delete patient because they have associated records."))
@@ -1564,17 +1634,27 @@ def registered_users():
 
 @app.route('/delete', methods=['POST'])
 def delete_user():
+    if not isadmin():
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
+        actor = get_current_actor()
         if request.form.get('delete_user'):
             user_id = request.form.get('delete_user')
+            user_row = db.execute('SELECT username, email FROM users WHERE id = ?', (user_id,)).fetchone()
             db.execute('DELETE FROM users WHERE id = ?', (user_id,))
             db.commit()
+            if user_row:
+                add_system_log(f"Employee account deleted: {user_row[0]} ({user_row[1] or 'no email'})", actor=actor)
             return redirect(url_for('registered_users', delete_message="Employee deleted successfully."))
         
         elif request.form.get('delete_admin'):
                 admin_id = request.form.get('delete_admin')
+                admin_row = db.execute('SELECT username, email FROM admins WHERE id = ?', (admin_id,)).fetchone()
                 db.execute('DELETE FROM admins WHERE id = ?', (admin_id,))
                 db.commit()
+                if admin_row:
+                    add_system_log(f"Admin account deleted: {admin_row[0]} ({admin_row[1] or 'no email'})", actor=actor)
                 return redirect(url_for('registered_users', delete_message="Admin deleted successfully."))
     else:
         return redirect(url_for('login'))
