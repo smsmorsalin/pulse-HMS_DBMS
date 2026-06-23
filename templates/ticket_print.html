@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Ticket Invoice | AL-JUMIRA HOSPITAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket_print.css') }}">
+</head>
+<body>
+    <main class="ticket-page">
+        <section class="ticket-sheet" id="printArea">
+            <div class="ticket-actions no-print">
+                <a href="{{ url_for('patients_registration', view='list') }}" class="action-btn secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+                <button type="button" class="action-btn" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Ticket
+                </button>
+            </div>
+
+            <header class="ticket-header">
+                <div class="hospital-brand">
+                    <img src="{{ url_for('assets', filename='logo.png') }}" alt="AL-JUMIRA HOSPITAL Logo">
+                    <div>
+                        <h1>AL-JUMIRA HOSPITAL</h1>
+                        <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                        <p>Phone: 017767617979 | Email: aljumirahospital@gmail.com</p>
+                    </div>
+                </div>
+                <div class="invoice-badge">
+                    <span>Doctor Ticket</span>
+                    <strong>#{{ ticket[1] or ticket[0] }}</strong>
+                </div>
+            </header>
+
+            <section class="ticket-meta">
+                <div>
+                    <span>UHID</span>
+                    <strong>{{ ticket[0] }}</strong>
+                </div>
+                <div>
+                    <span>Ticket No</span>
+                    <strong>{{ ticket[1] or '-' }}</strong>
+                </div>
+                <div>
+                    <span>Serial No</span>
+                    <strong>{{ ticket[2] or '-' }}</strong>
+                </div>
+                <div>
+                    <span>Date & Time</span>
+                    <strong>{{ ticket[14] or '-' }}</strong>
+                </div>
+            </section>
+
+            <section class="info-grid">
+                <div class="info-card">
+                    <h2>Patient Information</h2>
+                    <p><span>Name</span><strong>{{ ticket[3] }}</strong></p>
+                    <p><span>Age</span><strong>{{ ticket[4] }} {{ ticket[5] }}</strong></p>
+                    <p><span>Gender</span><strong>{{ ticket[6] }}</strong></p>
+                    <p><span>Mobile</span><strong>{{ ticket[7] }}</strong></p>
+                    <p><span>Status</span><strong>{{ ticket[9] or '-' }}</strong></p>
+                    <p><span>Address</span><strong>{{ ticket[8] }}</strong></p>
+                </div>
+
+                <div class="info-card">
+                    <h2>Doctor Information</h2>
+                    <p><span>Doctor</span><strong>{{ ticket[10] or '-' }}</strong></p>
+                    <p><span>Designation</span><strong>{{ ticket[11] or '-' }}</strong></p>
+                    <p><span>Referer</span><strong>{{ ticket[12] or '-' }}</strong></p>
+                    <p><span>Service</span><strong>Doctor Consultation</strong></p>
+                </div>
+            </section>
+
+            <section class="fee-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Doctor Consultation Fee</td>
+                            <td>1</td>
+                            <td>{{ "%.2f"|format(ticket[13] or 0) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="ticket-total">
+                <span>Payable Doctor Fee</span>
+                <strong>{{ "%.2f"|format(ticket[13] or 0) }} Tk</strong>
+            </section>
+                    <footer class="ticket-footer">
+
+                        <div class="footer-info">
+                            <div><strong>Prepared By:</strong> {{ prepared_by or 'Admin' }}</div>
+
+                            <div><strong>Printed By:</strong> {{ printed_by or 'Admin' }}</div>
+
+                            <div><strong>Printed At:</strong>
+                                <span id="printedTimestamp">--</span>
+                            </div>
+                        </div>
+
+                        <div class="footer-signature">
+                            <span></span>
+                            <p>Authorized Signature</p>
+                        </div>
+
+                    </footer>
+        </section>
+    </main>
+
+    <script>
+        function updatePrintedTimestamp() {
+            const timestampElement = document.getElementById("printedTimestamp");
+            if (!timestampElement) return;
+            timestampElement.textContent = new Date().toLocaleString("en-GB");
+        }
+
+        updatePrintedTimestamp();
+        window.setTimeout(function () {
+            window.print();
+        }, 500);
+    </script>
+</body>
+</html>

@@ -46,11 +46,15 @@
                             <th>Phone</th>
                             <th>Email</th>
                             <th>Specialization</th>
+                            <th>Designation</th>
                             <th>Department</th>
                             <th>License Number</th>
                             <th>Availability</th>
                             <th>Experience</th>
                             <th>Room Number</th>
+                            {% if admin %}
+                            <th>Action</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -66,11 +70,20 @@
                                 <td>{{ doctor[7] }}</td>
                                 <td>{{ doctor[8] }}</td>
                                 <td>{{ doctor[9] }}</td>
+                                <td>{{ doctor[10] }}</td>
+                                {% if admin %}
+                                <td>
+                                    <a class="edit-doctor-btn" href="{{ url_for('edit_doctor', doctor_id=doctor[0]) }}">
+                                        <i class="fas fa-pen-to-square"></i>
+                                        Edit
+                                    </a>
+                                </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="9">No doctors found.</td>
+                                <td colspan="{% if admin %}11{% else %}10{% endif %}">No doctors found.</td>
                             </tr>
                         {% endif %}
                     </tbody>

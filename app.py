@@ -81,7 +81,13 @@ def init_db():
                 emergency_contact_phone TEXT ,
                 medical_history TEXT,
                 created_at TEXT,
-                age_unit TEXT DEFAULT 'Y'
+                age_unit TEXT DEFAULT 'Y',
+                serial_no TEXT,
+                patient_status TEXT,
+                doctor_name TEXT,
+                doctor_designation TEXT,
+                referer_name TEXT,
+                doctor_fee REAL DEFAULT 0
              )
         ''')
         print("Patients table created successfully.")
@@ -96,18 +102,36 @@ def init_db():
             cursor.execute("UPDATE patients SET age_unit = 'Y' WHERE age_unit IS NULL OR age_unit = ''")
         if 'daily_patient_id' not in patients_columns:
             cursor.execute("ALTER TABLE patients ADD COLUMN daily_patient_id INTEGER")
-            existing_patients = cursor.execute('''
-                SELECT id, COALESCE(date(created_at), date('now', '+6 hours')) AS entry_date
+        if 'serial_no' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN serial_no TEXT")
+        if 'patient_status' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN patient_status TEXT")
+        if 'doctor_name' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN doctor_name TEXT")
+        if 'doctor_designation' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN doctor_designation TEXT")
+        if 'referer_name' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN referer_name TEXT")
+        if 'doctor_fee' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN doctor_fee REAL DEFAULT 0")
+
+        patients_missing_daily_id = cursor.execute('''
+            SELECT id, COALESCE(date(created_at), date('now', '+6 hours')) AS entry_date
+            FROM patients
+            WHERE daily_patient_id IS NULL OR daily_patient_id = ''
+            ORDER BY entry_date ASC, id ASC
+        ''').fetchall()
+        for patient_id, entry_date in patients_missing_daily_id:
+            next_daily_id = cursor.execute('''
+                SELECT COALESCE(MAX(daily_patient_id), 0) + 1
                 FROM patients
-                ORDER BY entry_date ASC, id ASC
-            ''').fetchall()
-            daily_counts = {}
-            for patient_id, entry_date in existing_patients:
-                daily_counts[entry_date] = daily_counts.get(entry_date, 0) + 1
-                cursor.execute(
-                    "UPDATE patients SET daily_patient_id = ? WHERE id = ?",
-                    (daily_counts[entry_date], patient_id)
-                )
+                WHERE date(created_at) = ?
+                  AND daily_patient_id IS NOT NULL
+            ''', (entry_date,)).fetchone()[0]
+            cursor.execute(
+                "UPDATE patients SET daily_patient_id = ? WHERE id = ?",
+                (next_daily_id, patient_id)
+            )
     
     #doctors table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="doctors"')
@@ -120,6 +144,7 @@ def init_db():
                 phone TEXT NOT NULL,
                 email TEXT NOT NULL,
                 specialization TEXT NOT NULL,
+                designation TEXT,
                 department TEXT NOT NULL,
                 license_number TEXT NOT NULL,
                 availability TEXT NOT NULL,
@@ -128,6 +153,11 @@ def init_db():
             )
         ''')
         print("Doctors table created successfully.")
+    else:
+        doctors_columns = {row[1] for row in cursor.execute("PRAGMA table_info(doctors)").fetchall()}
+        if 'designation' not in doctors_columns:
+            cursor.execute("ALTER TABLE doctors ADD COLUMN designation TEXT")
+            print("Doctors table migrated: designation column added.")
 
     #services table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="services"')
@@ -1422,23 +1452,19 @@ def delete_medicine_balance():
 
 @app.route('/patient')
 def patient():
-    """Patient information page - only accessible to logged-in users."""
-    if isadmin() or isuser():
-        selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
-        patient_list = db.execute('''
-            SELECT * FROM patients
-            WHERE date(created_at) = ?
-            ORDER BY id ASC
-        ''', (selected_date,)).fetchall()
-        is_admin = isadmin()
-        return render_template("patient.html", patients=patient_list, admin=is_admin, selected_date=selected_date)
-    else:
-        return redirect(url_for('login'))
+    return redirect(url_for('patients_registration'))
 
 @app.route('/add_patient', methods=['POST'])
 def add_patient():
     """Page/API to add new patient information - accessible to any logged-in account."""
     if isadmin() or isuser():
+        redirect_endpoint = request.args.get('next')
+        if redirect_endpoint != 'patients_registration':
+            redirect_endpoint = 'patients_registration'
+
+        def patient_redirect(**kwargs):
+            return redirect(url_for(redirect_endpoint, **kwargs))
+
         if request.method == 'POST':
             name = request.form.get('name')
             age = request.form.get('age')
@@ -1446,41 +1472,73 @@ def add_patient():
             gender = request.form.get('gender')
             phone = request.form.get('phone')
             email = request.form.get('email')
-            dob = request.form.get('dob')
+            dob = request.form.get('dob') or ''
             blood_group = request.form.get('blood_group')
             address = request.form.get('address')
-            emergency_contact_name = request.form.get('emergency_contact_name')
-            emergency_contact_phone = request.form.get('emergency_contact_phone')
+            emergency_contact_name = request.form.get('emergency_contact_name') or ''
+            emergency_contact_phone = request.form.get('emergency_contact_phone') or ''
             medical_history = request.form.get('medical_history')
+            serial_no = request.form.get('serial_no', '').strip()
+            patient_status = request.form.get('patient_status')
+            doctor_name = request.form.get('doctor_name')
+            doctor_designation = request.form.get('doctor_designation')
+            referer_name = request.form.get('referer_name')
+            doctor_fee = request.form.get('doctor_fee')
+            save_action = request.form.get('save_action')
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-            if not name or not age or not gender or not phone or not dob or not blood_group or not address or not emergency_contact_name or not emergency_contact_phone:
+            if not name or not age or not gender or not phone or not blood_group or not address or not patient_status or not doctor_name or not doctor_fee:
                 if is_ajax:
                     return {"success": False, "error": "Please fill in all required fields."}, 400
-                return redirect(url_for('patient'))
+                return patient_redirect(error="Please fill in all required fields.")
             if not age.isdigit() or int(age) < 0:
                 if is_ajax:
                     return {"success": False, "error": "Please enter a valid age."}, 400
-                return redirect(url_for('patient'))
+                return patient_redirect(error="Please enter a valid age.")
             if age_unit not in ('Y', 'M', 'D'):
                 age_unit = 'Y'
             if not phone.isdigit() or len(phone) < 7:
                 if is_ajax:
                     return {"success": False, "error": "Please enter a valid phone number."}, 400
-                return redirect(url_for('patient'))
+                return patient_redirect(error="Please enter a valid phone number.")
+            try:
+                doctor_fee_value = float(doctor_fee)
+            except (TypeError, ValueError):
+                if is_ajax:
+                    return {"success": False, "error": "Please enter a valid doctor fee."}, 400
+                return patient_redirect(error="Please enter a valid doctor fee.")
 
-            cursor = db.execute('''INSERT INTO patients (name, age, age_unit, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history, created_at) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))''',
-                                (name, age, age_unit, gender, phone, email, dob, blood_group, address, emergency_contact_name, emergency_contact_phone, medical_history))
+            daily_ticket_no = db.execute('''
+                SELECT COALESCE(MAX(daily_patient_id), 0) + 1
+                FROM patients
+                WHERE date(created_at) = date('now', '+6 hours')
+            ''').fetchone()[0]
+
+            cursor = db.execute('''INSERT INTO patients (
+                                      daily_patient_id, serial_no, name, age, age_unit, gender, phone, email,
+                                      dob, blood_group, address, emergency_contact_name, emergency_contact_phone,
+                                      medical_history, patient_status, doctor_name, doctor_designation,
+                                      referer_name, doctor_fee, created_at
+                                  ) 
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))''',
+                                (
+                                    daily_ticket_no, serial_no, name, age, age_unit, gender, phone, email,
+                                    dob, blood_group, address, emergency_contact_name, emergency_contact_phone,
+                                    medical_history, patient_status, doctor_name, doctor_designation,
+                                    referer_name, doctor_fee_value
+                                ))
             db.commit()
             patient_id = cursor.lastrowid
-            add_system_log(f"Patient created: {name} ({phone})", patient_id)
+            add_system_log(f"Patient created: {name} ({phone}), ticket no {daily_ticket_no}", patient_id)
 
             if is_ajax:
-                return {"success": True, "patient_id": patient_id}, 200
+                return {"success": True, "patient_id": patient_id, "ticket_no": daily_ticket_no, "print_url": url_for('ticket_print', patient_id=patient_id)}, 200
 
-            return redirect(url_for('patient', success="Patient added successfully."))
-        return redirect(url_for('patient'))
+            if save_action == 'save_print':
+                return redirect(url_for('ticket_print', patient_id=patient_id))
+
+            return patient_redirect(success="Patient added successfully.")
+        return patient_redirect()
     else:
         return redirect(url_for('login'))
 
@@ -1492,15 +1550,15 @@ def delete_patient(patient_id):
 
     patient = db.execute('SELECT id, name, phone FROM patients WHERE id = ?', (patient_id,)).fetchone()
     if not patient:
-        return redirect(url_for('patient', message="Patient not found."))
+        return redirect(url_for('patients_registration', message="Patient not found."))
 
     try:
         db.execute('DELETE FROM patients WHERE id = ?', (patient_id,))
         db.commit()
         add_system_log(f"Patient deleted: {patient[1]} ({patient[2]})", patient_id)
-        return redirect(url_for('patient', message="Patient deleted successfully."))
+        return redirect(url_for('patients_registration', message="Patient deleted successfully."))
     except sqlite3.IntegrityError:
-        return redirect(url_for('patient', message="Cannot delete patient because they have associated records."))
+        return redirect(url_for('patients_registration', message="Cannot delete patient because they have associated records."))
 
 @app.route('/admissions', methods=['GET', 'POST'])
 def admissions():
@@ -1665,12 +1723,106 @@ def doctors():
         return redirect(url_for('login'))
     """Page to display doctor information."""
     admin_varifier = isadmin()
-    doctor_list = db.execute('SELECT * FROM doctors').fetchall()
-    return render_template("doctors.html", doctors=doctor_list, admin=admin_varifier)
+    doctor_list = db.execute('''
+        SELECT id, name, phone, email, specialization, designation,
+               department, license_number, availability, experience, room_number
+        FROM doctors
+        ORDER BY id ASC
+    ''').fetchall()
+    message = request.args.get('message') or request.args.get('success')
+    return render_template("doctors.html", doctors=doctor_list, admin=admin_varifier, message=message)
+
+@app.route('/patients-registration')
+def patients_registration():
+    """Patient registration page from the dashboard sidebar."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    patient_list = db.execute('''
+        SELECT
+            id,
+            daily_patient_id,
+            name,
+            age,
+            COALESCE(NULLIF(age_unit, ''), 'Y') AS age_unit,
+            gender,
+            phone,
+            address
+        FROM patients
+        WHERE date(created_at) = ?
+        ORDER BY COALESCE(daily_patient_id, id) ASC, id ASC
+    ''', (selected_date,)).fetchall()
+    next_daily_ticket_no = db.execute('''
+        SELECT COALESCE(MAX(daily_patient_id), 0) + 1
+        FROM patients
+        WHERE date(created_at) = date('now', '+6 hours')
+    ''').fetchone()[0]
+    doctor_options = db.execute('''
+        SELECT id, name, COALESCE(designation, '') AS designation
+        FROM doctors
+        ORDER BY name ASC
+    ''').fetchall()
+    return render_template(
+        'patients_registration.html',
+        patients=patient_list,
+        admin=isadmin(),
+        selected_date=selected_date,
+        next_daily_ticket_no=next_daily_ticket_no,
+        doctor_options=doctor_options
+    )
+
+@app.route('/ticket-print/<int:patient_id>')
+def ticket_print(patient_id):
+    """Printable doctor ticket invoice for a registered patient."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    ticket = db.execute('''
+        SELECT
+            id,
+            daily_patient_id,
+            serial_no,
+            name,
+            age,
+            COALESCE(NULLIF(age_unit, ''), 'Y') AS age_unit,
+            gender,
+            phone,
+            address,
+            patient_status,
+            doctor_name,
+            doctor_designation,
+            referer_name,
+            doctor_fee,
+            created_at
+        FROM patients
+        WHERE id = ?
+    ''', (patient_id,)).fetchone()
+
+    if not ticket:
+        return redirect(url_for('patients_registration', message="Patient ticket not found."))
+
+    prepared_log = db.execute('''
+        SELECT actor_name
+        FROM logs
+        WHERE patient_id = ?
+          AND action LIKE 'Patient created:%'
+        ORDER BY timestamp ASC, id ASC
+        LIMIT 1
+    ''', (patient_id,)).fetchone()
+    prepared_by = prepared_log[0] if prepared_log and prepared_log[0] else 'Unknown user'
+    printed_by = get_current_actor()[2]
+
+    return render_template(
+        'ticket_print.html',
+        ticket=ticket,
+        prepared_by=prepared_by,
+        printed_by=printed_by
+    )
 
 @app.route('/tickets')
 def tickets():
-    return render_template('tickets.html')
+    return redirect(url_for('patients_registration'))
 
 @app.route('/add_doctor', methods=['GET', 'POST'])
 def add_doctor():
@@ -1683,27 +1835,73 @@ def add_doctor():
             phone = request.form.get('phone')
             email = request.form.get('email')
             specialization = request.form.get('specialization')
+            designation = request.form.get('designation')
             department = request.form.get('department')
             license_number = request.form.get('license_number')
             availability = request.form.get('availability')
             experience = request.form.get('experience')
             room_number = request.form.get('room_number')
 
-            if not name or not phone or not email or not specialization or not department or not license_number or not availability or not experience or not room_number:
+            if not name or not phone or not email or not specialization or not designation or not department or not license_number or not availability or not experience or not room_number:
                 return render_template("add_doctor.html", error="Please fill in all required fields.")
             if not phone.isdigit() or len(phone) < 7:
                 return render_template("add_doctor.html", error="Please enter a valid phone number.")
             if not experience.isdigit() or int(experience) < 0:
                 return render_template("add_doctor.html", error="Please enter a valid number of years of experience.")
             
-            db.execute('''INSERT INTO doctors (name, phone, email, specialization, department, license_number, availability, experience, room_number) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (name, phone, email, specialization, department, license_number, availability, experience, room_number))
+            db.execute('''INSERT INTO doctors (name, phone, email, specialization, designation, department, license_number, availability, experience, room_number) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, phone, email, specialization, designation, department, license_number, availability, experience, room_number))
             db.commit()
             return redirect(url_for('doctors', success="Doctor added successfully."))
         return render_template("add_doctor.html")
     else:
         return redirect(url_for('login'))
+
+@app.route('/edit_doctor/<int:doctor_id>', methods=['GET', 'POST'])
+def edit_doctor(doctor_id):
+    """Edit doctor information - only accessible to admin."""
+    if not isadmin():
+        return redirect(url_for('doctors', message="Only admins can edit doctor information."))
+
+    doctor = db.execute('''
+        SELECT id, name, phone, email, specialization, designation,
+               department, license_number, availability, experience, room_number
+        FROM doctors
+        WHERE id = ?
+    ''', (doctor_id,)).fetchone()
+    if not doctor:
+        return redirect(url_for('doctors', message="Doctor not found."))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        specialization = request.form.get('specialization')
+        designation = request.form.get('designation')
+        department = request.form.get('department')
+        license_number = request.form.get('license_number')
+        availability = request.form.get('availability')
+        experience = request.form.get('experience')
+        room_number = request.form.get('room_number')
+
+        if not name or not phone or not email or not specialization or not designation or not department or not license_number or not availability or not experience or not room_number:
+            return render_template("add_doctor.html", error="Please fill in all required fields.", doctor=doctor, mode="edit")
+        if not phone.isdigit() or len(phone) < 7:
+            return render_template("add_doctor.html", error="Please enter a valid phone number.", doctor=doctor, mode="edit")
+        if not experience.isdigit() or int(experience) < 0:
+            return render_template("add_doctor.html", error="Please enter a valid number of years of experience.", doctor=doctor, mode="edit")
+
+        db.execute('''
+            UPDATE doctors
+            SET name = ?, phone = ?, email = ?, specialization = ?, designation = ?,
+                department = ?, license_number = ?, availability = ?, experience = ?, room_number = ?
+            WHERE id = ?
+        ''', (name, phone, email, specialization, designation, department, license_number, availability, experience, room_number, doctor_id))
+        db.commit()
+        return redirect(url_for('doctors', success="Doctor information updated successfully."))
+
+    return render_template("add_doctor.html", doctor=doctor, mode="edit")
     
 @app.route('/services')
 def services():

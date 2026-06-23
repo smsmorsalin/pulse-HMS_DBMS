@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Doctor</title>
+    <title>{{ 'Edit Doctor' if mode == 'edit' else 'Add Doctor' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/add_doctor.css') }}">
@@ -15,77 +15,88 @@
         <section class="add-doctor-panel">
             <div class="panel-header">
                 <div>
-                    <h1><i class="fas fa-user-doctor"></i> Add Doctor</h1>
-                    <p>Create a new doctor profile for the hospital directory.</p>
+                    <h1><i class="fas fa-user-doctor"></i> {{ 'Edit Doctor' if mode == 'edit' else 'Add Doctor' }}</h1>
+                    <p>{{ 'Update doctor information for the hospital directory.' if mode == 'edit' else 'Create a new doctor profile for the hospital directory.' }}</p>
                 </div>
-                <a class="back-btn" href="{{ url_for('doctors') }}" aria-label="Back to doctors">
-                    <i class="fas fa-arrow-left"></i>
-                    Back
-                </a>
+                <div class="header-actions">
+                    <a class="edit-info-btn" href="{{ url_for('doctors') }}">
+                        <i class="fas fa-pen-to-square"></i>
+                        Edit Doctor Information
+                    </a>
+                    <a class="back-btn" href="{{ url_for('doctors') }}" aria-label="Back to doctors">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </a>
+                </div>
             </div>
 
             {% if error %}
                 <p class="flash-message">{{ error }}</p>
             {% endif %}
 
-            <form class="doctor-form" action="{{ url_for('add_doctor') }}" method="post">
+            <form class="doctor-form" action="{{ url_for('edit_doctor', doctor_id=doctor[0]) if mode == 'edit' else url_for('add_doctor') }}" method="post">
                 <div class="form-grid">
                     <div class="input-group">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="name" name="name" required placeholder=" ">
+                        <input type="text" id="name" name="name" value="{{ doctor[1] if doctor else '' }}" required placeholder=" ">
                         <label for="name">Name</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-phone"></i>
-                        <input type="text" id="phone" name="phone" required placeholder=" ">
+                        <input type="text" id="phone" name="phone" value="{{ doctor[2] if doctor else '' }}" required placeholder=" ">
                         <label for="phone">Phone</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="email" name="email" required placeholder=" ">
+                        <input type="email" id="email" name="email" value="{{ doctor[3] if doctor else '' }}" required placeholder=" ">
                         <label for="email">Email</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-stethoscope"></i>
-                        <input type="text" id="specialization" name="specialization" required placeholder=" ">
+                        <input type="text" id="specialization" name="specialization" value="{{ doctor[4] if doctor else '' }}" required placeholder=" ">
                         <label for="specialization">Specialization</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-building-user"></i>
-                        <input type="text" id="department" name="department" required placeholder=" ">
+                        <input type="text" id="department" name="department" value="{{ doctor[6] if doctor else '' }}" required placeholder=" ">
                         <label for="department">Department</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-id-card"></i>
-                        <input type="text" id="license_number" name="license_number" required placeholder=" ">
+                        <input type="text" id="license_number" name="license_number" value="{{ doctor[7] if doctor else '' }}" required placeholder=" ">
                         <label for="license_number">License Number</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-calendar-check"></i>
-                        <input type="text" id="availability" name="availability" required placeholder=" ">
+                        <input type="text" id="availability" name="availability" value="{{ doctor[8] if doctor else '' }}" required placeholder=" ">
                         <label for="availability">Availability</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-briefcase-medical"></i>
-                        <input type="number" id="experience" name="experience" required min="0" placeholder=" ">
+                        <input type="number" id="experience" name="experience" value="{{ doctor[9] if doctor else '' }}" required min="0" placeholder=" ">
                         <label for="experience">Experience (years)</label>
                     </div>
 
                     <div class="input-group">
                         <i class="fas fa-door-open"></i>
-                        <input type="text" id="room_number" name="room_number" required placeholder=" ">
+                        <input type="text" id="room_number" name="room_number" value="{{ doctor[10] if doctor else '' }}" required placeholder=" ">
                         <label for="room_number">Room Number</label>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-graduation-cap"></i>
+                        <input type="text" id="designation" name="designation" value="{{ (doctor[5] or '') if doctor else '' }}" required placeholder=" ">
+                        <label for="designation">Designation</label>
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn">Add Doctor</button>
+                <button type="submit" class="submit-btn">{{ 'Update Doctor' if mode == 'edit' else 'Add Doctor' }}</button>
             </form>
         </section>
     </main>

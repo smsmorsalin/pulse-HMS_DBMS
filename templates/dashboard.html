@@ -27,16 +27,13 @@
     
     <li><a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
    
-    <!-- NEW TICKET BUTTON -->
+    <!-- PATIENT REGISTRATION BUTTON -->
     <li>
-    <a class="nav-link" href="{{ url_for('tickets') }}">
-        <i class="fas fa-ticket-alt"></i>
-        <span>Ticket</span>
+    <a class="nav-link" href="{{ url_for('patients_registration') }}">
+        <i class="fas fa-user-plus"></i>
+        <span>Patients Registration</span>
     </a>
    </li>
-    
-    
-    <li><a class="nav-link" href="{{ url_for('patient') }}"><i class="fas fa-user-injured"></i> <span>Patients</span></a></li>
     <li><a class="nav-link" href="{{ url_for('doctors') }}"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
     <li><a class="nav-link" href="{{ url_for('admissions') }}"><i class="fas fa-file-medical"></i> <span>Admission</span></a></li>
     <li><a class="nav-link" href="{{ url_for('appointments_info') }}"><i class="fa-solid fa-book-medical"></i> <span>Appointments Info</span></a></li>

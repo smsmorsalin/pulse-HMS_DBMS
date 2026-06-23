@@ -50,12 +50,68 @@ body {
     to { transform: translateY(50px); }
 }
 
+.toast-message {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(56, 193, 114, 0.35);
+    background: rgba(15, 25, 60, 0.96);
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+    animation: toastSlideIn 0.28s ease both;
+}
+
+.toast-message i {
+    color: #9af0bb;
+}
+
+.toast-message.error {
+    border-color: rgba(255, 82, 82, 0.45);
+}
+
+.toast-message.error i {
+    color: #ff9f9f;
+}
+
+.toast-message.hide {
+    animation: toastSlideOut 0.35s ease both;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translate(18px, -12px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate(18px, -12px);
+    }
+}
+
 /* =========================
    FORM CONTAINER
 ========================= */
 .form-container{
     width: 100%;
-    max-width: 900px;
+    max-width: 1040px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
@@ -155,6 +211,13 @@ body {
     gap: 22px 28px;
 }
 
+.form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+}
+
 /* Full width elements */
 .full-width {
     grid-column: span 2;
@@ -215,7 +278,8 @@ body {
 }
 
 .input-group input:focus + label,
-.input-group input:valid + label,
+.input-group input:required:valid + label,
+.input-group input[placeholder]:not(:placeholder-shown) + label,
 .input-group textarea:focus + label,
 .input-group textarea:not(:placeholder-shown) + label,
 .input-group select:focus + label,
@@ -229,27 +293,50 @@ body {
 /* =========================
    BUTTON
 ========================= */
+.form-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 30px;
+}
+
 .submit-btn {
     width: 100%;
-    margin-top: 30px;
-    padding: 14px;
-    border: none;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
-    color: #fff;
-    font-weight: 600;
-    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #76c9ff;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #55b8f0;
+    font-weight: 700;
+    font-size: 16px;
     cursor: pointer;
-    transition: 0.3s ease;
+    white-space: nowrap;
+    transition: 0.25s ease;
+}
+
+.save-print-btn {
+    border-color: #96e4c8;
+    color: #18a977;
 }
 
 .submit-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(255, 30, 86, 0.7);
+    transform: translateY(-2px);
 }
 
 .submit-btn:active {
-    transform: scale(0.96);
+    transform: translateY(0);
+}
+
+.submit-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ===============================
@@ -298,6 +385,14 @@ body {
     }
 
     .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .patient-number-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
         grid-template-columns: 1fr;
     }
 
@@ -464,10 +559,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 
+.patient-number-grid {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.8fr) minmax(130px, 0.7fr) minmax(190px, 0.9fr);
+    gap: 14px;
+    margin-bottom: 25px;
+}
+
 .patient-id-card {
     text-align: center;
-    padding: 15px;
-    margin-bottom: 25px;
+    padding: 12px 14px;
     border-radius: 16px;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
@@ -475,14 +576,47 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .patient-id-card h3 {
     color: #fff;
-    font-size: 20px;
+    font-size: 17px;
     margin-bottom: 5px;
 }
 
 .id-value {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
     color: #ff1e56;
+}
+
+.serial-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: left;
+}
+
+.serial-card label {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.serial-card input {
+    width: 86px;
+    min-width: 0;
+    padding: 9px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    outline: none;
+    font-weight: 600;
+    text-align: center;
+}
+
+.serial-card input:focus {
+    border-color: #1e3cfa;
+    box-shadow: 0 0 12px rgba(30, 60, 250, 0.5);
 }
 
 /*side bar*/
@@ -578,7 +712,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .sidebar-menu {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
     margin-top: 20px;
 }
 
@@ -587,31 +721,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.06);
-    color: #fff;
+    padding: 12px 15px;
+    border: 0;
+    border-radius: 30px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
     cursor: pointer;
     text-decoration: none;
+    text-align: left;
     font: inherit;
-    transition: 0.25s ease;
+    margin-bottom: 10px;
+    transition: 0.3s ease;
 }
 
 .sidebar-item:hover {
-    background: rgba(255,255,255,0.14);
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    color: #fff;
+    transform: translateX(6px);
 }
 
 .sidebar-item.active {
     background: linear-gradient(135deg, #1e3cfa, #ff1e56);
-    border-color: rgba(255,255,255,0.24);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+    color: #fff;
 }
 
 .sidebar-item i {
     width: 18px;
+    flex: 0 0 18px;
     text-align: center;
+    color: inherit;
+}
+
+#patientListNav span {
+    font-size: 14px;
+    white-space: nowrap;
 }
 
 .main-content{
@@ -830,6 +973,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-width: 60px;
 }
 
+.ticket-col {
+    width: 10%;
+    min-width: 90px;
+}
+
 .name-col {
     width: 18%;
     min-width: 120px;
@@ -856,12 +1004,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .action-col {
-    width: 14%;
-    min-width: 100px;
+    width: 18%;
+    min-width: 170px;
 }
 
-/* Delete Button Styling */
-.delete-btn {
+.row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Row Action Buttons */
+.delete-btn,
+.print-ticket-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -878,12 +1035,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     white-space: nowrap;
 }
 
-.delete-btn:hover {
+.print-ticket-btn {
+    background: linear-gradient(135deg, #0aa7a3, #18a977);
+}
+
+.delete-btn:hover,
+.print-ticket-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(30, 60, 250, 0.4);
 }
 
-.delete-btn:active {
+.delete-btn:active,
+.print-ticket-btn:active {
     transform: translateY(0);
 }
 

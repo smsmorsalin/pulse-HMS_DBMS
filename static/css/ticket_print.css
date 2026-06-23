@@ -1,0 +1,379 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: #eef4f8;
+    color: #172033;
+    padding: 28px 14px;
+}
+
+.ticket-page {
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+.ticket-sheet {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 18px 45px rgba(23, 32, 51, 0.14);
+    padding: 26px;
+    border: 1px solid #dce7ef;
+}
+
+.ticket-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 10px;
+    background: #18a977;
+    color: #fff;
+    padding: 10px 16px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.action-btn.secondary {
+    background: #42526e;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    padding-bottom: 18px;
+    border-bottom: 2px solid #0aa7a3;
+}
+
+.hospital-brand {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.hospital-brand img {
+    width: 66px;
+    height: 66px;
+    object-fit: contain;
+}
+
+.hospital-brand h1 {
+    font-size: 28px;
+    color: #0d4d68;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.hospital-brand p {
+    margin-top: 4px;
+    color: #526176;
+    font-size: 13px;
+}
+
+.invoice-badge {
+    min-width: 150px;
+    text-align: center;
+    border: 1px solid #b8dfe0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.invoice-badge span {
+    display: block;
+    background: #0aa7a3;
+    color: #fff;
+    padding: 8px;
+    font-weight: 700;
+}
+
+.invoice-badge strong {
+    display: block;
+    padding: 12px;
+    color: #0d4d68;
+    font-size: 24px;
+}
+
+.ticket-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+}
+
+.ticket-meta div,
+.info-card {
+    border: 1px solid #dce7ef;
+    border-radius: 10px;
+    background: #f8fbfd;
+}
+
+.ticket-meta div {
+    padding: 12px;
+}
+
+.ticket-meta span,
+.info-card p span {
+    display: block;
+    color: #66768d;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ticket-meta strong {
+    display: block;
+    margin-top: 4px;
+    color: #172033;
+    font-size: 16px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.info-card {
+    padding: 16px;
+}
+
+.info-card h2 {
+    font-size: 17px;
+    color: #0d4d68;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dce7ef;
+}
+
+.info-card p {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    margin: 9px 0;
+}
+
+.info-card p strong {
+    font-size: 14px;
+    color: #172033;
+    overflow-wrap: anywhere;
+}
+
+.fee-table {
+    margin-top: 18px;
+    border: 1px solid #dce7ef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.fee-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fee-table th,
+.fee-table td {
+    padding: 13px 14px;
+    text-align: left;
+    border-bottom: 1px solid #dce7ef;
+}
+
+.fee-table th {
+    background: #0d4d68;
+    color: #fff;
+    font-size: 13px;
+}
+
+.fee-table td:nth-child(2),
+.fee-table td:nth-child(3) {
+    text-align: right;
+}
+
+.ticket-total {
+    margin-top: 20px;
+    margin-left: auto;
+    width: 300px;
+    padding: 12px 15px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: #ecfbf6;
+    border: 1px solid #96e4c8;
+    border-radius: 8px;
+
+    font-weight: 700;
+}
+
+.ticket-total strong {
+    font-size: 18px;
+}
+
+.ticket-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin-top: 34px;
+    color: #526176;
+    font-size: 13px;
+}
+
+.ticket-audit {
+    display: grid;
+    gap: 5px;
+}
+
+.ticket-audit p {
+    margin: 0;
+}
+
+.ticket-audit p span {
+    display: inline-block;
+    min-width: 88px;
+    color: #66768d;
+    font-weight: 600;
+}
+
+.ticket-audit p strong {
+    color: #172033;
+    font-weight: 700;
+}
+
+.signature {
+    min-width: 210px;
+    text-align: center;
+    color: #172033;
+}
+
+.signature span {
+    display: block;
+    border-top: 1px solid #172033;
+    margin-bottom: 7px;
+}
+
+@media (max-width: 760px) {
+    .ticket-sheet {
+        padding: 18px;
+    }
+
+    .ticket-header,
+    .hospital-brand,
+    .ticket-footer {
+        flex-direction: column;
+    }
+
+    .ticket-actions {
+        justify-content: stretch;
+    }
+
+    .action-btn {
+        flex: 1;
+    }
+
+    .ticket-meta,
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media print {
+
+    @page {
+        size: A5 portrait;
+        margin: 6mm;
+    }
+
+    body {
+        padding: 0;
+        margin: 0;
+        background: white;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .ticket-page {
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .ticket-sheet {
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+    }
+
+    .ticket-footer {
+        page-break-inside: avoid;
+    }
+
+    .ticket-total {
+        page-break-inside: avoid;
+    }
+}
+
+
+
+.ticket-footer {
+    margin-top: 25px;
+    padding-top: 12px;
+    border-top: 1px solid #dce7ef;
+}
+
+.footer-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #172033;
+    margin-bottom: 30px;
+}
+
+.footer-info div {
+    flex: 1;
+}
+
+.footer-info div:nth-child(2) {
+    text-align: center;
+}
+
+.footer-info div:nth-child(3) {
+    text-align: right;
+}
+
+.footer-signature {
+    text-align: right;
+}
+
+.footer-signature span {
+    display: inline-block;
+    width: 180px;
+    border-top: 1px solid #172033;
+    margin-bottom: 5px;
+}
+
+.footer-signature p {
+    font-size: 12px;
+    color: #172033;
+}

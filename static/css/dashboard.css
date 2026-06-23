@@ -389,19 +389,3 @@ body {
   color: #ffffff;
 }
 
-/* Ticket Menu */
-.nav-link .fa-ticket-alt {
-    color: #ffb347;
-}
-
-
-.ticket-link {
-    background: rgba(255, 179, 71, 0.15);
-}
-
-.ticket-link:hover {
-    background: rgba(255, 179, 71, 0.25);
-}
-
-
-

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patients Registration | AL-JUMIRA HOSPITAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/patients_registration.css') }}">
+</head>
+<body data-is-admin="{{ 'true' if admin|default(false) else 'false' }}">
+
+<div class="background-blobs"></div>
+
+{% if request.args.get('success') or request.args.get('error') %}
+<div class="toast-message {% if request.args.get('error') %}error{% endif %}" id="patientSuccessToast">
+    <i class="fas {% if request.args.get('error') %}fa-circle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+    <span>{{ request.args.get('success') or request.args.get('error') }}</span>
+</div>
+{% endif %}
+
+ <div class="dashboard">
+
+    <aside class="sidebar">
+        <a class="sidebar-brand" id="hmsBrand" href="{{ url_for('dashboard') }}">HMS</a>
+        <div class="sidebar-menu" id="patientSidebarMenu">
+            <a id="dashboardNav" class="sidebar-item" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+
+
+            <button type="button" id="newPatientNav" class="sidebar-item">
+                <i class="fas fa-user-plus"></i>
+                <span>Register Patient</span>
+            </button>
+
+
+            <button type="button" id="patientListNav" class="sidebar-item">
+                <i class="fas fa-list"></i>
+                <span>Daily Patients List</span>
+            </button>
+            
+
+
+
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section class="patient-list-panel" id="patientListPanel" aria-label="Registered patient list">
+ <div class="patient-list-header">
+    <h2><i class="fas fa-list"></i> Daily Patients List</h2>
+
+    <div class="header-actions">
+            <form class="date-filter-bar" method="GET" action="{{ url_for('patients_registration') }}">
+                <input type="hidden" name="view" value="list">
+                <div class="date-filter-label">
+                    <i class="fas fa-calendar-day"></i>
+                    <span>Date</span>
+                </div>
+                <input type="date" name="date" value="{{ selected_date or '' }}" class="date-filter-input">
+                <button type="submit" class="date-filter-btn">Show</button>
+                {% if selected_date %}
+                <a class="date-filter-clear" href="{{ url_for('patients_registration', view='list') }}">Clear</a>
+                {% endif %}
+            </form>
+            <div class="patient-list-tools">
+                <input type="text" id="patientSearchInput" placeholder="Search by UHID, Ticket No, or Phone Number">
+                <button type="button" id="patientSearchClearBtn">Clear</button>
+            </div>
+            
+
+        <button type="button" id="newPatientHeaderBtn" class="new-patient-btn">
+            <i class="fas fa-user-plus"></i>
+            <span>Register Patient</span>
+        </button>
+
+    </div>
+</div>
+
+            <div class="patient-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="id-col">UHID</th>
+                            <th class="ticket-col">Ticket No</th>
+                            <th class="name-col">Name</th>
+                            <th class="age-col">Age</th>
+                            <th class="gender-col">Gender</th>
+                            <th class="phone-col">Phone</th>
+                            <th class="address-col">Address</th>
+                            <th class="action-col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody">
+                        {% if patients %}
+                            {% for patient in patients %}
+                            <tr>
+                                <td class="id-col">{{ patient[0] }}</td>
+                                <td class="ticket-col">{{ patient[1] or '-' }}</td>
+                                <td class="name-col">{{ patient[2] }}</td>
+                                <td class="age-col">{{ patient[3] }} {{ patient[4] }}</td>
+                                <td class="gender-col">{{ patient[5] }}</td>
+                                <td class="phone-col">{{ patient[6] }}</td>
+                                <td class="address-col">{{ patient[7] }}</td>
+                                <td class="action-col">
+                                    <div class="row-actions">
+                                        <a href="{{ url_for('ticket_print', patient_id=patient[0]) }}" class="print-ticket-btn" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i> Print
+                                        </a>
+                                        {% if admin %}
+                                        <a href="/delete_patient/{{ patient[0] }}" class="delete-btn" onclick="return confirm('Are you sure you want to delete this patient?');">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8">No patients found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Patient Registration Form -->
+        <div class="form-container">
+            <div class="patient-number-grid">
+                <div class="patient-id-card">
+                    <h3>Patient UHID</h3>
+                    <div class="id-value" id="patientUHID">Auto</div>
+                </div>
+                <div class="patient-id-card">
+                    <h3>Ticket No</h3>
+                    <div class="id-value" id="dailyTicketNo">{{ next_daily_ticket_no or 'Auto' }}</div>
+                </div>
+                <div class="patient-id-card serial-card">
+                    <label for="serialNo">Serial No</label>
+                    <input type="text" id="serialNo" name="serial_no" form="patientRegistrationForm" inputmode="numeric" autocomplete="off">
+                </div>
+            </div>
+
+            <form id="patientRegistrationForm" class="glass-form" action="{{ url_for('add_patient', next='patients_registration') }}" method="POST">
+                <div class="patient-form-header">
+                    <h2><i class="fas fa-hospital-user"></i> Patient Registration</h2>
+                    <div class="entry-timestamp">
+                        <strong>Date & Time:</strong> <span id="printedTimestamp">--</span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+
+                    <div class="form-column left-column">
+                        <!-- Left Column -->
+
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="fullName" name="name" required autofocus placeholder=" ">
+                            <label>Full Name</label>
+                        </div>
+
+                        <!-- Age  -->
+                        <div class="age-gender-row">
+
+                            <div class="input-group age-box">
+                                <i class="fas fa-hashtag"></i>
+
+                                <div class="age-input-wrapper">
+                                    <input type="number" id="age" name="age" required min="0">
+
+                                    <select id="ageUnit" name="age_unit" aria-label="Age unit" required>
+                                        <option value="Y" selected>Y</option>
+                                        <option value="M">M</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+
+                                <label>Age</label>
+                            </div>
+
+                            <div class="input-group gender-box">
+                                <i class="fas fa-venus-mars"></i>
+                                <select id="gender" name="gender" required>
+                                    <option value="" disabled selected></option>
+                                    <option>Female</option>
+                                    <option>Male</option>
+                                    <option>Other</option>
+                                </select>
+                                <label>Gender</label>
+                            </div>
+
+                        </div>
+
+                        <div class="input-group">
+                            <i class="fas fa-phone"></i>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                maxlength="11"
+                                pattern="[0-9]{1,11}"
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)"
+                                required>
+                            <label>Phone Number</label>
+                        </div>
+                        
+                        <div class="input-group">
+                            <i class="fas fa-droplet"></i>
+                            <select id="bloodGroup" name="blood_group" required>
+                                <option value="" disabled selected></option>
+                                <option>B+</option>
+                                <option>B-</option>
+                                <option>A-</option>
+                                <option>A+</option>
+                                <option>AB+</option>
+                                <option>AB-</option>
+                                <option>O+</option>
+                                <option>O-</option>
+                            </select>
+                            <label>Blood Group</label>
+                        </div>
+                        
+                        <div class="input-group address-group">
+                            <i class="fas fa-location-dot"></i>
+                            <textarea id="address" name="address" placeholder=" " required></textarea>
+                            <label>Address</label>
+                        </div>
+
+                        <div class="input-group">
+                            <i class="fas fa-user-check"></i>
+                            <select id="patientStatus" name="patient_status" required>
+                                <option value="" disabled selected></option>
+                                <option>OLD</option>
+                                <option>NEW</option>
+                                
+                            </select>
+                            <label>Patient Status</label>
+                        </div>
+                    </div>
+
+                    <div class="form-column right-column">
+                        <!-- Right Column -->
+
+                        <div class="input-group">
+                            <i class="fas fa-user-md"></i>
+                            <select id="doctorname" name="doctor_name" required>
+                                <option value="" disabled selected></option>
+                                {% for doctor in doctor_options %}
+                                <option value="{{ doctor[1] }}" data-designation="{{ doctor[2] }}">{{ doctor[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            <label>Doctor Name</label>
+                        </div>
+                        
+                        <div class="input-group">
+                            <i class="fas fa-graduation-cap"></i>
+                            <input type="text" id="doctorDesignation" name="doctor_designation" placeholder=" " readonly>
+                            <label>Doctor Designation</label>
+                        </div>
+
+                        <div class="input-group">
+                            <i class="fas fa-user-friends"></i>
+                            <select id="refererName" name="referer_name" required>
+                                <option value="" disabled selected></option>
+                                <option>Self</option>
+                                <option>MD</option>
+                                <option>Sobuj</option>
+
+                            </select>
+                            <label>Name Of Referer</label>
+                        
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-phone-volume"></i>
+                            <input
+                                type="tel"
+                                id="emergencyContactNumber"
+                                name="emergency_contact_phone"
+                                maxlength="11"
+                                pattern="[0-9]{1,11}"
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)"
+                                placeholder=" ">
+                            <label>Emergency Contact Number</label>
+                        </div>
+
+
+                        <div class="input-group">
+                            <i class="fas fa-wallet"></i>
+                            <input type="text" id="doctorFee" name="doctor_fee"  required placeholder=" ">
+                            <label>Doctor Fee</label>
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+                <input type="hidden" id="patientSaveAction" name="save_action" value="register">
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn" id="registerPatientBtn" data-save-action="register">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Register Patient</span>
+                    </button>
+                    <button type="submit" class="submit-btn save-print-btn" id="savePrintPatientBtn" data-save-action="save_print">
+                        <i class="fas fa-print"></i>
+                        <span>Save &amp; Print</span>
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </main>
+
+ </div>
+
+<footer class="dashboard-footer">
+  <span>©</span>
+  <span>Copyright</span>
+  <span>AL-JUMIRA HOSPITAL</span>
+  <span>Patient Management System</span>
+  <span id="dashboardFooterYear"></span>
+</footer>
+    <script>
+    const patientForm = document.querySelector(".glass-form");
+    const patientTableBody = document.getElementById("patientTableBody");
+    const newPatientNav = document.getElementById("newPatientNav");
+    const newPatientHeaderBtn = document.getElementById("newPatientHeaderBtn");
+    const patientListNav = document.getElementById("patientListNav");
+    const patientListPanel = document.getElementById("patientListPanel");
+    const formContainer = document.querySelector(".form-container");
+    const ageInput = document.getElementById("age");
+    const doctorNameSelect = document.getElementById("doctorname");
+    const doctorDesignationInput = document.getElementById("doctorDesignation");
+    const submitButtons = patientForm.querySelectorAll(".submit-btn");
+    const registerPatientBtn = document.getElementById("registerPatientBtn");
+    const savePrintPatientBtn = document.getElementById("savePrintPatientBtn");
+    const patientSaveActionInput = document.getElementById("patientSaveAction");
+    const patientSearchInput = document.getElementById("patientSearchInput");
+    const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
+    const dashboardNav = document.getElementById("dashboardNav");
+    const billingNav = document.getElementById("billingNav");
+    const hmsBrand = document.getElementById("hmsBrand");
+    const sidebarItems = document.querySelectorAll("#patientSidebarMenu .sidebar-item");
+
+    function setActiveSidebarItem(activeItem) {
+        sidebarItems.forEach(function (item) {
+            item.classList.remove("active");
+        });
+
+        if (activeItem) {
+            activeItem.classList.add("active");
+        }
+    }
+
+    function navigateWithActive(linkElement) {
+        const targetUrl = linkElement.getAttribute("href");
+        setActiveSidebarItem(linkElement);
+        window.setTimeout(function () {
+            window.location.href = targetUrl;
+        }, 120);
+    }
+
+    function updateAgeState() {
+        const ageBox = ageInput.closest(".age-box");
+        if (ageInput.value !== "") {
+            ageInput.classList.add("has-value");
+            if (ageBox) ageBox.classList.add("has-value");
+        } else {
+            ageInput.classList.remove("has-value");
+            if (ageBox) ageBox.classList.remove("has-value");
+        }
+    }
+
+    function showPatientFormView() {
+        formContainer.style.display = "block";
+        patientListPanel.style.display = "none";
+        setActiveSidebarItem(newPatientNav);
+    }
+
+    function showPatientListView() {
+        formContainer.style.display = "none";
+        patientListPanel.style.display = "block";
+        setActiveSidebarItem(patientListNav);
+    }
+
+    ageInput.addEventListener("input", function () {
+        updateAgeState();
+    });
+
+    function updateDoctorDesignation() {
+        if (!doctorNameSelect || !doctorDesignationInput) return;
+
+        const selectedOption = doctorNameSelect.options[doctorNameSelect.selectedIndex];
+        const designation = selectedOption ? selectedOption.dataset.designation || "" : "";
+
+        doctorDesignationInput.value = designation;
+        doctorDesignationInput.classList.toggle("has-value", designation !== "");
+    }
+
+    if (doctorNameSelect) {
+        doctorNameSelect.addEventListener("change", updateDoctorDesignation);
+        updateDoctorDesignation();
+    }
+
+    patientSearchInput.addEventListener("input", function () {
+        const searchTerm = this.value.trim().toLowerCase();
+        const rows = patientTableBody.querySelectorAll("tr");
+
+        rows.forEach(function (row) {
+            const idCell = row.cells[0];
+            const ticketCell = row.cells[1];
+            const phoneCell = row.cells[5];
+
+            if (!idCell || !phoneCell) {
+                row.style.display = "";
+                return;
+            }
+
+            const idText = idCell.textContent.toLowerCase();
+            const ticketText = ticketCell ? ticketCell.textContent.toLowerCase() : "";
+            const phoneText = phoneCell.textContent.toLowerCase();
+            const isMatch = idText.includes(searchTerm) || ticketText.includes(searchTerm) || phoneText.includes(searchTerm);
+            row.style.display = isMatch ? "" : "none";
+        });
+    });
+
+    patientSearchClearBtn.addEventListener("click", function () {
+        patientSearchInput.value = "";
+        patientTableBody.querySelectorAll("tr").forEach(function (row) {
+            row.style.display = "";
+        });
+    });
+
+        submitButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                if (patientSaveActionInput) {
+                    patientSaveActionInput.value = button.dataset.saveAction || "register";
+                }
+            });
+        });
+
+        patientForm.addEventListener("submit", function (event) {
+            const activeButton = event.submitter || registerPatientBtn;
+            const saveAction = activeButton ? activeButton.dataset.saveAction || "register" : "register";
+            const activeText = saveAction === "save_print" ? "Saving..." : "Registering...";
+
+            if (patientSaveActionInput) {
+                patientSaveActionInput.value = saveAction;
+            }
+
+            submitButtons.forEach(function (button) {
+                button.disabled = true;
+            });
+
+            if (activeButton) {
+                activeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>' + activeText + '</span>';
+            }
+        });
+
+    if (dashboardNav) {
+        dashboardNav.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(dashboardNav);
+        });
+    }
+
+    if (billingNav) {
+        billingNav.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(billingNav);
+        });
+    }
+
+    if (hmsBrand) {
+        hmsBrand.addEventListener("click", function (event) {
+            event.preventDefault();
+            navigateWithActive(dashboardNav || hmsBrand);
+        });
+    }
+
+    window.addEventListener("pageshow", function () {
+        submitButtons.forEach(function (button) {
+            button.disabled = false;
+        });
+        if (registerPatientBtn) {
+            registerPatientBtn.innerHTML = '<i class="fas fa-user-plus"></i><span>Register Patient</span>';
+        }
+        if (savePrintPatientBtn) {
+            savePrintPatientBtn.innerHTML = '<i class="fas fa-print"></i><span>Save &amp; Print</span>';
+        }
+    });
+
+    const pageParams = new URLSearchParams(window.location.search);
+    if (pageParams.get("view") === "list" || pageParams.has("date")) {
+        showPatientListView();
+    } else {
+        showPatientFormView();
+    }
+
+    const patientSuccessToast = document.getElementById("patientSuccessToast");
+    if (patientSuccessToast) {
+        window.setTimeout(function () {
+            patientSuccessToast.classList.add("hide");
+        }, 3500);
+
+        window.setTimeout(function () {
+            patientSuccessToast.remove();
+        }, 4300);
+    }
+
+    newPatientNav.addEventListener("click", function () {
+        showPatientFormView();
+    });
+
+    if (newPatientHeaderBtn) {
+        newPatientHeaderBtn.addEventListener("click", function () {
+            showPatientFormView();
+        });
+    }
+
+    patientListNav.addEventListener("click", function () {
+        showPatientListView();
+    });
+
+    const logoutNav = document.getElementById("logoutNav");
+    if (logoutNav) {
+        logoutNav.addEventListener("click", function () {
+            window.location.href = "{{ url_for('logout') }}";
+        });
+    }
+
+ function updatePrintedTimestamp() {
+    const timestampElement = document.getElementById("printedTimestamp");
+    if (!timestampElement) return;
+
+    const now = new Date();
+
+    const options = {
+        weekday: 'short',   // Tue
+        day: 'numeric',    // 16
+        month: 'long',     // June
+        year: 'numeric',   // 2026
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    };
+
+    timestampElement.textContent = now.toLocaleString('en-GB', options);
+}
+
+    updatePrintedTimestamp();
+    window.setInterval(updatePrintedTimestamp, 1000);
+
+    const dashboardFooterYear = document.getElementById("dashboardFooterYear");
+if (dashboardFooterYear) {
+  dashboardFooterYear.textContent = new Date().getFullYear();
+
+}
+
+
+document.querySelectorAll('.input-group').forEach(group => {
+    const field = group.querySelector('input, select, textarea');
+    const label = group.querySelector('label');
+
+    if (field && field.required && label) {
+        label.innerHTML += ' <span class="required-star">*</span>';
+    }
+});
+
+    </script>
+
+</body>
+</html>
