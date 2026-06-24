@@ -437,6 +437,47 @@ def get_current_actor():
     return user_id, 'user', 'Unknown user'
 
 
+def amount_to_words(amount):
+    """Convert a Taka amount into simple uppercase English words."""
+    try:
+        amount = int(round(float(amount or 0)))
+    except (TypeError, ValueError):
+        amount = 0
+
+    if amount == 0:
+        return 'ZERO'
+
+    ones = [
+        '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight',
+        'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen',
+        'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+    ]
+    tens = [
+        '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy',
+        'Eighty', 'Ninety'
+    ]
+
+    def under_hundred(number):
+        if number < 20:
+            return ones[number]
+        return (tens[number // 10] + ' ' + ones[number % 10]).strip()
+
+    def under_thousand(number):
+        if number < 100:
+            return under_hundred(number)
+        return (ones[number // 100] + ' Hundred ' + under_hundred(number % 100)).strip()
+
+    parts = []
+    for value, label in ((10000000, 'Crore'), (100000, 'Lakh'), (1000, 'Thousand')):
+        if amount >= value:
+            parts.append(under_thousand(amount // value) + ' ' + label)
+            amount %= value
+    if amount:
+        parts.append(under_thousand(amount))
+
+    return ' '.join(parts).upper()
+
+
 def add_log(patient_id, action, actor=None):
     user_id_db, role, actor_name = actor or get_current_actor()
 
@@ -1788,7 +1829,9 @@ def ticket_print(patient_id):
             COALESCE(NULLIF(age_unit, ''), 'Y') AS age_unit,
             gender,
             phone,
+            blood_group,
             address,
+            emergency_contact_phone,
             patient_status,
             doctor_name,
             doctor_designation,
@@ -1801,6 +1844,29 @@ def ticket_print(patient_id):
 
     if not ticket:
         return redirect(url_for('patients_registration', message="Patient ticket not found."))
+
+    doctor_fee = ticket[15] or 0
+    ticket_info = {
+        'uhid': ticket[0],
+        'ticket_no': ticket[1],
+        'serial_no': ticket[2],
+        'name': ticket[3],
+        'age': ticket[4],
+        'age_unit': ticket[5],
+        'gender': ticket[6],
+        'phone': ticket[7],
+        'blood_group': ticket[8],
+        'address': ticket[9],
+        'emergency_contact_phone': ticket[10],
+        'patient_status': ticket[11],
+        'doctor_name': ticket[12],
+        'doctor_designation': ticket[13],
+        'referer_name': ticket[14],
+        'doctor_fee': doctor_fee,
+        'created_at': ticket[16],
+        'bill_no': ticket[1] or ticket[0],
+        'barcode': ticket[1] or ticket[0]
+    }
 
     prepared_log = db.execute('''
         SELECT actor_name
@@ -1815,7 +1881,8 @@ def ticket_print(patient_id):
 
     return render_template(
         'ticket_print.html',
-        ticket=ticket,
+        ticket=ticket_info,
+        amount_in_words=amount_to_words(doctor_fee),
         prepared_by=prepared_by,
         printed_by=printed_by
     )

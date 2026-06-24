@@ -3,134 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doctor Ticket Invoice | AL-JUMIRA HOSPITAL</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <title>Cash Bill</title>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket_print.css') }}">
 </head>
+
 <body>
-    <main class="ticket-page">
-        <section class="ticket-sheet" id="printArea">
-            <div class="ticket-actions no-print">
-                <a href="{{ url_for('patients_registration', view='list') }}" class="action-btn secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    Back
-                </a>
-                <button type="button" class="action-btn" onclick="window.print()">
-                    <i class="fas fa-print"></i>
-                    Print Ticket
-                </button>
+    <main class="bill-page">
+        <section class="bill-sheet" id="printArea">
+
+            <div class="bill-actions no-print">
+                <a href="{{ url_for('patients_registration', view='list') }}" class="action-btn secondary">Back</a>
+                <button type="button" class="action-btn" onclick="window.print()">Print</button>
             </div>
 
-            <header class="ticket-header">
+            <header class="bill-header">
+                <div></div>
                 <div class="hospital-brand">
-                    <img src="{{ url_for('assets', filename='logo.png') }}" alt="AL-JUMIRA HOSPITAL Logo">
-                    <div>
-                        <h1>AL-JUMIRA HOSPITAL</h1>
-                        <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
-                        <p>Phone: 017767617979 | Email: aljumirahospital@gmail.com</p>
+                    <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital Logo" class="hospital-logo">
+                    <div class="hospital-info">
+                        <strong>AL-JUMIRA HOSPITAL</strong>
+                        <span>Milk Vita Road, Dewla, Near ASA Office, Tangail</span>
+                        <span>Phone: 017767617979 | Email: aljumirahospital@gmail.com</span>
                     </div>
                 </div>
-                <div class="invoice-badge">
-                    <span>Doctor Ticket</span>
-                    <strong>#{{ ticket[1] or ticket[0] }}</strong>
-                </div>
+                <h2>Customer Copy</h2>
             </header>
 
-            <section class="ticket-meta">
-                <div>
-                    <span>UHID</span>
-                    <strong>{{ ticket[0] }}</strong>
+            <section class="bill-top">
+                <div class="bill-left">
+                    <p><strong>Bill No</strong><span>:</span> {{ ticket.bill_no }}</p>
+                    <p><strong>UHID</strong><span>:</span> {{ ticket.uhid }}</p>
+                    <p><strong>Ticket No</strong><span>:</span> {{ ticket.ticket_no or '-' }}</p>
+                    <p><strong>Serial No</strong><span>:</span> {{ ticket.serial_no or '-' }}</p>
+                    <p><strong>Patient</strong><span>:</span> {{ ticket.name or '-' }}</p>
+                    <p><strong>Contact No</strong><span>:</span> {{ ticket.phone or '-' }}</p>
+                    <p><strong>Emergency No</strong><span>:</span> {{ ticket.emergency_contact_phone or '-' }}</p>
+                    <p><strong>Address</strong><span>:</span> {{ ticket.address or '-' }}</p>
+                    <p><strong>Patient Status</strong><span>:</span> {{ ticket.patient_status or '-' }}</p>
+                    <p><strong>Referred By</strong><span>:</span> {{ ticket.referer_name or '-' }}</p>
                 </div>
-                <div>
-                    <span>Ticket No</span>
-                    <strong>{{ ticket[1] or '-' }}</strong>
-                </div>
-                <div>
-                    <span>Serial No</span>
-                    <strong>{{ ticket[2] or '-' }}</strong>
-                </div>
-                <div>
-                    <span>Date & Time</span>
-                    <strong>{{ ticket[14] or '-' }}</strong>
+
+                <div class="bill-right">
+                    <p><strong>Bill Date</strong><span>:</span> {{ ticket.created_at or '-' }}</p>
+                    <p><strong>Payer</strong><span>:</span> CASH</p>
+                    <p><strong>Age/Gender</strong><span>:</span> {{ ticket.age or '-' }} {{ ticket.age_unit or '' }} / {{ ticket.gender or '-' }}</p>
+                    <p><strong>Blood Group</strong><span>:</span> {{ ticket.blood_group or '-' }}</p>
+                    <p><strong>Doctor</strong><span>:</span> {{ ticket.doctor_name or '-' }}</p>
+                    <p><strong>Designation</strong><span>:</span> {{ ticket.doctor_designation or '-' }}</p>
+
+                    <div class="barcode-box">
+                        <svg
+                            id="billBarcode"
+                            data-barcode="{{ ticket.barcode }}"
+                        ></svg>
+                    </div>
+
+                    <div class="cash-bill-box">
+                        <strong>CASH BILL</strong>
+                    </div>
                 </div>
             </section>
 
-            <section class="info-grid">
-                <div class="info-card">
-                    <h2>Patient Information</h2>
-                    <p><span>Name</span><strong>{{ ticket[3] }}</strong></p>
-                    <p><span>Age</span><strong>{{ ticket[4] }} {{ ticket[5] }}</strong></p>
-                    <p><span>Gender</span><strong>{{ ticket[6] }}</strong></p>
-                    <p><span>Mobile</span><strong>{{ ticket[7] }}</strong></p>
-                    <p><span>Status</span><strong>{{ ticket[9] or '-' }}</strong></p>
-                    <p><span>Address</span><strong>{{ ticket[8] }}</strong></p>
-                </div>
 
-                <div class="info-card">
-                    <h2>Doctor Information</h2>
-                    <p><span>Doctor</span><strong>{{ ticket[10] or '-' }}</strong></p>
-                    <p><span>Designation</span><strong>{{ ticket[11] or '-' }}</strong></p>
-                    <p><span>Referer</span><strong>{{ ticket[12] or '-' }}</strong></p>
-                    <p><span>Service</span><strong>Doctor Consultation</strong></p>
-                </div>
-            </section>
 
-            <section class="fee-table">
+            <section class="item-table">
                 <table>
                     <thead>
                         <tr>
-                            <th>Description</th>
-                            <th>Qty</th>
-                            <th>Amount</th>
+                            <th>Sno</th>
+                            <th>Investigations</th>
+                            <th>Total Amount</th>
+                            <th>Net Amount</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         <tr>
-                            <td>Doctor Consultation Fee</td>
                             <td>1</td>
-                            <td>{{ "%.2f"|format(ticket[13] or 0) }}</td>
+                            <td>Doctor Consultation Fee{% if ticket.doctor_name %} - {{ ticket.doctor_name }}{% endif %}</td>
+                            <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
+                            <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
                         </tr>
                     </tbody>
                 </table>
             </section>
 
-            <section class="ticket-total">
-                <span>Payable Doctor Fee</span>
-                <strong>{{ "%.2f"|format(ticket[13] or 0) }} Tk</strong>
+            <section class="summary-section">
+                <div class="payment-note">
+                    <div class="paid-box">
+                        <strong>PAID</strong>
+                        <span>Thank You</span>
+                    </div>
+                    <p>Cash: {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                </div>
+
+                <div class="amount-summary">
+                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p><strong>Gross Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p><strong>Discount</strong><span>:</span> 0.00</p>
+                    <p><strong>Refund Amount</strong><span>:</span> 0.00</p>
+                    <p><strong>Balance</strong><span>:</span> 0.00</p>
+                </div>
             </section>
-                    <footer class="ticket-footer">
 
-                        <div class="footer-info">
-                            <div><strong>Prepared By:</strong> {{ prepared_by or 'Admin' }}</div>
+            <section class="amount-word">
+                <p>
+                    <strong>Amount in Words</strong>
+                    "{{ amount_in_words or 'ZERO' }}" Taka Only
+                </p>
+            </section>
 
-                            <div><strong>Printed By:</strong> {{ printed_by or 'Admin' }}</div>
+            <section class="narration">
+                <p><strong>Narration :</strong> Doctor consultation registration bill.</p>
+            </section>
 
-                            <div><strong>Printed At:</strong>
-                                <span id="printedTimestamp">--</span>
-                            </div>
-                        </div>
+            <section class="signature-row">
+                <div></div>
+                <div>
+                    <span></span>
+                    <p>Authorised Signatory</p>
+                </div>
+            </section>
 
-                        <div class="footer-signature">
-                            <span></span>
-                            <p>Authorized Signature</p>
-                        </div>
+            <section class="instruction-section">
+                <p><strong>Note:</strong></p>
+                <p>* Please check patient name, age, gender, doctor name and other information before leaving the counter.</p>
+                <p>* Please bring this bill during consultation.</p>
+                <p>* This is a computer-generated cash bill.</p>
+            </section>
 
-                    </footer>
+            <footer class="bill-footer">
+                <p><strong>Prepared By:</strong> {{ prepared_by or 'Admin' }}</p>
+                <p><strong>Printed By:</strong> {{ printed_by or 'Admin' }}</p>
+                <p><strong>Printed At:</strong> <span id="printedTimestamp">--</span></p>
+                <p>1 of 1</p>
+            </footer>
+
         </section>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
     <script>
         function updatePrintedTimestamp() {
             const timestampElement = document.getElementById("printedTimestamp");
+
             if (!timestampElement) return;
+
             timestampElement.textContent = new Date().toLocaleString("en-GB");
         }
 
+        function generateBarcode() {
+            const barcodeElement = document.getElementById("billBarcode");
+
+            if (!barcodeElement || typeof JsBarcode === "undefined") return;
+
+            const barcodeValue = barcodeElement.dataset.barcode || "000000";
+
+            JsBarcode(barcodeElement, barcodeValue, {
+                format: "CODE128",
+                width: 0.8,
+                height: 22,
+                displayValue: false,
+                margin: 0
+            });
+        }
+
         updatePrintedTimestamp();
+        generateBarcode();
+
+        window.addEventListener("beforeprint", function () {
+            updatePrintedTimestamp();
+            generateBarcode();
+        });
+
         window.setTimeout(function () {
             window.print();
-        }, 500);
+        }, 700);
     </script>
+
 </body>
 </html>
