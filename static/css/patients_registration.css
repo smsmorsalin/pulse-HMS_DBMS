@@ -202,6 +202,11 @@ body {
     background: rgba(255, 255, 255, 0.12);
 }
 
+.list-switch-btn {
+    gap: 8px;
+    white-space: nowrap;
+}
+
 /* =========================
    TWO COLUMN GRID
 ========================= */
@@ -295,7 +300,7 @@ body {
 ========================= */
 .form-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
     margin-top: 30px;
 }
@@ -322,6 +327,11 @@ body {
 .save-print-btn {
     border-color: #96e4c8;
     color: #18a977;
+}
+
+.all-patients-btn {
+    border-color: #c4b5fd;
+    color: #7c3aed;
 }
 
 .submit-btn:hover {
@@ -694,19 +704,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: rgba(255,255,255,0.15);
 }
 
-.sidebar-brand {
-    display: block;
-    text-align: center;
-    text-decoration: none;
-    color: #fff;
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    padding: 14px 12px;
+.brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.brand-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(30, 60, 250, 0.35), rgba(255, 30, 86, 0.35));
-    border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    background: transparent;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.brand-link:hover {
+    background: transparent;
+    transform: scale(1.05);
+}
+
+.brand-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+.brand-text {
+    font-size: 50px;
+    font-weight: 600;
+    color: #ffffff;
 }
 
 .sidebar-menu {

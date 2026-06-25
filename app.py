@@ -1779,8 +1779,10 @@ def patients_registration():
     if not isadmin() and not isuser():
         return redirect(url_for('login'))
 
+    list_view = request.args.get('view', '').strip().lower()
+    show_all_patients = list_view == 'all'
     selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
-    patient_list = db.execute('''
+    patient_query = '''
         SELECT
             id,
             daily_patient_id,
@@ -1791,9 +1793,16 @@ def patients_registration():
             phone,
             address
         FROM patients
-        WHERE date(created_at) = ?
-        ORDER BY COALESCE(daily_patient_id, id) ASC, id ASC
-    ''', (selected_date,)).fetchall()
+    '''
+    if show_all_patients:
+        patient_query += ' ORDER BY datetime(created_at) DESC, id DESC'
+        patient_list = db.execute(patient_query).fetchall()
+    else:
+        patient_query += '''
+            WHERE date(created_at) = ?
+            ORDER BY COALESCE(daily_patient_id, id) ASC, id ASC
+        '''
+        patient_list = db.execute(patient_query, (selected_date,)).fetchall()
     next_daily_ticket_no = db.execute('''
         SELECT COALESCE(MAX(daily_patient_id), 0) + 1
         FROM patients
@@ -1808,6 +1817,7 @@ def patients_registration():
         'patients_registration.html',
         patients=patient_list,
         admin=isadmin(),
+        show_all_patients=show_all_patients,
         selected_date=selected_date,
         next_daily_ticket_no=next_daily_ticket_no,
         doctor_options=doctor_options
@@ -1878,13 +1888,16 @@ def ticket_print(patient_id):
     ''', (patient_id,)).fetchone()
     prepared_by = prepared_log[0] if prepared_log and prepared_log[0] else 'Unknown user'
     printed_by = get_current_actor()[2]
+    ticket_created_date = str(ticket[16]).split(' ')[0] if ticket[16] else None
+    return_url = url_for('patients_registration', view='list', date=ticket_created_date) if ticket_created_date else url_for('patients_registration', view='list')
 
     return render_template(
         'ticket_print.html',
         ticket=ticket_info,
         amount_in_words=amount_to_words(doctor_fee),
         prepared_by=prepared_by,
-        printed_by=printed_by
+        printed_by=printed_by,
+        return_url=return_url
     )
 
 @app.route('/tickets')

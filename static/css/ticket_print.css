@@ -5,16 +5,19 @@
 }
 
 :root {
-    --ticket-width: 4.315in;
-    --ticket-height: 5.845in;
+    --ticket-width: 5.83in;
+    --ticket-height: 8.27in;
     --ticket-padding-x: 0.16in;
     --ticket-padding-y: 0.12in;
+    --print-safe-margin: 0.12in;
+    --print-safe-total: 0.24in;
 }
 
 body {
     background: #f2f2f2;
     color: #222;
     font-family: Arial, Helvetica, sans-serif;
+    font-size: 11.6px;
     padding: 16px;
 }
 
@@ -58,15 +61,11 @@ body {
 
 /* Header */
 .bill-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 6px;
+    display: flex;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 6px;
-}
-
-.bill-header > div:first-child {
-    display: block;
+    margin-bottom: 0;
+    text-align: center;
 }
 
 .hospital-brand {
@@ -74,14 +73,14 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 9px;
     min-width: 0;
     text-align: left;
 }
 
 .hospital-logo {
-    width: 28px;
-    height: 28px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
     flex: 0 0 auto;
 }
@@ -91,22 +90,46 @@ body {
     flex-direction: column;
     gap: 0;
     min-width: 0;
-    line-height: 1.12;
+    line-height: 1.18;
 }
 
 .hospital-info strong {
-    font-size: 11px;
+    font-size: 19px;
     font-weight: 700;
 }
 
 .hospital-info span {
-    font-size: 6.7px;
+    font-size: 11px;
     white-space: nowrap;
 }
 
-.bill-header h2 {
+/* Bill Titles */
+.bill-title-row {
+    position: relative;
+    margin-top: 22px;
+    min-height: 16px;
+    text-align: center;
+}
+
+.bill-title {
+    font-size: 15.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.customer-copy-row {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 42%;
+    text-align: left;
+}
+.customer-copy-title {
+    margin-bottom: 7px;
     text-align: right;
-    font-size: 8.5px;
+    padding-right: 12px; /* Adjust this value */
+    font-size: 13.5px;
     font-weight: 700;
     text-decoration: underline;
     white-space: nowrap;
@@ -117,24 +140,33 @@ body {
     display: grid;
     grid-template-columns: 1.08fr 0.92fr;
     gap: 8px;
-    font-size: 7.8px;
+    margin-top: 10px;
+    font-size: 11.6px;
     line-height: 1.22;
+}
+
+.bill-left {
+    padding-top: 0;
 }
 
 .bill-left p,
 .bill-right p {
     display: grid;
-    grid-template-columns: 62px 5px 1fr;
+    grid-template-columns: 92px 6px 1fr;
     margin-bottom: 1px;
     overflow-wrap: anywhere;
 }
 
 .bill-right p {
-    grid-template-columns: 58px 5px 1fr;
+    grid-template-columns: 90px 6px 1fr;
 }
 
 .bill-left strong,
 .bill-right strong {
+    font-weight: 700;
+}
+
+.bill-highlight {
     font-weight: 700;
 }
 
@@ -144,24 +176,18 @@ body {
 }
 
 #billBarcode {
-    width: 118px;
-    height: 24px;
-}
-
-.cash-bill-box {
-    margin-top: 3px;
-    text-align: center;
-}
-
-.cash-bill-box strong {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1;
+    width: 150px;
+    height: 30px;
+    display: inline-block;
+    color: #000;
+    object-fit: fill;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
 }
 
 .paid-box {
-    margin-bottom: 18px;
+    margin-bottom: 35px;
     transform: none;
     text-align: left;
     padding-left: 42px;
@@ -169,14 +195,14 @@ body {
 
 .paid-box strong {
     display: block;
-    font-size: 17px;
+    font-size: 20px;
     font-weight: 700;
     line-height: 1;
 }
 
 .paid-box span {
     display: block;
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
 }
 
@@ -187,14 +213,14 @@ body {
     gap: 4px;
     margin-top: 8px;
     margin-bottom: 26px;
-    font-size: 8px;
+    font-size: 11.6px;
 }
 
 /* Table */
 .item-table table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 8px;
+    font-size: 11.6px;
     line-height: 1.2;
 }
 
@@ -219,7 +245,7 @@ body {
 .item-table th:nth-child(4),
 .item-table td:nth-child(3),
 .item-table td:nth-child(4) {
-    width: 58px;
+    width: 82px;
     text-align: right;
 }
 
@@ -235,26 +261,26 @@ body {
 /* Summary */
 .summary-section {
     display: grid;
-    grid-template-columns: 1fr 138px;
+    grid-template-columns: 1fr 172px;
     gap: 8px;
     margin-top: 7px;
     min-height: 70px;
 }
 
 .payment-note {
-    font-size: 7.8px;
+    font-size: 11.6px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
 }
 
 .amount-summary {
-    font-size: 7.8px;
+    font-size: 11.6px;
 }
 
 .amount-summary p {
     display: grid;
-    grid-template-columns: 76px 5px 1fr;
+    grid-template-columns: 106px 6px 1fr;
     border-bottom: 1px dashed #222;
     padding: 1.5px 0;
 }
@@ -272,7 +298,7 @@ body {
 /* Amount Words */
 .amount-word {
     margin-top: 6px;
-    font-size: 7.8px;
+    font-size: 11.6px;
     font-weight: 700;
 }
 
@@ -280,13 +306,13 @@ body {
     margin-top: 4px;
     padding-bottom: 3px;
     border-bottom: 1px solid #222;
-    font-size: 7.8px;
+    font-size: 11.6px;
 }
 
 /* Signature */
 .signature-row {
     display: grid;
-    grid-template-columns: 1fr 112px;
+    grid-template-columns: 1fr 140px;
     margin-top: 5px;
 }
 
@@ -298,7 +324,7 @@ body {
 
 .signature-row p {
     text-align: center;
-    font-size: 7.8px;
+    font-size: 11.6px;
     font-weight: 700;
 }
 
@@ -307,9 +333,9 @@ body {
     position: absolute;
     left: var(--ticket-padding-x);
     right: var(--ticket-padding-x);
-    bottom: 28px;
+    bottom: 36px;
     text-align: center;
-    font-size: 6.5px;
+    font-size: 8.8px;
     line-height: 1.25;
 }
 
@@ -318,13 +344,13 @@ body {
     position: absolute;
     left: var(--ticket-padding-x);
     right: var(--ticket-padding-x);
-    bottom: 8px;
+    bottom: 12px;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 20px;
+    grid-template-columns: 1fr 1fr 1fr 30px;
     gap: 4px;
     border-top: 1px solid #222;
     padding-top: 2px;
-    font-size: 5.7px;
+    font-size: 7.6px;
 }
 
 .bill-footer p:nth-child(2),
@@ -339,8 +365,8 @@ body {
 /* Print */
 @media print {
     @page {
-        size: 4.315in 5.845in;
-        margin: 0;
+        size: A5 portrait;
+        margin: 0.12in;
     }
 
     body {
@@ -354,16 +380,16 @@ body {
     }
 
     .bill-page {
-        width: var(--ticket-width);
+        width: calc(var(--ticket-width) - var(--print-safe-total));
         max-width: none;
         margin: 0;
     }
 
     .bill-sheet {
         border: none;
-        width: var(--ticket-width);
-        height: var(--ticket-height);
-        min-height: var(--ticket-height);
+        width: calc(var(--ticket-width) - var(--print-safe-total));
+        height: calc(var(--ticket-height) - var(--print-safe-total));
+        min-height: calc(var(--ticket-height) - var(--print-safe-total));
         padding: var(--ticket-padding-y) var(--ticket-padding-x);
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;

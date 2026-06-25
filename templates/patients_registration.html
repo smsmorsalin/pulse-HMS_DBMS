@@ -26,7 +26,12 @@
  <div class="dashboard">
 
     <aside class="sidebar">
-        <a class="sidebar-brand" id="hmsBrand" href="{{ url_for('dashboard') }}">HMS</a>
+        <div class="brand">
+            <a href="{{ url_for('dashboard') }}" class="brand-link" id="hmsBrand">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+                <span class="brand-text">AJH</span>
+            </a>
+        </div>
         <div class="sidebar-menu" id="patientSidebarMenu">
             <a id="dashboardNav" class="sidebar-item" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-chart-line"></i>
@@ -40,11 +45,16 @@
             </button>
 
 
-            <button type="button" id="patientListNav" class="sidebar-item">
+            <button type="button" id="patientListNav" class="sidebar-item" data-list-url="{{ url_for('patients_registration', view='list') }}">
                 <i class="fas fa-list"></i>
                 <span>Daily Patients List</span>
             </button>
-            
+
+            <a id="allPatientsNav" class="sidebar-item" href="{{ url_for('patients_registration', view='all') }}">
+                <i class="fas fa-users"></i>
+                <span>All Patients List</span>
+            </a>
+
 
 
 
@@ -54,9 +64,15 @@
     <main class="main-content">
         <section class="patient-list-panel" id="patientListPanel" aria-label="Registered patient list">
  <div class="patient-list-header">
-    <h2><i class="fas fa-list"></i> Daily Patients List</h2>
+    <h2><i class="fas fa-list"></i> {{ 'All Patients List' if show_all_patients else 'Daily Patients List' }}</h2>
 
     <div class="header-actions">
+            {% if show_all_patients %}
+            <a class="date-filter-btn list-switch-btn" href="{{ url_for('patients_registration', view='list') }}">
+                <i class="fas fa-calendar-day"></i>
+                <span>Daily Patients List</span>
+            </a>
+            {% else %}
             <form class="date-filter-bar" method="GET" action="{{ url_for('patients_registration') }}">
                 <input type="hidden" name="view" value="list">
                 <div class="date-filter-label">
@@ -69,6 +85,11 @@
                 <a class="date-filter-clear" href="{{ url_for('patients_registration', view='list') }}">Clear</a>
                 {% endif %}
             </form>
+            <a class="date-filter-btn list-switch-btn" href="{{ url_for('patients_registration', view='all') }}">
+                <i class="fas fa-users"></i>
+                <span>All Patients List</span>
+            </a>
+            {% endif %}
             <div class="patient-list-tools">
                 <input type="text" id="patientSearchInput" placeholder="Search by UHID, Ticket No, or Phone Number">
                 <button type="button" id="patientSearchClearBtn">Clear</button>
@@ -110,7 +131,7 @@
                                 <td class="address-col">{{ patient[7] }}</td>
                                 <td class="action-col">
                                     <div class="row-actions">
-                                        <a href="{{ url_for('ticket_print', patient_id=patient[0]) }}" class="print-ticket-btn" target="_blank" rel="noopener">
+                                        <a href="{{ url_for('ticket_print', patient_id=patient[0]) }}" class="print-ticket-btn">
                                             <i class="fas fa-print"></i> Print
                                         </a>
                                         {% if admin %}
@@ -311,6 +332,10 @@
                         <i class="fas fa-user-plus"></i>
                         <span>Register Patient</span>
                     </button>
+                    <button type="button" class="submit-btn all-patients-btn" id="allPatientsFormBtn" data-all-url="{{ url_for('patients_registration', view='all') }}">
+                        <i class="fas fa-users"></i>
+                        <span>All Patients List</span>
+                    </button>
                     <button type="submit" class="submit-btn save-print-btn" id="savePrintPatientBtn" data-save-action="save_print">
                         <i class="fas fa-print"></i>
                         <span>Save &amp; Print</span>
@@ -337,6 +362,7 @@
     const newPatientNav = document.getElementById("newPatientNav");
     const newPatientHeaderBtn = document.getElementById("newPatientHeaderBtn");
     const patientListNav = document.getElementById("patientListNav");
+    const allPatientsNav = document.getElementById("allPatientsNav");
     const patientListPanel = document.getElementById("patientListPanel");
     const formContainer = document.querySelector(".form-container");
     const ageInput = document.getElementById("age");
@@ -344,6 +370,7 @@
     const doctorDesignationInput = document.getElementById("doctorDesignation");
     const submitButtons = patientForm.querySelectorAll(".submit-btn");
     const registerPatientBtn = document.getElementById("registerPatientBtn");
+    const allPatientsFormBtn = document.getElementById("allPatientsFormBtn");
     const savePrintPatientBtn = document.getElementById("savePrintPatientBtn");
     const patientSaveActionInput = document.getElementById("patientSaveAction");
     const patientSearchInput = document.getElementById("patientSearchInput");
@@ -388,10 +415,10 @@
         setActiveSidebarItem(newPatientNav);
     }
 
-    function showPatientListView() {
+    function showPatientListView(activeItem) {
         formContainer.style.display = "none";
         patientListPanel.style.display = "block";
-        setActiveSidebarItem(patientListNav);
+        setActiveSidebarItem(activeItem || patientListNav);
     }
 
     ageInput.addEventListener("input", function () {
@@ -502,8 +529,10 @@
     });
 
     const pageParams = new URLSearchParams(window.location.search);
-    if (pageParams.get("view") === "list" || pageParams.has("date")) {
-        showPatientListView();
+    if (pageParams.get("view") === "all") {
+        showPatientListView(allPatientsNav);
+    } else if (pageParams.get("view") === "list" || pageParams.has("date")) {
+        showPatientListView(patientListNav);
     } else {
         showPatientFormView();
     }
@@ -529,8 +558,19 @@
         });
     }
 
+    if (allPatientsFormBtn) {
+        allPatientsFormBtn.addEventListener("click", function () {
+            window.location.href = allPatientsFormBtn.dataset.allUrl || "/patients-registration?view=all";
+        });
+    }
+
     patientListNav.addEventListener("click", function () {
-        showPatientListView();
+        if (pageParams.get("view") === "all") {
+            window.location.href = patientListNav.dataset.listUrl || "/patients-registration?view=list";
+            return;
+        }
+
+        showPatientListView(patientListNav);
     });
 
     const logoutNav = document.getElementById("logoutNav");

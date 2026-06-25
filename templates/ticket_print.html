@@ -8,17 +8,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket_print.css') }}">
 </head>
 
-<body>
+<body data-return-url="{{ return_url or url_for('patients_registration', view='list') }}">
     <main class="bill-page">
         <section class="bill-sheet" id="printArea">
 
             <div class="bill-actions no-print">
-                <a href="{{ url_for('patients_registration', view='list') }}" class="action-btn secondary">Back</a>
-                <button type="button" class="action-btn" onclick="window.print()">Print</button>
+                <a href="{{ return_url or url_for('patients_registration', view='list') }}" class="action-btn secondary">Back</a>
+                <button type="button" class="action-btn" onclick="printBill()">Print</button>
             </div>
 
             <header class="bill-header">
-                <div></div>
                 <div class="hospital-brand">
                     <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital Logo" class="hospital-logo">
                     <div class="hospital-info">
@@ -27,40 +26,43 @@
                         <span>Phone: 017767617979 | Email: aljumirahospital@gmail.com</span>
                     </div>
                 </div>
-                <h2>Customer Copy</h2>
             </header>
+
+            <section class="bill-title-row">
+                <h2 class="bill-title">CASH BILL</h2>
+                <div class="customer-copy-row">
+                    <h3 class="customer-copy-title">Customer Copy</h3>
+                </div>
+            </section>
 
             <section class="bill-top">
                 <div class="bill-left">
                     <p><strong>Bill No</strong><span>:</span> {{ ticket.bill_no }}</p>
                     <p><strong>UHID</strong><span>:</span> {{ ticket.uhid }}</p>
-                    <p><strong>Ticket No</strong><span>:</span> {{ ticket.ticket_no or '-' }}</p>
+                    <p class="bill-highlight"><strong>Ticket No</strong><span>:</span> {{ ticket.ticket_no or '-' }}</p>
                     <p><strong>Serial No</strong><span>:</span> {{ ticket.serial_no or '-' }}</p>
-                    <p><strong>Patient</strong><span>:</span> {{ ticket.name or '-' }}</p>
+                    <p class="bill-highlight"><strong>Patient</strong><span>:</span> {{ ticket.name or '-' }}</p>
                     <p><strong>Contact No</strong><span>:</span> {{ ticket.phone or '-' }}</p>
                     <p><strong>Emergency No</strong><span>:</span> {{ ticket.emergency_contact_phone or '-' }}</p>
                     <p><strong>Address</strong><span>:</span> {{ ticket.address or '-' }}</p>
-                    <p><strong>Patient Status</strong><span>:</span> {{ ticket.patient_status or '-' }}</p>
+                    <p class="bill-highlight"><strong>Patient Status</strong><span>:</span> {{ ticket.patient_status or '-' }}</p>
                     <p><strong>Referred By</strong><span>:</span> {{ ticket.referer_name or '-' }}</p>
                 </div>
 
                 <div class="bill-right">
                     <p><strong>Bill Date</strong><span>:</span> {{ ticket.created_at or '-' }}</p>
                     <p><strong>Payer</strong><span>:</span> CASH</p>
-                    <p><strong>Age/Gender</strong><span>:</span> {{ ticket.age or '-' }} {{ ticket.age_unit or '' }} / {{ ticket.gender or '-' }}</p>
-                    <p><strong>Blood Group</strong><span>:</span> {{ ticket.blood_group or '-' }}</p>
+                    <p class="bill-highlight"><strong>Age/Gender</strong><span>:</span> {{ ticket.age or '-' }} {{ ticket.age_unit or '' }} / {{ ticket.gender or '-' }}</p>
+                    <p class="bill-highlight"><strong>Blood Group</strong><span>:</span> {{ ticket.blood_group or '-' }}</p>
                     <p><strong>Doctor</strong><span>:</span> {{ ticket.doctor_name or '-' }}</p>
                     <p><strong>Designation</strong><span>:</span> {{ ticket.doctor_designation or '-' }}</p>
 
                     <div class="barcode-box">
-                        <svg
+                        <img
                             id="billBarcode"
                             data-barcode="{{ ticket.barcode }}"
-                        ></svg>
-                    </div>
-
-                    <div class="cash-bill-box">
-                        <strong>CASH BILL</strong>
+                            alt="Bill Barcode"
+                        >
                     </div>
                 </div>
             </section>
@@ -144,9 +146,24 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-
     <script>
+        const dailyPatientListUrl = document.body.dataset.returnUrl || "/patients-registration?view=list";
+        let hasReturnedToDailyList = false;
+
+        const code128Patterns = [
+            "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
+            "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
+            "221231", "213212", "223112", "312131", "311222", "321122", "321221", "312212", "322112", "322211",
+            "212123", "212321", "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+            "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121", "313121", "211331",
+            "231131", "213113", "213311", "213131", "311123", "311321", "331121", "312113", "312311", "332111",
+            "314111", "221411", "431111", "111224", "111422", "121124", "121421", "141122", "141221", "112214",
+            "112412", "122114", "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+            "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112", "421211", "212141",
+            "214121", "412121", "111143", "111341", "131141", "114113", "114311", "411113", "411311", "113141",
+            "114131", "311141", "411131", "211412", "211214", "211232", "2331112"
+        ];
+
         function updatePrintedTimestamp() {
             const timestampElement = document.getElementById("printedTimestamp");
 
@@ -155,20 +172,105 @@
             timestampElement.textContent = new Date().toLocaleString("en-GB");
         }
 
+        function getCode128Codes(value) {
+            const safeValue = String(value || "000000").replace(/[^\x20-\x7e]/g, "");
+            const codes = [104];
+
+            for (const character of safeValue || "000000") {
+                codes.push(character.charCodeAt(0) - 32);
+            }
+
+            const checksum = codes.reduce(function (sum, code, index) {
+                return sum + (index === 0 ? code : code * index);
+            }, 0) % 103;
+
+            codes.push(checksum, 106);
+
+            return {
+                codes: codes,
+                value: safeValue || "000000"
+            };
+        }
+
+        function drawCode128Barcode(canvas, value) {
+            const barcode = getCode128Codes(value);
+            const unitWidth = 3;
+            const quietZone = unitWidth * 10;
+            const height = 80;
+            let x = 0;
+
+            const totalModules = barcode.codes.reduce(function (total, code) {
+                return total + code128Patterns[code].split("").reduce(function (sum, width) {
+                    return sum + Number(width);
+                }, 0);
+            }, 0);
+
+            canvas.width = totalModules * unitWidth + quietZone * 2;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            context.fillStyle = "#fff";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = "#000";
+
+            x = quietZone;
+
+            for (const code of barcode.codes) {
+                const pattern = code128Patterns[code];
+
+                for (let index = 0; index < pattern.length; index += 1) {
+                    const width = Number(pattern[index]) * unitWidth;
+
+                    if (index % 2 === 0) {
+                        context.fillRect(x, 0, width, height);
+                    }
+
+                    x += width;
+                }
+            }
+        }
+
         function generateBarcode() {
-            const barcodeElement = document.getElementById("billBarcode");
+            return new Promise(function (resolve) {
+                const barcodeElement = document.getElementById("billBarcode");
 
-            if (!barcodeElement || typeof JsBarcode === "undefined") return;
+                if (!barcodeElement) {
+                    resolve();
+                    return;
+                }
 
-            const barcodeValue = barcodeElement.dataset.barcode || "000000";
+                const barcodeValue = barcodeElement.dataset.barcode || "000000";
+                const canvas = document.createElement("canvas");
 
-            JsBarcode(barcodeElement, barcodeValue, {
-                format: "CODE128",
-                width: 0.8,
-                height: 22,
-                displayValue: false,
-                margin: 0
+                drawCode128Barcode(canvas, barcodeValue);
+
+                barcodeElement.onload = function () {
+                    resolve();
+                };
+                barcodeElement.onerror = function () {
+                    resolve();
+                };
+                barcodeElement.src = canvas.toDataURL("image/png");
+                window.setTimeout(resolve, 150);
             });
+        }
+
+        function returnToDailyPatientList() {
+            if (hasReturnedToDailyList) return;
+
+            hasReturnedToDailyList = true;
+            window.location.replace(dailyPatientListUrl);
+        }
+
+        async function printBill() {
+            updatePrintedTimestamp();
+            await generateBarcode();
+            await new Promise(function (resolve) {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(resolve);
+                });
+            });
+            window.print();
         }
 
         updatePrintedTimestamp();
@@ -176,11 +278,19 @@
 
         window.addEventListener("beforeprint", function () {
             updatePrintedTimestamp();
-            generateBarcode();
+
+            const barcodeElement = document.getElementById("billBarcode");
+            if (barcodeElement && !barcodeElement.src) {
+                generateBarcode();
+            }
+        });
+
+        window.addEventListener("afterprint", function () {
+            window.setTimeout(returnToDailyPatientList, 300);
         });
 
         window.setTimeout(function () {
-            window.print();
+            printBill();
         }, 700);
     </script>
 
