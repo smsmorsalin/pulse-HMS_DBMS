@@ -17,11 +17,21 @@
 	</div>
 
 	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
 		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
+		{% if can_access_page('pathology_dashboard') %}
 		<li><a class="nav-link active" href="{{ url_for('pathology_dashboard') }}"><i class="fas fa-microscope"></i> <span>Pathology</span></a></li>
+		{% endif %}
+		{% if can_access_page('service_desk') %}
 		<li><a class="nav-link" href="{{ url_for('service_desk') }}"><i class="fas fa-headset"></i> <span>Service Desk</span></a></li>
+		{% endif %}
+		{% if can_access_page('tests') %}
 		<li><a class="nav-link" href="{{ url_for('tests') }}"><i class="fas fa-vial"></i> <span>Test Catalog</span></a></li>
+		{% endif %}
+		{% if can_access_page('billing') %}
 		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
+		{% endif %}
 		{% if admin %}
 		<li><a class="nav-link" href="{{ url_for('services') }}"><i class="fas fa-sliders"></i> <span>Services</span></a></li>
 		{% endif %}
@@ -37,10 +47,12 @@
 		</div>
 
 		<div class="header-tools">
+			{% if can_access_page('service_desk') %}
 			<a class="header-action" href="{{ url_for('service_desk') }}">
 				<i class="fas fa-plus"></i>
 				New Lab Order
 			</a>
+			{% endif %}
 			<div class="profile" id="adminMenu">
 				<button class="admin-btn" id="adminBtn" type="button">
 					<i class="fas fa-user-circle"></i>
@@ -62,8 +74,12 @@
 			<button type="submit"><i class="fas fa-filter"></i> Show</button>
 		</form>
 		<div class="quick-actions">
+			{% if can_access_page('tests') %}
 			<a href="{{ url_for('tests') }}"><i class="fas fa-list-check"></i> Tests</a>
+			{% endif %}
+			{% if can_access_page('billing') %}
 			<a href="{{ url_for('billing') }}"><i class="fas fa-receipt"></i> Billing</a>
+			{% endif %}
 			{% if admin %}
 			<a href="{{ url_for('services') }}"><i class="fas fa-gear"></i> Manage</a>
 			{% endif %}
@@ -183,7 +199,7 @@
 							<td colspan="6">
 								<div class="empty-table">
 									<i class="fas fa-flask-vial"></i>
-									<span>No pathology orders found for {{ selected_date }}.</span>
+									<span>No pathology orders found for {{ format_date_display(selected_date) }}.</span>
 								</div>
 							</td>
 						</tr>

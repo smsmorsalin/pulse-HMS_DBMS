@@ -52,7 +52,7 @@
                 </div>
 
                 <!-- Password -->
-               <div class="input-group full-width password-group">
+                <div class="input-group full-width password-group">
                         <i class="fa-solid fa-lock"></i>
 
                       <input type="password" id="password" name="password" autocomplete="new-password" required>
@@ -63,7 +63,20 @@
                         </span>
                 </div>
 
-            
+                <fieldset class="permissions-group full-width" id="permissionsGroup">
+                    <legend>Allowed Pages</legend>
+                    <div class="permissions-grid">
+                        {% for page in page_options %}
+                        <label class="permission-option">
+                            <input type="checkbox" name="page_permissions" value="{{ page.key }}">
+                            <span>
+                                {{ page.label }}
+                                {% if page.nav is defined and not page.nav %}<small>Detail/print page</small>{% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
 
                 <div class="full-width btn-row">
                    <button type="submit" class="submit-btn">Register</button>
@@ -88,6 +101,19 @@
             const toggle = document.querySelector(".toggle-password");
             const password = document.querySelector("#password");
             const icon = toggle.querySelector("i");
+            const role = document.querySelector("#role");
+            const permissionsGroup = document.querySelector("#permissionsGroup");
+            const permissionInputs = document.querySelectorAll('input[name="page_permissions"]');
+
+            function syncPermissionVisibility() {
+                const isUser = role.value === "user";
+                permissionsGroup.style.display = isUser ? "block" : "none";
+                permissionInputs.forEach(input => {
+                    if (!isUser) {
+                        input.checked = false;
+                    }
+                });
+            }
 
             toggle.addEventListener("click", function () {
 
@@ -105,6 +131,10 @@
                 }
 
             });
+
+            role.addEventListener("change", syncPermissionVisibility);
+            permissionInputs.forEach(input => input.addEventListener("change", syncPermissionVisibility));
+            syncPermissionVisibility();
 
         });
         </script>

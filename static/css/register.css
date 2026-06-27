@@ -15,7 +15,7 @@ body {
     align-items: center;
     background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
     padding: 40px 15px;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 /* =========================
@@ -55,7 +55,7 @@ body::after {
 ========================= */
 .form-container {
     width: 100%;
-    max-width: 500px;
+    max-width: 680px;
     position: relative;
     z-index: 1;
 }
@@ -186,6 +186,54 @@ body::after {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+.permissions-group {
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 14px;
+    padding: 16px;
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+}
+
+.permissions-group legend {
+    padding: 0 8px;
+    color: rgba(255,255,255,0.78);
+    font-size: 13px;
+}
+
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.permission-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 13px;
+}
+
+.permission-option span {
+    display: grid;
+    gap: 2px;
+}
+
+.permission-option small {
+    color: rgba(255,255,255,0.62);
+    font-size: 11px;
+}
+
+.permission-option input {
+    width: 16px;
+    height: 16px;
+    accent-color: #ff1e56;
+}
+
 /* =========================
    BUTTON
 ========================= */
@@ -234,6 +282,10 @@ body::after {
 
     .full-width {
         grid-column: span 1;
+    }
+
+    .permissions-grid {
+        grid-template-columns: 1fr;
     }
 }
 

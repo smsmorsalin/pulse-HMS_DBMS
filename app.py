@@ -12,6 +12,85 @@ app.secret_key = 'xs12a'  # Required for session management
 db = sqlite3.connect('hospital.db', check_same_thread=False)  # Connect to the SQLite database
 db.execute("PRAGMA foreign_keys = ON")  # Enable foreign key support
 
+PAGE_OPTIONS = [
+    {'key': 'dashboard', 'label': 'Dashboard', 'endpoint': 'dashboard', 'icon': 'fas fa-home'},
+    {'key': 'patients_registration', 'label': 'Patients Registration', 'endpoint': 'patients_registration', 'icon': 'fas fa-user-plus'},
+    {'key': 'ticket_print', 'label': 'Patient Ticket Print', 'endpoint': None, 'icon': 'fas fa-ticket', 'nav': False},
+    {'key': 'doctors', 'label': 'Doctors', 'endpoint': 'doctors', 'icon': 'fas fa-user-md'},
+    {'key': 'duty_management', 'label': 'Doctor and Nurse Duty', 'endpoint': 'duty_management', 'icon': 'fas fa-clipboard-check'},
+    {'key': 'admissions', 'label': 'Admission', 'endpoint': 'admissions', 'icon': 'fas fa-file-medical'},
+    {'key': 'appointments_info', 'label': 'Appointments Info', 'endpoint': 'appointments_info', 'icon': 'fa-solid fa-book-medical'},
+    {'key': 'appointment_doctors', 'label': 'Appointment Doctors', 'endpoint': 'appointment_doctors', 'icon': 'fas fa-stethoscope'},
+    {'key': 'appointment_patients', 'label': 'Appointment Patients', 'endpoint': 'appointment_patients', 'icon': 'fas fa-hospital-user'},
+    {'key': 'pathology_dashboard', 'label': 'Pathology', 'endpoint': 'pathology_dashboard', 'icon': 'fas fa-microscope'},
+    {'key': 'tests', 'label': 'View Tests', 'endpoint': 'tests', 'icon': 'fas fa-vial'},
+    {'key': 'service_desk', 'label': 'Services', 'endpoint': 'service_desk', 'icon': 'fas fa-hand-holding-medical'},
+    {'key': 'patient_service', 'label': 'Patient Service Order', 'endpoint': None, 'icon': 'fas fa-notes-medical', 'nav': False},
+    {'key': 'medicine_sales', 'label': 'Medicine Sales', 'endpoint': 'medicine_sales', 'icon': 'fas fa-pills'},
+    {'key': 'medicine_sales_print', 'label': 'Medicine Sales Print', 'endpoint': None, 'icon': 'fas fa-print', 'nav': False},
+    {'key': 'medicine_sales_list', 'label': 'Medicine Sales List', 'endpoint': 'medicine_sales_list', 'icon': 'fas fa-calendar-days'},
+    {'key': 'billing', 'label': 'Billing', 'endpoint': 'billing', 'icon': 'fas fa-file-invoice'},
+    {'key': 'bill_print', 'label': 'Bill Print', 'endpoint': None, 'icon': 'fas fa-receipt', 'nav': False},
+    {'key': 'services', 'label': 'Service Catalog', 'endpoint': 'services', 'icon': 'fas fa-procedures'},
+]
+DASHBOARD_NAV_KEYS = (
+    'dashboard',
+    'patients_registration',
+    'doctors',
+    'duty_management',
+    'admissions',
+    'appointments_info',
+    'pathology_dashboard',
+    'tests',
+    'service_desk',
+    'medicine_sales',
+    'billing',
+)
+PAGE_KEYS = [page['key'] for page in PAGE_OPTIONS]
+PAGE_BY_KEY = {page['key']: page for page in PAGE_OPTIONS}
+ENDPOINT_PERMISSIONS = {
+    'dashboard': ('dashboard',),
+    'admin_portal': ('admin_portal',),
+    'follow_up_dashboard': ('follow_up_dashboard',),
+    'register': ('register',),
+    'registered_users': ('registered_users',),
+    'logs': ('logs',),
+    'patients_registration': ('patients_registration',),
+    'patient': ('patients_registration',),
+    'add_patient': ('patients_registration',),
+    'ticket_print': ('ticket_print', 'patients_registration'),
+    'tickets': ('patients_registration',),
+    'doctors': ('doctors',),
+    'duty_management': ('duty_management',),
+    'add_doctor': ('add_doctor',),
+    'edit_doctor': ('edit_doctor',),
+    'admissions': ('admissions',),
+    'discharge_admission': ('admissions',),
+    'appointments_info': ('appointments_info',),
+    'appointment_doctors': ('appointment_doctors', 'appointments_info'),
+    'appointment_patients': ('appointment_patients', 'appointments_info'),
+    'pathology_dashboard': ('pathology_dashboard',),
+    'tests': ('tests',),
+    'service_desk': ('service_desk',),
+    'patient_service': ('patient_service', 'service_desk'),
+    'bill_print': ('bill_print', 'service_desk', 'billing'),
+    'medicine_stock_dashboard': ('medicine_stock_dashboard',),
+    'edit_medicine_transaction': ('medicine_stock_dashboard',),
+    'delete_medicine_transaction': ('medicine_stock_dashboard',),
+    'delete_medicine_balance': ('medicine_stock_dashboard',),
+    'medicine_sales': ('medicine_sales',),
+    'save_medicine_sale': ('medicine_sales',),
+    'medicine_sales_print': ('medicine_sales_print', 'medicine_sales', 'medicine_sales_list'),
+    'medicine_sales_list': ('medicine_sales_list',),
+    'medicine_monthly_report': ('medicine_monthly_report',),
+    'delete_medicine_sale': ('medicine_sales_list',),
+    'billing': ('billing',),
+    'services': ('services',),
+    'add_service': ('add_service',),
+    'edit_service': ('edit_service',),
+    'delete_service': ('services',),
+}
+
 # Function to initialize the database and create tables if they don't exist
 def init_db():
     """Initialize the hospital database with required tables if they don't exist."""
@@ -38,6 +117,33 @@ def init_db():
         if 'email' not in users_columns:
             cursor.execute('ALTER TABLE users ADD COLUMN email TEXT')
             print("Users table migrated: email column added.")
+
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="user_permissions"')
+    user_permissions_exists = cursor.fetchone() is not None
+    if not user_permissions_exists:
+        cursor.execute('''
+            CREATE TABLE user_permissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                page_key TEXT NOT NULL,
+                UNIQUE(user_id, page_key),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+        existing_user_ids = [row[0] for row in cursor.execute('SELECT id FROM users').fetchall()]
+        for existing_user_id in existing_user_ids:
+            for page_key in PAGE_KEYS:
+                cursor.execute(
+                    'INSERT OR IGNORE INTO user_permissions (user_id, page_key) VALUES (?, ?)',
+                    (existing_user_id, page_key)
+                )
+        print("User permissions table created successfully.")
+    else:
+        placeholders = ','.join('?' for _ in PAGE_KEYS)
+        cursor.execute(
+            f'DELETE FROM user_permissions WHERE page_key NOT IN ({placeholders})',
+            PAGE_KEYS
+        )
     
     #admins table
     cursor.execute('''
@@ -287,6 +393,27 @@ def init_db():
         cursor.execute("UPDATE admissions SET status = 'Admitted' WHERE status IS NULL OR status = ''")
         cursor.execute("UPDATE admissions SET created_at = datetime('now', '+6 hours') WHERE created_at IS NULL OR created_at = ''")
 
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="duty_records"')
+    duty_records_exists = cursor.fetchone() is not None
+    if not duty_records_exists:
+        cursor.execute('''
+            CREATE TABLE duty_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                staff_role TEXT CHECK(staff_role IN ('doctor','nurse')) NOT NULL,
+                doctor_id INTEGER,
+                staff_name TEXT NOT NULL,
+                duty_date TEXT NOT NULL,
+                shift TEXT NOT NULL,
+                ward TEXT NOT NULL,
+                round_completed INTEGER NOT NULL DEFAULT 0,
+                notes TEXT,
+                created_by TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+            )
+        ''')
+        print("Duty Records table created successfully.")
+
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="medicine_transactions"')
     medicine_transactions_exists = cursor.fetchone() is not None
     if not medicine_transactions_exists:
@@ -419,6 +546,93 @@ def isuser():
     user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
     return user_checker and user_checker[0] == session.get('user_id')
 
+def get_user_page_keys(user_id=None):
+    """Return page keys assigned to a regular user."""
+    if user_id is None:
+        user_id = session.get('user_id')
+    if not user_id or user_id == 'root_admin':
+        return []
+    rows = db.execute(
+        '''
+        SELECT page_key
+        FROM user_permissions
+        WHERE user_id = ?
+        ORDER BY id ASC
+        ''',
+        (user_id,)
+    ).fetchall()
+    return [row[0] for row in rows if row[0] in PAGE_BY_KEY]
+
+def get_user_pages(user_id=None):
+    """Return the page metadata assigned to a regular user."""
+    assigned_keys = set(get_user_page_keys(user_id))
+    return [page for page in PAGE_OPTIONS if page['key'] in assigned_keys]
+
+def get_direct_nav_pages(pages, include_admin_only=True):
+    """Return pages that can be opened directly from a menu."""
+    return [
+        page for page in pages
+        if page.get('endpoint') and page.get('nav', True)
+        and (include_admin_only or not page.get('admin_only'))
+    ]
+
+def set_user_page_permissions(user_id, page_keys):
+    """Replace a regular user's page permissions."""
+    clean_keys = [page_key for page_key in page_keys if page_key in PAGE_BY_KEY]
+    db.execute('DELETE FROM user_permissions WHERE user_id = ?', (user_id,))
+    for page_key in clean_keys:
+        db.execute(
+            'INSERT OR IGNORE INTO user_permissions (user_id, page_key) VALUES (?, ?)',
+            (user_id, page_key)
+        )
+
+def user_has_any_page(page_keys, user_id=None):
+    """Check whether a regular user has at least one requested page key."""
+    assigned_keys = set(get_user_page_keys(user_id))
+    return any(page_key in assigned_keys for page_key in page_keys)
+
+def can_access_page(page_key):
+    """Template helper for hiding links the signed-in account cannot open."""
+    if isadmin():
+        return True
+    if not isuser():
+        return False
+    return user_has_any_page((page_key,))
+
+def get_first_allowed_page(user_id=None):
+    """Return the first assigned page for a user, or None when no access is set."""
+    pages = get_direct_nav_pages(get_user_pages(user_id), include_admin_only=False)
+    return pages[0] if pages else None
+
+@app.context_processor
+def inject_permission_helpers():
+    return {
+        'page_options': PAGE_OPTIONS,
+        'can_access_page': can_access_page,
+        'format_date_display': format_date_display,
+    }
+
+@app.before_request
+def enforce_user_page_permissions():
+    """Enforce page-level permissions for regular users."""
+    if request.endpoint in (None, 'login', 'logout', 'assets', 'static'):
+        return None
+    if isadmin() or not isuser():
+        return None
+
+    required_page_keys = ENDPOINT_PERMISSIONS.get(request.endpoint)
+    if not required_page_keys or user_has_any_page(required_page_keys):
+        return None
+
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'error': 'You do not have permission to open this page.'}), 403
+
+    first_allowed_page = get_first_allowed_page()
+    if first_allowed_page:
+        return redirect(url_for(first_allowed_page['endpoint']))
+    session.clear()
+    return redirect(url_for('login'))
+
 def get_current_actor():
     """Return the current actor id, role, and display name for audit logs."""
     user_id = session.get('user_id')
@@ -476,6 +690,42 @@ def amount_to_words(amount):
         parts.append(under_thousand(amount))
 
     return ' '.join(parts).upper()
+
+
+def format_invoice_datetime(value):
+    """Format stored ISO-like dates as DD-MM-YYYY for printable invoices."""
+    if not value:
+        return '-'
+
+    text_value = str(value)
+    for date_format, output_format in (
+        ('%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%d', '%d-%m-%Y'),
+    ):
+        try:
+            return datetime.strptime(text_value, date_format).strftime(output_format)
+        except ValueError:
+            continue
+
+    return text_value
+
+def format_date_display(value):
+    """Format date text as DD-MM-YYYY, preserving time when present."""
+    if not value:
+        return '-'
+
+    text_value = str(value)
+    for date_format, output_format in (
+        ('%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%d %H:%M', '%d-%m-%Y %H:%M'),
+        ('%Y-%m-%d', '%d-%m-%Y'),
+    ):
+        try:
+            return datetime.strptime(text_value, date_format).strftime(output_format)
+        except ValueError:
+            continue
+
+    return text_value
 
 
 def add_log(patient_id, action, actor=None):
@@ -556,8 +806,11 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         email = request.form.get('email')
+        page_keys = request.form.getlist('page_permissions')
         if not role or not username or not password or not email:
             return render_template("register.html", error="Please fill in all fields.")
+        if role == 'user' and not page_keys:
+            return render_template("register.html", error="Please choose at least one page this user can access.")
         else:
             if isadmin():
                 hashed_password = generate_password_hash(password)
@@ -571,7 +824,8 @@ def register():
                         return render_template("register.html", error="Username or email already exists. Please use different credentials.")
                 else:  # role == 'user'
                     try:
-                        db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
+                        user_cursor = db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', (username, hashed_password, email))
+                        set_user_page_permissions(user_cursor.lastrowid, page_keys)
                         db.commit()
                         add_system_log(f"Employee account created: {username} ({email})")
                         return redirect(url_for('registered_users', success=f"Employee registered successfully."))
@@ -604,7 +858,11 @@ def login():
                     return redirect(url_for('admin_portal', admin_success="admin login successful"))  # Redirect to the admin portal page after successful login
                 else:
                     session['user_id'] = user_checker[0]  # Store user_id in session
-                    return redirect(url_for('dashboard', user_success="login successful"))  # Redirect to the dashboard page after successful login
+                    first_allowed_page = get_first_allowed_page(user_checker[0])
+                    if not first_allowed_page:
+                        session.clear()
+                        return render_template("login.html", error="No page permission assigned. Please contact admin.")
+                    return redirect(url_for(first_allowed_page['endpoint'], user_success="login successful"))
             else:
                 return render_template("login.html", error="Invalid username or password.")
     else:
@@ -676,6 +934,252 @@ def logs():
     return render_template("logs.html", logs=logs_list, total_logs=len(logs_list))
 
 
+@app.route('/follow_up_dashboard')
+def follow_up_dashboard():
+    """Admin follow-up dashboard with daily operational records in one screen."""
+    if not isadmin():
+        return redirect(url_for('login'))
+
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    profile_name = root_admin_username if session.get('user_id') == 'root_admin' else admin_checker[1]
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    try:
+        datetime.strptime(selected_date, '%Y-%m-%d')
+    except ValueError:
+        selected_date = datetime.now().strftime('%Y-%m-%d')
+
+    selected_month = selected_date[:7]
+
+    patient_count = db.execute(
+        'SELECT COUNT(*) FROM patients WHERE date(created_at) = ?',
+        (selected_date,)
+    ).fetchone()[0]
+    active_admission_count = db.execute(
+        "SELECT COUNT(*) FROM admissions WHERE status = 'Admitted'"
+    ).fetchone()[0]
+    test_order_count = db.execute(
+        'SELECT COUNT(*) FROM test_orders WHERE date(test_date) = ?',
+        (selected_date,)
+    ).fetchone()[0]
+    appointment_count = db.execute(
+        'SELECT COUNT(*) FROM appointments WHERE date(appointment_date) = ?',
+        (selected_date,)
+    ).fetchone()[0]
+    bill_summary = db.execute(
+        '''
+        SELECT COUNT(*), COALESCE(SUM(total_amount), 0)
+        FROM bills
+        WHERE date(created_at) = ?
+        ''',
+        (selected_date,)
+    ).fetchone()
+    medicine_summary = db.execute(
+        '''
+        SELECT
+            COUNT(*),
+            COALESCE(SUM(grand_total), 0),
+            COALESCE(SUM(received_amount), 0),
+            COALESCE(SUM(due_amount), 0)
+        FROM medicine_sales
+        WHERE date(sale_date) = ?
+        ''',
+        (selected_date,)
+    ).fetchone()
+    compliance_count = db.execute(
+        'SELECT COUNT(*) FROM logs WHERE date(timestamp) = ?',
+        (selected_date,)
+    ).fetchone()[0]
+    duty_rows = db.execute(
+        '''
+        SELECT id, staff_role, staff_name, duty_date, shift, ward, round_completed, notes, created_at
+        FROM duty_records
+        WHERE date(duty_date) = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 25
+        ''',
+        (selected_date,)
+    ).fetchall()
+    duty_completed = sum(1 for row in duty_rows if row[6])
+
+    summary_cards = [
+        {'label': 'Daily Patients', 'value': patient_count, 'icon': 'fas fa-hospital-user', 'note': 'Registered today'},
+        {'label': 'Appointments', 'value': appointment_count, 'icon': 'fas fa-stethoscope', 'note': 'Doctor visits today'},
+        {'label': 'Test Orders', 'value': test_order_count, 'icon': 'fas fa-vial', 'note': 'Pathology orders today'},
+        {'label': 'Active Admissions', 'value': active_admission_count, 'icon': 'fas fa-bed-pulse', 'note': 'Currently admitted'},
+        {'label': 'Service Bills', 'value': bill_summary[0] or 0, 'icon': 'fas fa-file-invoice', 'note': f"Tk {float(bill_summary[1] or 0):.2f}"},
+        {'label': 'Medicine Sales', 'value': medicine_summary[0] or 0, 'icon': 'fas fa-pills', 'note': f"Tk {float(medicine_summary[1] or 0):.2f}"},
+        {'label': 'Medicine Due', 'value': f"Tk {float(medicine_summary[3] or 0):.2f}", 'icon': 'fas fa-hand-holding-dollar', 'note': 'Pending pharmacy amount'},
+        {'label': 'Compliance Logs', 'value': compliance_count, 'icon': 'fas fa-shield-halved', 'note': 'Actions recorded today'},
+    ]
+
+    compliance_logs = db.execute(
+        '''
+        SELECT
+            l.id,
+            l.user_id,
+            l.role,
+            l.actor_name,
+            l.patient_id,
+            l.action,
+            l.timestamp,
+            COALESCE(a.username, u.username) AS resolved_actor_name,
+            p.name AS patient_name
+        FROM logs l
+        LEFT JOIN admins a ON l.role = 'admin' AND l.user_id = a.id
+        LEFT JOIN users u ON l.role = 'user' AND l.user_id = u.id
+        LEFT JOIN patients p ON l.patient_id = p.id
+        WHERE date(l.timestamp) = ?
+        ORDER BY l.id DESC
+        LIMIT 25
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    medicine_sales_rows = db.execute(
+        '''
+        SELECT
+            id, invoice_no, customer_name, customer_phone, subtotal, discount_amount,
+            grand_total, received_amount, due_amount, payment_type, sale_date, created_at
+        FROM medicine_sales
+        WHERE date(sale_date) = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 20
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    medicine_sales = []
+    for row in medicine_sales_rows:
+        item_rows = db.execute(
+            '''
+            SELECT medicine_name, batch_no, unit_type, quantity, unit_price, discount, line_total
+            FROM medicine_sale_items
+            WHERE sale_id = ?
+            ORDER BY id ASC
+            ''',
+            (row[0],)
+        ).fetchall()
+        medicine_sales.append({
+            'id': row[0],
+            'invoice_no': row[1],
+            'customer_name': row[2],
+            'customer_phone': row[3],
+            'subtotal': float(row[4] or 0),
+            'discount_amount': float(row[5] or 0),
+            'grand_total': float(row[6] or 0),
+            'received_amount': float(row[7] or 0),
+            'due_amount': float(row[8] or 0),
+            'payment_type': row[9],
+            'sale_date': row[10],
+            'created_at': row[11],
+            'items': item_rows,
+        })
+
+    patient_rows = db.execute(
+        '''
+        SELECT id, daily_patient_id, name, age, age_unit, gender, phone, patient_status,
+               doctor_name, doctor_fee, created_at
+        FROM patients
+        WHERE date(created_at) = ?
+        ORDER BY id DESC
+        LIMIT 20
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    service_bills = db.execute(
+        '''
+        SELECT b.id, p.name, p.phone, b.total_amount, b.created_at
+        FROM bills b
+        JOIN patients p ON b.patient_id = p.id
+        WHERE date(b.created_at) = ?
+        ORDER BY b.id DESC
+        LIMIT 20
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    appointments = db.execute(
+        '''
+        SELECT a.id, p.name, p.phone, COALESCE(d.name, 'Not assigned'),
+               COALESCE(s.name, 'Doctor service'), a.appointment_date
+        FROM appointments a
+        JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN services s ON a.service_id = s.id
+        WHERE date(a.appointment_date) = ?
+        ORDER BY a.id DESC
+        LIMIT 15
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    test_orders = db.execute(
+        '''
+        SELECT t.id, p.name, p.phone, s.name, s.price, t.test_date
+        FROM test_orders t
+        JOIN patients p ON p.id = t.patient_id
+        JOIN services s ON s.id = t.service_id
+        WHERE date(t.test_date) = ?
+        ORDER BY t.id DESC
+        LIMIT 15
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    admissions_today = db.execute(
+        '''
+        SELECT a.id, p.name, p.phone, a.ward, a.bed_number, a.status, a.admission_date, a.created_at
+        FROM admissions a
+        JOIN patients p ON a.patient_id = p.id
+        WHERE date(a.created_at) = ?
+        ORDER BY a.id DESC
+        LIMIT 15
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    low_stock_rows = [
+        row for row in get_medicine_balance_rows(positive_only=True)
+        if row['balance'] <= 10
+    ][:10]
+
+    month_totals = db.execute(
+        '''
+        SELECT
+            COALESCE((SELECT SUM(total_amount) FROM bills WHERE strftime('%Y-%m', created_at) = ?), 0),
+            COALESCE((SELECT SUM(grand_total) FROM medicine_sales WHERE strftime('%Y-%m', sale_date) = ?), 0),
+            COALESCE((SELECT COUNT(*) FROM patients WHERE strftime('%Y-%m', created_at) = ?), 0)
+        ''',
+        (selected_month, selected_month, selected_month)
+    ).fetchone()
+
+    return render_template(
+        'follow_up_dashboard.html',
+        profile_name=profile_name,
+        selected_date=selected_date,
+        selected_month=selected_month,
+        summary_cards=summary_cards,
+        compliance_logs=compliance_logs,
+        medicine_sales=medicine_sales,
+        patient_rows=patient_rows,
+        service_bills=service_bills,
+        appointments=appointments,
+        test_orders=test_orders,
+        admissions_today=admissions_today,
+        low_stock_rows=low_stock_rows,
+        duty_rows=duty_rows,
+        duty_completed=duty_completed,
+        duty_pending=len(duty_rows) - duty_completed,
+        month_totals={
+            'service_revenue': float(month_totals[0] or 0),
+            'medicine_revenue': float(month_totals[1] or 0),
+            'patients': int(month_totals[2] or 0),
+        },
+    )
+
+
 @app.route('/dashboard')
 def dashboard():
     """User dashboard page - only accessible to logged-in users."""
@@ -693,9 +1197,13 @@ def dashboard():
             profile_name = admin_checker[1]
         else:
             profile_name = user_checker[1]
+        nav_pages = get_direct_nav_pages(
+            PAGE_OPTIONS if isadmin() else get_user_pages(),
+            include_admin_only=isadmin()
+        )
         if isadmin():
-            return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name)
-        return render_template("dashboard.html", admin=False, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name)
+            return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name, nav_pages=nav_pages)
+        return render_template("dashboard.html", admin=False, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name, nav_pages=nav_pages)
     else:
         return redirect(url_for('login'))
 
@@ -1171,9 +1679,101 @@ def save_medicine_sale():
             'payment_type': payment_type,
             'sale_date': sale_date,
             'created_at': created_at,
+            'print_url': url_for('medicine_sales_print', sale_id=sale_id),
             'items': cleaned_items,
         }
     })
+
+
+@app.route('/medicine-sales-print/<int:sale_id>')
+def medicine_sales_print(sale_id):
+    """Printable medicine sales invoice."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    sale_row = db.execute(
+        '''
+        SELECT id, invoice_no, customer_name, customer_phone, subtotal, discount_type,
+               discount_value, discount_amount, tax_type, tax_value, tax_amount,
+               delivery_cost, grand_total, received_amount, due_amount, change_amount,
+               payment_type, sale_date, created_by, created_at
+        FROM medicine_sales
+        WHERE id = ?
+        ''',
+        (sale_id,)
+    ).fetchone()
+
+    if not sale_row:
+        return redirect(url_for('medicine_sales_list', message='Medicine sale invoice not found.'))
+
+    item_rows = db.execute(
+        '''
+        SELECT medicine_name, batch_no, unit_type, quantity, unit_price, discount, line_total
+        FROM medicine_sale_items
+        WHERE sale_id = ?
+        ORDER BY id ASC
+        ''',
+        (sale_id,)
+    ).fetchall()
+
+    created_by_id = sale_row[18]
+    if created_by_id == 'root_admin':
+        prepared_by = root_admin_username
+    else:
+        prepared_user = db.execute('SELECT username FROM admins WHERE id = ?', (created_by_id,)).fetchone()
+        if not prepared_user:
+            prepared_user = db.execute('SELECT username FROM users WHERE id = ?', (created_by_id,)).fetchone()
+        prepared_by = prepared_user[0] if prepared_user and prepared_user[0] else 'Unknown user'
+
+    sale = {
+        'id': sale_row[0],
+        'invoice_no': sale_row[1],
+        'customer_name': sale_row[2],
+        'customer_phone': sale_row[3],
+        'subtotal': sale_row[4],
+        'discount_type': sale_row[5],
+        'discount_value': sale_row[6],
+        'discount_amount': sale_row[7],
+        'tax_type': sale_row[8],
+        'tax_value': sale_row[9],
+        'tax_amount': sale_row[10],
+        'delivery_cost': sale_row[11],
+        'grand_total': sale_row[12],
+        'received_amount': sale_row[13],
+        'due_amount': sale_row[14],
+        'change_amount': sale_row[15],
+        'payment_type': sale_row[16],
+        'sale_date': sale_row[17],
+        'sale_date_display': format_invoice_datetime(sale_row[17]),
+        'created_by': created_by_id,
+        'created_at': sale_row[19],
+        'created_at_display': format_invoice_datetime(sale_row[19]),
+        'barcode': sale_row[1],
+    }
+    items = [
+        {
+            'medicine_name': item[0],
+            'batch_no': item[1],
+            'unit_type': item[2],
+            'quantity': item[3],
+            'unit_price': item[4],
+            'discount': item[5],
+            'line_total': item[6],
+        }
+        for item in item_rows
+    ]
+    printed_by = get_current_actor()[2]
+    return_url = url_for('medicine_sales_list', date=sale['sale_date'])
+
+    return render_template(
+        'medicine_sales_print.html',
+        sale=sale,
+        items=items,
+        amount_in_words=amount_to_words(sale['grand_total']),
+        prepared_by=prepared_by,
+        printed_by=printed_by,
+        return_url=return_url
+    )
 
 
 @app.route('/medicine_sales_list')
@@ -1726,10 +2326,46 @@ def registered_users():
     if isadmin():
         user_list = db.execute('SELECT * FROM users').fetchall()
         admin_list = db.execute('SELECT * FROM admins').fetchall()
-        return render_template("registered_users.html", users=user_list, admins=admin_list)
+        user_permissions = {
+            user[0]: set(get_user_page_keys(user[0]))
+            for user in user_list
+        }
+        return render_template(
+            "registered_users.html",
+            users=user_list,
+            admins=admin_list,
+            page_options=PAGE_OPTIONS,
+            user_permissions=user_permissions,
+            success=request.args.get('success'),
+            delete_message=request.args.get('delete_message')
+        )
     else:
         return redirect(url_for('login'))
     
+
+@app.route('/update_user_permissions', methods=['POST'])
+def update_user_permissions():
+    """Allow admins to edit which pages a regular user can open."""
+    if not isadmin():
+        return redirect(url_for('login'))
+
+    user_id = request.form.get('user_id')
+    if not user_id or not user_id.isdigit():
+        return redirect(url_for('registered_users', delete_message="Invalid employee selected."))
+
+    user_row = db.execute('SELECT username FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not user_row:
+        return redirect(url_for('registered_users', delete_message="Employee not found."))
+
+    page_keys = request.form.getlist('page_permissions')
+    if not page_keys:
+        return redirect(url_for('registered_users', delete_message="Please choose at least one page for this employee."))
+
+    set_user_page_permissions(user_id, page_keys)
+    db.commit()
+    add_system_log(f"Employee permissions updated: {user_row[0]}")
+    return redirect(url_for('registered_users', success="Employee permissions updated successfully."))
+
 
 @app.route('/delete', methods=['POST'])
 def delete_user():
@@ -1741,6 +2377,7 @@ def delete_user():
         if request.form.get('delete_user'):
             user_id = request.form.get('delete_user')
             user_row = db.execute('SELECT username, email FROM users WHERE id = ?', (user_id,)).fetchone()
+            db.execute('DELETE FROM user_permissions WHERE user_id = ?', (user_id,))
             db.execute('DELETE FROM users WHERE id = ?', (user_id,))
             db.commit()
             if user_row:
@@ -1772,6 +2409,108 @@ def doctors():
     ''').fetchall()
     message = request.args.get('message') or request.args.get('success')
     return render_template("doctors.html", doctors=doctor_list, admin=admin_varifier, message=message)
+
+@app.route('/duty-management', methods=['GET', 'POST'])
+def duty_management():
+    """Track doctor rounds and nurse duty completion."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+
+    if request.method == 'POST':
+        staff_role = request.form.get('staff_role', '').strip().lower()
+        doctor_id = request.form.get('doctor_id', '').strip()
+        staff_name = request.form.get('staff_name', '').strip()
+        duty_date = request.form.get('duty_date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+        shift = request.form.get('shift', '').strip()
+        ward = request.form.get('ward', '').strip()
+        round_completed = 1 if request.form.get('round_completed') == 'on' else 0
+        notes = request.form.get('notes', '').strip()
+
+        if staff_role not in ('doctor', 'nurse'):
+            return redirect(url_for('duty_management', date=duty_date, message="Please choose Doctor or Nurse."))
+        if not shift or not ward:
+            return redirect(url_for('duty_management', date=duty_date, message="Please choose shift and ward/unit."))
+
+        doctor_id_value = None
+        if staff_role == 'doctor':
+            if not doctor_id or not doctor_id.isdigit():
+                return redirect(url_for('duty_management', date=duty_date, message="Please select a doctor."))
+            doctor_row = db.execute('SELECT id, name FROM doctors WHERE id = ?', (doctor_id,)).fetchone()
+            if not doctor_row:
+                return redirect(url_for('duty_management', date=duty_date, message="Doctor not found."))
+            doctor_id_value = doctor_row[0]
+            staff_name = doctor_row[1]
+        elif not staff_name:
+            return redirect(url_for('duty_management', date=duty_date, message="Please write the nurse name."))
+
+        db.execute(
+            '''
+            INSERT INTO duty_records (
+                staff_role, doctor_id, staff_name, duty_date, shift, ward,
+                round_completed, notes, created_by, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))
+            ''',
+            (
+                staff_role, doctor_id_value, staff_name, duty_date, shift, ward,
+                round_completed, notes, str(session.get('user_id'))
+            )
+        )
+        db.commit()
+        add_system_log(f"{staff_role.title()} duty record saved: {staff_name}")
+        return redirect(url_for('duty_management', date=duty_date, success="Duty record saved successfully."))
+
+    doctor_list = db.execute('''
+        SELECT id, name, COALESCE(designation, ''), department
+        FROM doctors
+        ORDER BY name ASC
+    ''').fetchall()
+    duty_rows = db.execute(
+        '''
+        SELECT id, staff_role, staff_name, duty_date, shift, ward, round_completed, notes, created_by, created_at
+        FROM duty_records
+        WHERE date(duty_date) = ?
+        ORDER BY created_at DESC, id DESC
+        ''',
+        (selected_date,)
+    ).fetchall()
+
+    duty_records = [
+        {
+            'id': row[0],
+            'staff_role': row[1],
+            'staff_name': row[2],
+            'duty_date': row[3],
+            'shift': row[4],
+            'ward': row[5],
+            'round_completed': bool(row[6]),
+            'notes': row[7] or '',
+            'created_by': row[8],
+            'created_at': row[9],
+        }
+        for row in duty_rows
+    ]
+    total_records = len(duty_records)
+    completed_records = sum(1 for row in duty_records if row['round_completed'])
+    doctor_completed = sum(1 for row in duty_records if row['staff_role'] == 'doctor' and row['round_completed'])
+    nurse_completed = sum(1 for row in duty_records if row['staff_role'] == 'nurse' and row['round_completed'])
+
+    return render_template(
+        'duty_management.html',
+        doctors=doctor_list,
+        duty_records=duty_records,
+        selected_date=selected_date,
+        total_records=total_records,
+        completed_records=completed_records,
+        pending_records=total_records - completed_records,
+        doctor_completed=doctor_completed,
+        nurse_completed=nurse_completed,
+        admin=isadmin(),
+        message=request.args.get('message'),
+        success=request.args.get('success')
+    )
 
 @app.route('/patients-registration')
 def patients_registration():

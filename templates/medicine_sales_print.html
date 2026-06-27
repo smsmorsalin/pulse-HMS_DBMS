@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Bill</title>
+    <title>Medicine Sales Invoice</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket_print.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales_print.css') }}">
 </head>
 
-<body data-return-url="{{ return_url or url_for('patients_registration', view='list') }}">
+<body data-return-url="{{ return_url or url_for('medicine_sales_list') }}">
     <main class="bill-page">
         <section class="bill-sheet" id="printArea">
 
             <div class="bill-actions no-print">
-                <a href="{{ return_url or url_for('patients_registration', view='list') }}" class="action-btn secondary">Back</a>
+                <a href="{{ return_url or url_for('medicine_sales_list') }}" class="action-btn secondary">Back</a>
                 <button type="button" class="action-btn" onclick="printBill()">Print</button>
             </div>
 
@@ -29,7 +29,7 @@
             </header>
 
             <section class="bill-title-row">
-                <h2 class="bill-title">CASH BILL</h2>
+                <h2 class="bill-title">MEDICINE SALES INVOICE</h2>
                 <div class="customer-copy-row">
                     <h3 class="customer-copy-title">Customer Copy</h3>
                 </div>
@@ -37,56 +37,61 @@
 
             <section class="bill-top">
                 <div class="bill-left">
-                    <p><strong>Bill No</strong><span>:</span> {{ ticket.bill_no }}</p>
-                    <p><strong>UHID</strong><span>:</span> {{ ticket.uhid }}</p>
-                    <p class="bill-highlight"><strong>Ticket No</strong><span>:</span> {{ ticket.ticket_no or '-' }}</p>
-                    <p><strong>Serial No</strong><span>:</span> {{ ticket.serial_no or '-' }}</p>
-                    <p class="bill-highlight"><strong>Patient</strong><span>:</span> {{ ticket.name or '-' }}</p>
-                    <p><strong>Contact No</strong><span>:</span> {{ ticket.phone or '-' }}</p>
-                    <p><strong>Emergency No</strong><span>:</span> {{ ticket.emergency_contact_phone or '-' }}</p>
-                    <p><strong>Address</strong><span>:</span> {{ ticket.address or '-' }}</p>
-                    <p class="bill-highlight"><strong>Patient Status</strong><span>:</span> {{ ticket.patient_status or '-' }}</p>
-                    <p><strong>Referred By</strong><span>:</span> {{ ticket.referer_name or '-' }}</p>
+                    <p><strong>Invoice No</strong><span>:</span> {{ sale.invoice_no }}</p>
+                    <p><strong>Sale ID</strong><span>:</span> {{ sale.id }}</p>
+                    <p class="bill-highlight"><strong>Customer</strong><span>:</span> {{ sale.customer_name or 'Walk-in Customer' }}</p>
+                    <p><strong>Contact No</strong><span>:</span> {{ sale.customer_phone or '-' }}</p>
+                    <p><strong>Payment Type</strong><span>:</span> {{ sale.payment_type or 'Cash' }}</p>
                 </div>
 
                 <div class="bill-right">
-                    <p><strong>Bill Date</strong><span>:</span> {{ format_date_display(ticket.created_at) }}</p>
+                    <p><strong>Bill Date</strong><span>:</span> {{ sale.sale_date_display or '-' }}</p>
+                    <p><strong>Created At</strong><span>:</span> {{ sale.created_at_display or '-' }}</p>
                     <p><strong>Payer</strong><span>:</span> CASH</p>
-                    <p class="bill-highlight"><strong>Age/Gender</strong><span>:</span> {{ ticket.age or '-' }} {{ ticket.age_unit or '' }} / {{ ticket.gender or '-' }}</p>
-                    <p class="bill-highlight"><strong>Blood Group</strong><span>:</span> {{ ticket.blood_group or '-' }}</p>
-                    <p><strong>Doctor</strong><span>:</span> {{ ticket.doctor_name or '-' }}</p>
-                    <p><strong>Designation</strong><span>:</span> {{ ticket.doctor_designation or '-' }}</p>
+                    <p class="bill-highlight"><strong>Status</strong><span>:</span> {% if sale.due_amount and sale.due_amount > 0 %}DUE{% else %}PAID{% endif %}</p>
 
                     <div class="barcode-box">
                         <img
                             id="billBarcode"
-                            data-barcode="{{ ticket.barcode }}"
-                            alt="Bill Barcode"
+                            data-barcode="{{ sale.barcode }}"
+                            alt="Invoice Barcode"
                         >
                     </div>
                 </div>
             </section>
-
-
 
             <section class="item-table">
                 <table>
                     <thead>
                         <tr>
                             <th>Sno</th>
-                            <th>Investigations</th>
-                            <th>Total Amount</th>
+                            <th>Medicine</th>
+                            <th>Batch</th>
+                            <th>Unit</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Discount</th>
                             <th>Net Amount</th>
                         </tr>
                     </thead>
 
                     <tbody>
+                        {% for item in items %}
                         <tr>
-                            <td>1</td>
-                            <td>Doctor Consultation Fee{% if ticket.doctor_name %} - {{ ticket.doctor_name }}{% endif %}</td>
-                            <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
-                            <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ item.medicine_name }}</td>
+                            <td>{{ item.batch_no or '-' }}</td>
+                            <td>{{ item.unit_type|title }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ "%.2f"|format(item.unit_price or 0) }}</td>
+                            <td>{{ "%.2f"|format(item.discount or 0) }}</td>
+                            <td>{{ "%.2f"|format(item.line_total or 0) }}</td>
                         </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="empty-cell">No medicine items found.</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </section>
@@ -94,19 +99,21 @@
             <section class="summary-section">
                 <div class="payment-note">
                     <div class="paid-box">
-                        <strong>PAID</strong>
+                        <strong>{% if sale.due_amount and sale.due_amount > 0 %}DUE{% else %}PAID{% endif %}</strong>
                         <span>Thank You</span>
                     </div>
-                    <p>Cash: {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p>{{ sale.payment_type or 'Cash' }}: {{ "%.2f"|format(sale.received_amount or 0) }}</p>
                 </div>
 
                 <div class="amount-summary">
-                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
-                    <p><strong>Gross Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
-                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
-                    <p><strong>Discount</strong><span>:</span> 0.00</p>
-                    <p><strong>Refund Amount</strong><span>:</span> 0.00</p>
-                    <p><strong>Balance</strong><span>:</span> 0.00</p>
+                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(sale.subtotal or 0) }}</p>
+                    <p><strong>Discount</strong><span>:</span> {{ "%.2f"|format(sale.discount_amount or 0) }}</p>
+                    <p><strong>Tax</strong><span>:</span> {{ "%.2f"|format(sale.tax_amount or 0) }}</p>
+                    <p><strong>Delivery</strong><span>:</span> {{ "%.2f"|format(sale.delivery_cost or 0) }}</p>
+                    <p><strong>Net Amount</strong><span>:</span> {{ "%.2f"|format(sale.grand_total or 0) }}</p>
+                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(sale.received_amount or 0) }}</p>
+                    <p><strong>Due Amount</strong><span>:</span> {{ "%.2f"|format(sale.due_amount or 0) }}</p>
+                    <p><strong>Change</strong><span>:</span> {{ "%.2f"|format(sale.change_amount or 0) }}</p>
                 </div>
             </section>
 
@@ -118,7 +125,7 @@
             </section>
 
             <section class="narration">
-                <p><strong>Narration :</strong> Doctor consultation registration bill.</p>
+                <p><strong>Narration :</strong> Pharmacy medicine sales invoice.</p>
             </section>
 
             <section class="signature-row">
@@ -131,9 +138,9 @@
 
             <section class="instruction-section">
                 <p><strong>Note:</strong></p>
-                <p>* Please check patient name, age, gender, doctor name and other information before leaving the counter.</p>
-                <p>* Please bring this bill during consultation.</p>
-                <p>* This is a computer-generated cash bill.</p>
+                <p>* Please check medicine name, batch, quantity, price and payment information before leaving the counter.</p>
+                <p>* Sold medicine may be exchanged only according to hospital pharmacy policy.</p>
+                <p>* This is a computer-generated pharmacy invoice.</p>
             </section>
 
             <footer class="bill-footer">
@@ -147,8 +154,8 @@
     </main>
 
     <script>
-        const dailyPatientListUrl = document.body.dataset.returnUrl || "/patients-registration?view=list";
-        let hasReturnedToDailyList = false;
+        const salesListUrl = document.body.dataset.returnUrl || "/medicine_sales_list";
+        let hasReturnedToSalesList = false;
 
         const code128Patterns = [
             "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
@@ -173,6 +180,7 @@
             const pad = function (value) {
                 return String(value).padStart(2, "0");
             };
+
             timestampElement.textContent = [
                 pad(now.getDate()),
                 pad(now.getMonth() + 1),
@@ -267,11 +275,11 @@
             });
         }
 
-        function returnToDailyPatientList() {
-            if (hasReturnedToDailyList) return;
+        function returnToSalesList() {
+            if (hasReturnedToSalesList) return;
 
-            hasReturnedToDailyList = true;
-            window.location.replace(dailyPatientListUrl);
+            hasReturnedToSalesList = true;
+            window.location.replace(salesListUrl);
         }
 
         async function printBill() {
@@ -298,7 +306,7 @@
         });
 
         window.addEventListener("afterprint", function () {
-            window.setTimeout(returnToDailyPatientList, 300);
+            window.setTimeout(returnToSalesList, 300);
         });
 
         window.setTimeout(function () {

@@ -42,7 +42,7 @@
                     <p><strong>Name:</strong> {{ bill[3] }}</p>
                     <p><strong>Phone:</strong> {{ bill[4] }}</p>
                     <p><strong>Bill ID:</strong> {{ bill[0] }}</p>
-                    <p><strong>Date:</strong> {{ bill[2] }}</p>
+                    <p><strong>Date:</strong> {{ format_date_display(bill[2]) }}</p>
                     <p class="printed-time"><strong>Printed At:</strong> <span id="printedTimestamp">--</span></p>
                 </div>
 
@@ -99,7 +99,11 @@
             }
 
             const now = new Date();
-            timestampElement.textContent = now.toLocaleString();
+            const day = String(now.getDate()).padStart(2, "0");
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const year = now.getFullYear();
+            const time = now.toLocaleTimeString("en-GB");
+            timestampElement.textContent = `${day}-${month}-${year} ${time}`;
         }
 
         updatePrintedTimestamp();

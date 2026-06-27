@@ -27,52 +27,72 @@
                 </div>
             </div>
 
-            <form method="post" action="/delete">
+            {% if delete_message %}
+            <p class="flash-message">{{ delete_message }}</p>
+            {% endif %}
 
-                {% if delete_message %}
-                <p class="flash-message">{{ delete_message }}</p>
-                {% endif %}
+            {% if success %}
+            <p class="flash-message">{{ success }}</p>
+            {% endif %}
 
-                {% if success %}
-                <p class="flash-message">{{ success }}</p>
-                {% endif %}
-
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for admin in admins %}
-                            <tr>
-                                <td>{{ admin[1] }}</td>
-                                <td>{{ admin[3] or '-' }}</td>
-                                <td>Admin</td>
-                                <td>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Allowed Pages</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr>
+                            <td>{{ admin[1] }}</td>
+                            <td>{{ admin[3] or '-' }}</td>
+                            <td>Admin</td>
+                            <td><span class="admin-access">All pages</span></td>
+                            <td>
+                                <form method="post" action="{{ url_for('delete_user') }}">
                                     <button class="delete-btn" name="delete_admin" value="{{ admin[0] }}">Delete</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
 
-                            {% for user in users %}
-                            <tr>
-                                <td>{{ user[1] }}</td>
-                                <td>{{ user[3] or '-' }}</td>
-                                <td>User</td>
-                                <td>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user[1] }}</td>
+                            <td>{{ user[3] or '-' }}</td>
+                            <td>User</td>
+                            <td>
+                                <form class="permission-form" method="post" action="{{ url_for('update_user_permissions') }}">
+                                    <input type="hidden" name="user_id" value="{{ user[0] }}">
+                                    <div class="permission-list">
+                                        {% for page in page_options %}
+                                        <label>
+                                            <input type="checkbox" name="page_permissions" value="{{ page.key }}" {% if page.key in user_permissions.get(user[0], []) %}checked{% endif %}>
+                                            <span>
+                                                {{ page.label }}
+                                                {% if page.nav is defined and not page.nav %}<small>Detail/print page</small>{% endif %}
+                                            </span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                    <button class="save-btn" type="submit">Update Permissions</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" action="{{ url_for('delete_user') }}">
                                     <button class="delete-btn" name="delete_user" value="{{ user[0] }}">Delete</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
 

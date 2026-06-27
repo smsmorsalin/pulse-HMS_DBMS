@@ -51,6 +51,13 @@
             </a>
         </li>
 
+        <li>
+            <a href="{{ url_for('follow_up_dashboard') }}" class="nav-link" name="follow_up_dashboard">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Follow Up</span>
+            </a>
+        </li>
+
 
  
 
@@ -77,6 +84,13 @@
                 You can add admin functionalities here such as:
                 User Management, System Settings, Reports, etc.
             </p>
+
+            <div class="portal-actions">
+                <a href="{{ url_for('follow_up_dashboard') }}" class="follow-up-btn">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Follow Up</span>
+                </a>
+            </div>
 
         </div>
     </div>

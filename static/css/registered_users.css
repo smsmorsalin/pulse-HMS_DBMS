@@ -106,7 +106,7 @@ table {
 	width: 100%;
 	border-collapse: collapse;
 	color: #fff;
-	min-width: 620px;
+	min-width: 920px;
 }
 
 thead tr {
@@ -138,6 +138,66 @@ tbody tr:hover {
 }
 
 .delete-btn:hover {
+	filter: brightness(1.08);
+}
+
+.admin-access {
+	display: inline-flex;
+	border-radius: 999px;
+	padding: 6px 10px;
+	background: rgba(158, 248, 173, 0.16);
+	color: #9ef8ad;
+	font-size: 13px;
+}
+
+.permission-form {
+	display: grid;
+	gap: 10px;
+}
+
+.permission-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(150px, 1fr));
+	gap: 8px;
+}
+
+.permission-list label {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 8px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.08);
+	font-size: 12px;
+}
+
+.permission-list span {
+	display: grid;
+	gap: 2px;
+}
+
+.permission-list small {
+	color: rgba(255, 255, 255, 0.62);
+	font-size: 10px;
+}
+
+.permission-list input {
+	width: 15px;
+	height: 15px;
+	accent-color: #ff1e56;
+}
+
+.save-btn {
+	justify-self: start;
+	border: none;
+	border-radius: 10px;
+	padding: 8px 12px;
+	color: #fff;
+	background: linear-gradient(135deg, #1e3cfa, #24c6dc);
+	cursor: pointer;
+}
+
+.save-btn:hover {
 	filter: brightness(1.08);
 }
 

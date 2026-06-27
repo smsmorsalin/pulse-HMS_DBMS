@@ -157,7 +157,7 @@
             <div class="records-header">
                 <div>
                     <h2><i class="fas fa-clipboard-list"></i> Admission Records</h2>
-                    <p>Showing records created on {{ selected_date }}.</p>
+                    <p>Showing records created on {{ format_date_display(selected_date) }}.</p>
                 </div>
 
                 <form class="date-filter-bar" method="GET" action="{{ url_for('admissions') }}">

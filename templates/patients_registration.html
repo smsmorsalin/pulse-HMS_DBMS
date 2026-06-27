@@ -33,10 +33,12 @@
             </a>
         </div>
         <div class="sidebar-menu" id="patientSidebarMenu">
+            {% if can_access_page('dashboard') %}
             <a id="dashboardNav" class="sidebar-item" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </a>
+            {% endif %}
 
 
             <button type="button" id="newPatientNav" class="sidebar-item">

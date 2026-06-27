@@ -18,7 +18,9 @@
 	</div>
 
 	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
 		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
 		<li class="medicine-menu open" id="medicineMenu">
 			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
 				<i class="fas fa-pills"></i>
@@ -29,8 +31,12 @@
 				{% if admin %}
 				<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
 				{% endif %}
+				{% if can_access_page('medicine_sales') %}
 				<a class="sub-link active" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				{% endif %}
+				{% if can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% endif %}
 				{% if admin %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
@@ -493,6 +499,15 @@ function collectSalePayload() {
 	};
 }
 
+function displayDateTime(value) {
+	if (!value) return '-';
+	const parts = String(value).split(' ');
+	const dateParts = parts[0].split('-');
+	if (dateParts.length !== 3) return value;
+	const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+	return parts[1] ? `${formattedDate} ${parts.slice(1).join(' ')}` : formattedDate;
+}
+
 function receiptHtml(sale) {
 	const itemRows = sale.items.map(function (item, index) {
 		return `
@@ -527,8 +542,8 @@ function receiptHtml(sale) {
 				</div>
 				<div class="meta">
 					<strong>${sale.invoice_no}</strong>
-					<p>Date: ${sale.sale_date}</p>
-					<p>Created: ${sale.created_at}</p>
+					<p>Date: ${displayDateTime(sale.sale_date)}</p>
+					<p>Created: ${displayDateTime(sale.created_at)}</p>
 					<p>Payment: ${sale.payment_type}</p>
 				</div>
 			</div>
@@ -674,20 +689,14 @@ savePrintButton.addEventListener('click', async function () {
 		if (!response.ok || !result.success) {
 			throw new Error(result.error || 'Could not save this sale.');
 		}
-		const receiptOpened = printReceipt(result.sale);
-		resetSaleState({
-			clearCart: true,
-			message: receiptOpened
-				? 'Sale saved and printed. Reloading for the next sale...'
-				: 'Sale saved. Please allow pop-ups to print the receipt.',
-		});
-		if (receiptOpened) {
-			reloadForNextSale();
-		}
+		window.location.href = result.sale.print_url || '{{ url_for("medicine_sales_list") }}';
 	} catch (error) {
 		saleStatus.textContent = error.message;
-	} finally {
 		savePrintButton.disabled = false;
+	} finally {
+		if (!saleStatus.textContent.includes('Saving')) {
+			savePrintButton.disabled = false;
+		}
 	}
 });
 

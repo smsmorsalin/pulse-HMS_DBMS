@@ -17,7 +17,9 @@
 	</div>
 
 	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
 		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
 		<li class="medicine-menu open" id="medicineMenu">
 			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
 				<i class="fas fa-pills"></i>
@@ -28,8 +30,12 @@
 				{% if admin %}
 				<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
 				{% endif %}
+				{% if can_access_page('medicine_sales') %}
 				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				{% endif %}
+				{% if can_access_page('medicine_sales_list') %}
 				<a class="sub-link active" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% endif %}
 				{% if admin %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
@@ -94,7 +100,7 @@
 					<div class="invoice">
 						<strong>{{ sale.invoice_no }}</strong>
 						<span>{{ sale.customer_name }}{% if sale.customer_phone %} | {{ sale.customer_phone }}{% endif %}</span>
-						<small>{{ sale.created_at }} | {{ sale.payment_type }}</small>
+						<small>{{ format_date_display(sale.created_at) }} | {{ sale.payment_type }}</small>
 					</div>
 					<div class="metric">
 						<span>Subtotal</span>
@@ -112,14 +118,15 @@
 						<span>Due</span>
 						<strong>Tk {{ '%.2f'|format(sale.due_amount) }}</strong>
 					</div>
-					{% if admin %}
 					<div class="sale-actions">
+						<a class="print-invoice-btn" href="{{ url_for('medicine_sales_print', sale_id=sale.id) }}"><i class="fas fa-print"></i> Print</a>
+						{% if admin %}
 						<form class="delete-sale-form" method="POST" action="{{ url_for('delete_medicine_sale', sale_id=sale.id) }}" onsubmit="return confirm('Delete this sale record? This will also remove the matching stock deduction.');">
 							<input type="hidden" name="selected_date" value="{{ selected_date }}">
 							<button class="delete-sale-btn" type="submit"><i class="fas fa-trash"></i> Delete</button>
 						</form>
+						{% endif %}
 					</div>
-					{% endif %}
 				</div>
 				<div class="table-wrap">
 					<table class="items-table">

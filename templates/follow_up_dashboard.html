@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow Up Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/follow_up_dashboard.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="background-blobs">
+<div class="dashboard">
+    <aside class="sidebar">
+        <h2>Pulse-HMS</h2>
+        <ul>
+            <li>
+                <a href="{{ url_for('admin_portal') }}" class="nav-link">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Admin Portal</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('follow_up_dashboard') }}" class="nav-link active">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Follow Up</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('logs') }}" class="nav-link">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span>Logs</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('medicine_sales_list', date=selected_date) }}" class="nav-link">
+                    <i class="fas fa-pills"></i>
+                    <span>Medicine Sales List</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="follow-header">
+            <div>
+                <p class="eyebrow"><i class="fas fa-clipboard-check"></i> Admin Follow Up</p>
+                <h1>Daily Follow Up Dashboard</h1>
+                <p>One screen for compliance logs, medicine sales, patients, bills, services, appointments, tests, and admissions.</p>
+            </div>
+            <form class="date-filter" method="GET" action="{{ url_for('follow_up_dashboard') }}">
+                <label for="followDate">Record Date</label>
+                <div>
+                    <input id="followDate" type="date" name="date" value="{{ selected_date }}" required>
+                    <button type="submit"><i class="fas fa-filter"></i> Show</button>
+                </div>
+                <span>Signed in as {{ profile_name }}</span>
+            </form>
+        </header>
+
+        <section class="record-section duty-log-section">
+            <div class="section-head">
+                <div>
+                    <p class="eyebrow small"><i class="fas fa-shield-heart"></i> Duty Management</p>
+                    <h2>Compliance Log</h2>
+                    <p>Doctor round and nurse duty records submitted for {{ format_date_display(selected_date) }}.</p>
+                </div>
+                <div class="duty-actions">
+                    <span>{{ duty_rows|length }} entries</span>
+                    <span>{{ duty_completed }} completed</span>
+                    <span>{{ duty_pending }} pending</span>
+                    <a href="{{ url_for('duty_management', date=selected_date) }}">Open Duty Board <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Name</th>
+                            <th>Shift</th>
+                            <th>Ward</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if duty_rows %}
+                            {% for record in duty_rows %}
+                            <tr>
+                                <td>
+                                    <span class="role-pill {{ record[1] }}">
+                                        <i class="fas {{ 'fa-user-doctor' if record[1] == 'doctor' else 'fa-user-nurse' }}"></i>
+                                        {{ record[1]|title }}
+                                    </span>
+                                </td>
+                                <td><strong>{{ record[2] }}</strong></td>
+                                <td>{{ record[4] }}</td>
+                                <td>{{ record[5] }}</td>
+                                <td>
+                                    <span class="status-pill {{ 'done' if record[6] else 'pending' }}">
+                                        {{ 'Completed' if record[6] else 'Not Done' }}
+                                    </span>
+                                </td>
+                                <td>{{ record[7] or '-' }}</td>
+                                <td>{{ format_date_display(record[8]) }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7" class="empty-state">No duty management compliance records found for this date.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="summary-grid" aria-label="Follow up summary">
+            {% for card in summary_cards %}
+            <article class="summary-card">
+                <i class="{{ card.icon }}"></i>
+                <div>
+                    <span>{{ card.label }}</span>
+                    <strong>{{ card.value }}</strong>
+                    <small>{{ card.note }}</small>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="month-strip">
+            <div>
+                <span>{{ selected_month }} Service Revenue</span>
+                <strong>Tk {{ '%.2f'|format(month_totals.service_revenue) }}</strong>
+            </div>
+            <div>
+                <span>{{ selected_month }} Medicine Revenue</span>
+                <strong>Tk {{ '%.2f'|format(month_totals.medicine_revenue) }}</strong>
+            </div>
+            <div>
+                <span>{{ selected_month }} Patients</span>
+                <strong>{{ month_totals.patients }}</strong>
+            </div>
+        </section>
+
+        <section class="record-section wide">
+            <div class="section-head">
+                <div>
+                    <p class="eyebrow small">Daily Compliance Log</p>
+                    <h2>Compliance Activity</h2>
+                </div>
+                <a href="{{ url_for('logs') }}">Full Logs <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Actor</th>
+                            <th>Role</th>
+                            <th>Patient</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if compliance_logs %}
+                            {% for item in compliance_logs %}
+                            <tr>
+                                <td>{{ format_date_display(item[6]) }}</td>
+                                <td>
+                                    <strong>{{ item[3] or item[7] or 'Unknown user' }}</strong>
+                                    {% if item[1] %}<span>ID: {{ item[1] }}</span>{% else %}<span>Root account</span>{% endif %}
+                                </td>
+                                <td><span class="pill {{ item[2] }}">{{ item[2]|title }}</span></td>
+                                <td>
+                                    {% if item[4] %}
+                                    <strong>{{ item[8] or 'Deleted patient' }}</strong>
+                                    <span>Patient ID: {{ item[4] }}</span>
+                                    {% else %}
+                                    <span class="muted">Not patient-specific</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item[5] }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="5" class="empty-state">No compliance activity found for this date.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="record-section wide">
+            <div class="section-head">
+                <div>
+                    <p class="eyebrow small">Daily Medicine Sales Record</p>
+                    <h2>Medicine Sales Details</h2>
+                </div>
+                <a href="{{ url_for('medicine_sales_list', date=selected_date) }}">Sales List <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="sales-list">
+                {% if medicine_sales %}
+                    {% for sale in medicine_sales %}
+                    <article class="sale-record">
+                        <div class="sale-main">
+                            <div>
+                                <strong>{{ sale.invoice_no }}</strong>
+                                <span>{{ sale.customer_name }}{% if sale.customer_phone %} | {{ sale.customer_phone }}{% endif %}</span>
+                                <small>{{ format_date_display(sale.created_at) }} | {{ sale.payment_type }}</small>
+                            </div>
+                            <div class="money-grid">
+                                <span>Subtotal <strong>Tk {{ '%.2f'|format(sale.subtotal) }}</strong></span>
+                                <span>Discount <strong>Tk {{ '%.2f'|format(sale.discount_amount) }}</strong></span>
+                                <span>Total <strong>Tk {{ '%.2f'|format(sale.grand_total) }}</strong></span>
+                                <span>Due <strong>Tk {{ '%.2f'|format(sale.due_amount) }}</strong></span>
+                            </div>
+                            <a class="print-link" href="{{ url_for('medicine_sales_print', sale_id=sale.id) }}">
+                                <i class="fas fa-print"></i> Print
+                            </a>
+                        </div>
+                        <div class="mini-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Medicine</th>
+                                        <th>Batch</th>
+                                        <th>Unit</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in sale.items %}
+                                    <tr>
+                                        <td>{{ item[0] }}</td>
+                                        <td>{{ item[1] }}</td>
+                                        <td>{{ item[2]|title }}</td>
+                                        <td>{{ item[3] }}</td>
+                                        <td>Tk {{ '%.2f'|format(item[4]) }}</td>
+                                        <td>Tk {{ '%.2f'|format(item[6]) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">No medicine sales found for this date.</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="section-grid">
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Registration</p>
+                        <h2>Daily Patients</h2>
+                    </div>
+                    <a href="{{ url_for('patients_registration', view='list', date=selected_date) }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if patient_rows %}
+                        {% for patient in patient_rows %}
+                        <article>
+                            <strong>{{ patient[2] }}</strong>
+                            <span>UHID {{ patient[0] }} | Ticket {{ patient[1] or '-' }} | {{ patient[5] }} | {{ patient[6] }}</span>
+                            <small>{{ patient[3] }} {{ patient[4] or 'Y' }} | {{ patient[7] or 'General' }} | Fee Tk {{ '%.2f'|format(patient[9] or 0) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No patients registered for this date.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Billing</p>
+                        <h2>Service Bills</h2>
+                    </div>
+                    <a href="{{ url_for('billing') }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if service_bills %}
+                        {% for bill in service_bills %}
+                        <article>
+                            <strong>Bill #{{ bill[0] }} | Tk {{ '%.2f'|format(bill[3] or 0) }}</strong>
+                            <span>{{ bill[1] }} | {{ bill[2] }}</span>
+                            <small>{{ format_date_display(bill[4]) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No service bills found for this date.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Doctor Visits</p>
+                        <h2>Appointments</h2>
+                    </div>
+                    <a href="{{ url_for('appointment_doctors') }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if appointments %}
+                        {% for appointment in appointments %}
+                        <article>
+                            <strong>{{ appointment[1] }} | {{ appointment[4] }}</strong>
+                            <span>{{ appointment[2] }} | Dr. {{ appointment[3] }}</span>
+                            <small>{{ format_date_display(appointment[5]) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No appointments found for this date.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Pathology</p>
+                        <h2>Test Orders</h2>
+                    </div>
+                    <a href="{{ url_for('pathology_dashboard', date=selected_date) }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if test_orders %}
+                        {% for test in test_orders %}
+                        <article>
+                            <strong>{{ test[3] }} | Tk {{ '%.2f'|format(test[4] or 0) }}</strong>
+                            <span>{{ test[1] }} | {{ test[2] }}</span>
+                            <small>{{ format_date_display(test[5]) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No test orders found for this date.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Admission</p>
+                        <h2>Admission Records</h2>
+                    </div>
+                    <a href="{{ url_for('admissions', date=selected_date) }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if admissions_today %}
+                        {% for admission in admissions_today %}
+                        <article>
+                            <strong>{{ admission[1] }} | {{ admission[3] }} Bed {{ admission[4] }}</strong>
+                            <span>{{ admission[2] }} | {{ admission[5] }}</span>
+                            <small>Admission: {{ format_date_display(admission[6]) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No admission records found for this date.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="record-section">
+                <div class="section-head">
+                    <div>
+                        <p class="eyebrow small">Pharmacy Stock</p>
+                        <h2>Low Stock Follow Up</h2>
+                    </div>
+                    <a href="{{ url_for('medicine_stock_dashboard') }}">Open <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="compact-list">
+                    {% if low_stock_rows %}
+                        {% for stock in low_stock_rows %}
+                        <article>
+                            <strong>{{ stock.medicine_name }}</strong>
+                            <span>Batch {{ stock.batch_no }} | {{ stock.unit_type|title }}</span>
+                            <small>Balance {{ stock.balance }} | Last price Tk {{ '%.2f'|format(stock.latest_price or 0) }}</small>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">No low stock medicine found.</div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

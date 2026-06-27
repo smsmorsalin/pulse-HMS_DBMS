@@ -24,25 +24,107 @@
 
   <!-- NAVIGATION -->
   <ul class="nav-list" id="sidebarMenu">
-    
-    <li><a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-   
-    <!-- PATIENT REGISTRATION BUTTON -->
+    {% if can_access_page('dashboard') %}
     <li>
-    <a class="nav-link" href="{{ url_for('patients_registration') }}">
+      <a class="nav-link active" href="{{ url_for('dashboard') }}">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('patients_registration') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('patients_registration') }}">
         <i class="fas fa-user-plus"></i>
         <span>Patients Registration</span>
-    </a>
-   </li>
-    <li><a class="nav-link" href="{{ url_for('doctors') }}"><i class="fas fa-user-md"></i> <span>Doctors</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('admissions') }}"><i class="fas fa-file-medical"></i> <span>Admission</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('appointments_info') }}"><i class="fa-solid fa-book-medical"></i> <span>Appointments Info</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('pathology_dashboard') }}"><i class="fas fa-microscope"></i> <span>Pathology</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('tests') }}"><i class="fas fa-vial"></i> <span>View Tests</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('service_desk') }}"><i class="fas fa-hand-holding-medical"></i> <span>Services</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-pills"></i> <span>Medicine</span></a></li>
-    <li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
-    <li><a class="nav-link" href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('doctors') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('doctors') }}">
+        <i class="fas fa-user-md"></i>
+        <span>Doctors</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('duty_management') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('duty_management') }}">
+        <i class="fas fa-clipboard-check"></i>
+        <span>Doctor & Nurse Duty</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('admissions') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('admissions') }}">
+        <i class="fas fa-file-medical"></i>
+        <span>Admission</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('appointments_info') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('appointments_info') }}">
+        <i class="fa-solid fa-book-medical"></i>
+        <span>Appointments Info</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('pathology_dashboard') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('pathology_dashboard') }}">
+        <i class="fas fa-microscope"></i>
+        <span>Pathology</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('tests') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('tests') }}">
+        <i class="fas fa-vial"></i>
+        <span>View Tests</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('service_desk') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('service_desk') }}">
+        <i class="fas fa-hand-holding-medical"></i>
+        <span>Services</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('medicine_sales') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('medicine_sales') }}">
+        <i class="fas fa-pills"></i>
+        <span>Medicine Sales</span>
+      </a>
+    </li>
+    {% endif %}
+
+
+    {% if can_access_page('billing') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('billing') }}">
+        <i class="fas fa-file-invoice"></i>
+        <span>Billing</span>
+      </a>
+    </li>
+    {% endif %}
+
+
   </ul>
 
 </div>

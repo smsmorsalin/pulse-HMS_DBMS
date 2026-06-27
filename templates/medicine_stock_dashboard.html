@@ -18,7 +18,9 @@
 	</div>
 
 	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
 		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
 		<li class="medicine-menu open" id="medicineMenu">
 			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
 				<i class="fas fa-pills"></i>
@@ -27,8 +29,12 @@
 			</button>
 			<div class="sub-nav">
 				<a class="sub-link active" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
+				{% if can_access_page('medicine_sales') %}
 				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				{% endif %}
+				{% if can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% endif %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 			</div>
 		</li>

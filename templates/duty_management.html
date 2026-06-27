@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor and Nurse Duty</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/duty_management.css') }}">
+</head>
+<body>
+    <main class="duty-page">
+        <section class="duty-panel">
+            <div class="duty-header">
+                <div class="title-block">
+                    <span class="eyebrow"><i class="fas fa-shield-heart"></i> Duty Compliance</span>
+                    <h1>Doctor and Nurse Duty Board</h1>
+                    <p>Track clinical rounds, nursing duty completion, ward coverage, and shift notes in one record.</p>
+                </div>
+
+                <div class="header-actions">
+                    <a class="back-btn" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </a>
+                    <a class="logout-btn" href="{{ url_for('logout') }}" aria-label="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+
+                    <form class="date-filter-bar" method="GET" action="{{ url_for('duty_management') }}">
+                        <label class="date-filter-label" for="dutyFilterDate">
+                            <i class="fas fa-calendar-day"></i>
+                            <span>Review Date</span>
+                        </label>
+                        <input id="dutyFilterDate" type="date" name="date" value="{{ selected_date or '' }}" class="date-filter-input">
+                        <button type="submit" class="date-filter-btn">
+                            <i class="fas fa-filter"></i>
+                            Show
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if success %}
+                <p class="flash-message success"><i class="fas fa-circle-check"></i> {{ success }}</p>
+            {% endif %}
+            {% if message %}
+                <p class="flash-message error"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+            {% endif %}
+
+            <section class="duty-stats" aria-label="Duty summary">
+                <div class="stat-card total">
+                    <i class="fas fa-list-check"></i>
+                    <div>
+                        <span>Total Records</span>
+                        <strong>{{ total_records }}</strong>
+                    </div>
+                </div>
+                <div class="stat-card doctor">
+                    <i class="fas fa-user-doctor"></i>
+                    <div>
+                        <span>Doctor Rounds Done</span>
+                        <strong>{{ doctor_completed }}</strong>
+                    </div>
+                </div>
+                <div class="stat-card nurse">
+                    <i class="fas fa-user-nurse"></i>
+                    <div>
+                        <span>Nurse Duties Done</span>
+                        <strong>{{ nurse_completed }}</strong>
+                    </div>
+                </div>
+                <div class="stat-card pending">
+                    <i class="fas fa-hourglass-half"></i>
+                    <div>
+                        <span>Pending / Not Done</span>
+                        <strong>{{ pending_records }}</strong>
+                    </div>
+                </div>
+            </section>
+
+            <div class="duty-workspace">
+                <section class="entry-panel" aria-label="Duty entry form">
+                    <div class="section-heading">
+                        <div>
+                            <h2><i class="fas fa-pen-to-square"></i> New Verification</h2>
+                            <p>Record one doctor round or nurse duty update.</p>
+                        </div>
+                        <span class="date-chip">{{ format_date_display(selected_date) }}</span>
+                    </div>
+
+                    <form class="duty-form" method="POST" action="{{ url_for('duty_management') }}">
+                        <div class="form-section-title">
+                            <i class="fas fa-id-badge"></i>
+                            Staff Type
+                        </div>
+                        <div class="role-toggle" role="radiogroup" aria-label="Staff role">
+                            <label>
+                                <input type="radio" name="staff_role" value="doctor" checked>
+                                <span><i class="fas fa-user-doctor"></i> Doctor</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="staff_role" value="nurse">
+                                <span><i class="fas fa-user-nurse"></i> Nurse</span>
+                            </label>
+                        </div>
+
+                        <div class="form-section-title">
+                            <i class="fas fa-clipboard-list"></i>
+                            Duty Information
+                        </div>
+                        <div class="form-grid">
+                            <div class="input-group doctor-field">
+                                <i class="fas fa-stethoscope"></i>
+                                <select id="doctorId" name="doctor_id" aria-label="Select doctor">
+                                    <option value="" selected>Select doctor</option>
+                                    {% for doctor in doctors %}
+                                    <option value="{{ doctor[0] }}">{{ doctor[1] }}{% if doctor[2] %} - {{ doctor[2] }}{% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="input-group nurse-field">
+                                <i class="fas fa-user-nurse"></i>
+                                <input type="text" id="staffName" name="staff_name" placeholder=" ">
+                                <label for="staffName">Nurse Name</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-calendar-day"></i>
+                                <input type="date" id="dutyDate" name="duty_date" value="{{ selected_date }}" required>
+                                <label for="dutyDate">Duty Date</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-clock"></i>
+                                <select id="shift" name="shift" required>
+                                    <option value="" disabled selected></option>
+                                    <option>Morning</option>
+                                    <option>Evening</option>
+                                    <option>Night</option>
+                                    <option>Emergency</option>
+                                </select>
+                                <label for="shift">Shift</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-hospital"></i>
+                                <select id="ward" name="ward" required>
+                                    <option value="" disabled selected></option>
+                                    <option>102</option>
+                                    <option>103</option>
+                                    <option>104</option>
+                                    <option>106</option>
+                                    <option>201-A</option>
+                                    <option>201-B</option>
+                                    <option>202-A</option>
+                                    <option>202-B</option>
+                                    <option>203-A</option>
+                                    <option>203-B</option>
+                                    <option>205-A</option>
+                                    <option>205-B</option>
+                                </select>
+                                <label for="ward">Ward / Unit</label>
+                            </div>
+
+                            <label class="completion-card">
+                                <input type="checkbox" name="round_completed" checked>
+                                <span class="checkbox-ui"><i class="fas fa-check"></i></span>
+                                <span>
+                                    <strong id="completionTitle">Round completed</strong>
+                                    <small id="completionHint">Tick when the doctor has finished the patient round.</small>
+                                </span>
+                            </label>
+
+                            <div class="input-group full-width">
+                                <i class="fas fa-note-sticky"></i>
+                                <textarea id="notes" name="notes" placeholder=" "></textarea>
+                                <label for="notes">Notes / Observation</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-floppy-disk"></i>
+                            <span>Save Verification</span>
+                        </button>
+                    </form>
+                </section>
+
+                <section class="records-panel" aria-label="Duty records">
+                    <div class="section-heading">
+                        <div>
+                            <h2><i class="fas fa-clipboard-list"></i> Compliance Log</h2>
+                            <p>Records submitted for {{ format_date_display(selected_date) }}.</p>
+                        </div>
+                        <span class="date-chip">{{ duty_records|length }} entries</span>
+                    </div>
+
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="recordSearchInput" placeholder="Search by name, role, ward, shift, or notes">
+                        <button type="button" id="recordSearchClearBtn" aria-label="Clear record search">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="records-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th>Name</th>
+                                    <th>Shift</th>
+                                    <th>Ward</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                                {% if duty_records %}
+                                    {% for record in duty_records %}
+                                    <tr>
+                                        <td>
+                                            <span class="role-pill {{ record.staff_role }}">
+                                                <i class="fas {{ 'fa-user-doctor' if record.staff_role == 'doctor' else 'fa-user-nurse' }}"></i>
+                                                {{ record.staff_role.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="staff-name">{{ record.staff_name }}</span>
+                                        </td>
+                                        <td>{{ record.shift }}</td>
+                                        <td>{{ record.ward }}</td>
+                                        <td>
+                                            <span class="status-pill {{ 'done' if record.round_completed else 'pending' }}">
+                                                {{ 'Completed' if record.round_completed else 'Not Done' }}
+                                            </span>
+                                        </td>
+                                        <td class="notes-cell">{{ record.notes or '-' }}</td>
+                                        <td>{{ format_date_display(record.created_at) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="empty-cell">
+                                            <i class="fas fa-clipboard"></i>
+                                            No duty records found for this date.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer class="dashboard-footer">
+        <span>Copyright</span>
+        <span>AL-JUMIRA HOSPITAL</span>
+        <span>Patient Management System</span>
+        <span id="dashboardFooterYear"></span>
+    </footer>
+
+    <script>
+        const roleInputs = document.querySelectorAll('input[name="staff_role"]');
+        const doctorField = document.querySelector(".doctor-field");
+        const nurseField = document.querySelector(".nurse-field");
+        const doctorSelect = document.getElementById("doctorId");
+        const nurseName = document.getElementById("staffName");
+        const completionTitle = document.getElementById("completionTitle");
+        const completionHint = document.getElementById("completionHint");
+        const recordSearchInput = document.getElementById("recordSearchInput");
+        const recordSearchClearBtn = document.getElementById("recordSearchClearBtn");
+        const recordsTableBody = document.getElementById("recordsTableBody");
+
+        function syncRoleFields() {
+            const activeRole = document.querySelector('input[name="staff_role"]:checked').value;
+            const doctorMode = activeRole === "doctor";
+
+            doctorField.style.display = doctorMode ? "block" : "none";
+            nurseField.style.display = doctorMode ? "none" : "block";
+            doctorSelect.required = doctorMode;
+            nurseName.required = !doctorMode;
+            if (doctorMode) {
+                nurseName.value = "";
+                completionTitle.textContent = "Round completed";
+                completionHint.textContent = "Tick when the doctor has finished the patient round.";
+            } else {
+                doctorSelect.value = "";
+                completionTitle.textContent = "Duty completed";
+                completionHint.textContent = "Tick when the nurse has completed the assigned duty.";
+            }
+        }
+
+        roleInputs.forEach(input => input.addEventListener("change", syncRoleFields));
+        syncRoleFields();
+
+        recordSearchInput.addEventListener("input", function () {
+            const searchTerm = this.value.trim().toLowerCase();
+            recordsTableBody.querySelectorAll("tr").forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(searchTerm) ? "" : "none";
+            });
+        });
+
+        recordSearchClearBtn.addEventListener("click", function () {
+            recordSearchInput.value = "";
+            recordsTableBody.querySelectorAll("tr").forEach(row => row.style.display = "");
+        });
+
+        const dashboardFooterYear = document.getElementById("dashboardFooterYear");
+        if (dashboardFooterYear) {
+            dashboardFooterYear.textContent = new Date().getFullYear();
+        }
+    </script>
+</body>
+</html>

@@ -252,3 +252,29 @@ body {
     text-align: center;
     color: rgba(255,255,255,0.85);
 }
+
+.portal-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+}
+
+.follow-up-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 999px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    box-shadow: 0 12px 28px rgba(255, 30, 86, 0.34);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.follow-up-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(30, 60, 250, 0.38);
+}

@@ -466,12 +466,15 @@ input {
 .sale-actions {
 	display: flex;
 	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
 }
 
 .delete-sale-form {
 	margin: 0;
 }
 
+.print-invoice-btn,
 .delete-sale-btn {
 	display: inline-flex;
 	align-items: center;
@@ -486,6 +489,18 @@ input {
 	cursor: pointer;
 	transition: 0.25s ease;
 	white-space: nowrap;
+}
+
+.print-invoice-btn {
+	border-color: rgba(46, 204, 113, 0.38);
+	background: rgba(46, 204, 113, 0.14);
+	color: #c8f7dc;
+	text-decoration: none;
+}
+
+.print-invoice-btn:hover {
+	background: rgba(46, 204, 113, 0.24);
+	transform: translateY(-1px);
 }
 
 .delete-sale-btn:hover {
