@@ -448,6 +448,7 @@ def init_db():
                 invoice_no TEXT UNIQUE NOT NULL,
                 customer_name TEXT NOT NULL,
                 customer_phone TEXT,
+                customer_address TEXT,
                 subtotal REAL NOT NULL DEFAULT 0,
                 discount_type TEXT NOT NULL DEFAULT 'flat',
                 discount_value REAL NOT NULL DEFAULT 0,
@@ -467,6 +468,11 @@ def init_db():
             )
         ''')
         print("Medicine Sales table created successfully.")
+    else:
+        cursor.execute('PRAGMA table_info(medicine_sales)')
+        medicine_sales_columns = {row[1] for row in cursor.fetchall()}
+        if 'customer_address' not in medicine_sales_columns:
+            cursor.execute("ALTER TABLE medicine_sales ADD COLUMN customer_address TEXT")
 
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="medicine_sale_items"')
     medicine_sale_items_exists = cursor.fetchone() is not None
@@ -697,9 +703,12 @@ def format_invoice_datetime(value):
     if not value:
         return '-'
 
-    text_value = str(value)
+    text_value = str(value).strip()
     for date_format, output_format in (
         ('%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%dT%H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%d %H:%M:%S.%f', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%dT%H:%M:%S.%f', '%d-%m-%Y %H:%M:%S'),
         ('%Y-%m-%d', '%d-%m-%Y'),
     ):
         try:
@@ -709,15 +718,24 @@ def format_invoice_datetime(value):
 
     return text_value
 
+def format_invoice_date(value):
+    """Format stored ISO-like dates as DD-MM-YYYY without time."""
+    formatted_value = format_invoice_datetime(value)
+    return formatted_value.split(' ')[0] if formatted_value and formatted_value != '-' else formatted_value
+
 def format_date_display(value):
     """Format date text as DD-MM-YYYY, preserving time when present."""
     if not value:
         return '-'
 
-    text_value = str(value)
+    text_value = str(value).strip()
     for date_format, output_format in (
         ('%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%dT%H:%M:%S', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%d %H:%M:%S.%f', '%d-%m-%Y %H:%M:%S'),
+        ('%Y-%m-%dT%H:%M:%S.%f', '%d-%m-%Y %H:%M:%S'),
         ('%Y-%m-%d %H:%M', '%d-%m-%Y %H:%M'),
+        ('%Y-%m-%dT%H:%M', '%d-%m-%Y %H:%M'),
         ('%Y-%m-%d', '%d-%m-%Y'),
     ):
         try:
@@ -1180,6 +1198,63 @@ def follow_up_dashboard():
     )
 
 
+@app.route('/duty-management-dashboard')
+def duty_management_dashboard():
+    """Records-only dashboard for all doctor and nurse duty submissions."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin':
+        profile_name = root_admin_username
+    elif admin_checker and admin_checker[0] == session.get('user_id'):
+        profile_name = admin_checker[1]
+    elif user_checker and user_checker[0] == session.get('user_id'):
+        profile_name = user_checker[1]
+    else:
+        profile_name = 'User'
+
+    duty_rows = db.execute(
+        '''
+        SELECT id, staff_role, staff_name, duty_date, shift, ward, round_completed, notes, created_by, created_at
+        FROM duty_records
+        ORDER BY date(duty_date) DESC, created_at DESC, id DESC
+        '''
+    ).fetchall()
+
+    duty_records = [
+        {
+            'id': row[0],
+            'staff_role': row[1],
+            'staff_name': row[2],
+            'duty_date': row[3],
+            'shift': row[4],
+            'ward': row[5],
+            'round_completed': bool(row[6]),
+            'notes': row[7] or '',
+            'created_by': row[8],
+            'created_at': row[9],
+        }
+        for row in duty_rows
+    ]
+    total_records = len(duty_records)
+    completed_records = sum(1 for row in duty_records if row['round_completed'])
+    doctor_records = sum(1 for row in duty_records if row['staff_role'] == 'doctor')
+    nurse_records = sum(1 for row in duty_records if row['staff_role'] == 'nurse')
+
+    return render_template(
+        'duty_management_dashboard.html',
+        profile_name=profile_name,
+        duty_records=duty_records,
+        total_records=total_records,
+        completed_records=completed_records,
+        pending_records=total_records - completed_records,
+        doctor_records=doctor_records,
+        nurse_records=nurse_records,
+    )
+
+
 @app.route('/dashboard')
 def dashboard():
     """User dashboard page - only accessible to logged-in users."""
@@ -1464,18 +1539,30 @@ def medicine_sales():
 
     search_query = request.args.get('q', '').strip()
     medicine_rows = get_medicine_balance_rows(search_query=search_query, positive_only=True)
+    selected_customer = request.args.get('customer', '').strip()
 
     customers = [
-        {'name': row[0], 'phone': row[1]}
+        {'name': row[0], 'phone': row[1], 'address': row[2]}
         for row in db.execute(
             '''
-            SELECT name, phone
+            SELECT name, phone, address
             FROM patients
             ORDER BY id DESC
             LIMIT 8
             '''
         ).fetchall()
     ]
+    selected_customer_info = next(
+        (customer for customer in customers if customer['name'] == selected_customer),
+        None
+    )
+    customer_name_value = request.args.get('customer_name', '').strip()
+    customer_phone_value = request.args.get('customer_phone', '').strip()
+    customer_address_value = request.args.get('customer_address', '').strip()
+    if selected_customer_info:
+        customer_name_value = customer_name_value or selected_customer_info['name']
+        customer_phone_value = customer_phone_value or selected_customer_info['phone']
+        customer_address_value = customer_address_value or selected_customer_info['address']
 
     cart_items = []
     for row in medicine_rows:
@@ -1508,6 +1595,10 @@ def medicine_sales():
         "medicine_sales.html",
         profile_name=profile_name,
         customers=customers,
+        selected_customer=selected_customer,
+        customer_name_value=customer_name_value,
+        customer_phone_value=customer_phone_value,
+        customer_address_value=customer_address_value,
         cart_items=cart_items,
         search_query=search_query,
         subtotal=subtotal,
@@ -1601,7 +1692,21 @@ def save_medicine_sale():
     change_amount = max(received_amount - grand_total, 0)
     payment_type = str(payload.get('paymentType') or 'Cash').strip() or 'Cash'
     customer_name = str(payload.get('customerName') or 'Walk-in Customer').strip() or 'Walk-in Customer'
-    customer_phone = str(payload.get('customerPhone') or '').strip()
+    customer_phone = ''.join(character for character in str(payload.get('customerPhone') or '') if character.isdigit())[:11]
+    customer_address = str(payload.get('customerAddress') or '').strip()
+    registered_customer = db.execute(
+        '''
+        SELECT phone, address
+        FROM patients
+        WHERE name = ?
+        ORDER BY id DESC
+        LIMIT 1
+        ''',
+        (customer_name,)
+    ).fetchone()
+    if registered_customer:
+        customer_phone = customer_phone or (registered_customer[0] or '')
+        customer_address = customer_address or (registered_customer[1] or '')
     sale_date = datetime.now().strftime('%Y-%m-%d')
     created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     invoice_count = db.execute(
@@ -1614,14 +1719,14 @@ def save_medicine_sale():
         cursor = db.execute(
             '''
             INSERT INTO medicine_sales (
-                invoice_no, customer_name, customer_phone, subtotal, discount_type,
+                invoice_no, customer_name, customer_phone, customer_address, subtotal, discount_type,
                 discount_value, discount_amount, tax_type, tax_value, tax_amount,
                 delivery_cost, grand_total, received_amount, due_amount, change_amount,
                 payment_type, sale_date, created_by, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
             (
-                invoice_no, customer_name, customer_phone, subtotal, discount_type,
+                invoice_no, customer_name, customer_phone, customer_address, subtotal, discount_type,
                 discount_value, discount_amount, tax_type, tax_value, tax_amount,
                 delivery_cost, grand_total, received_amount, due_amount, change_amount,
                 payment_type, sale_date, str(session.get('user_id')), created_at
@@ -1668,6 +1773,7 @@ def save_medicine_sale():
             'invoice_no': invoice_no,
             'customer_name': customer_name,
             'customer_phone': customer_phone,
+            'customer_address': customer_address,
             'subtotal': subtotal,
             'discount_amount': discount_amount,
             'tax_amount': tax_amount,
@@ -1693,7 +1799,7 @@ def medicine_sales_print(sale_id):
 
     sale_row = db.execute(
         '''
-        SELECT id, invoice_no, customer_name, customer_phone, subtotal, discount_type,
+        SELECT id, invoice_no, customer_name, customer_phone, customer_address, subtotal, discount_type,
                discount_value, discount_amount, tax_type, tax_value, tax_amount,
                delivery_cost, grand_total, received_amount, due_amount, change_amount,
                payment_type, sale_date, created_by, created_at
@@ -1716,7 +1822,7 @@ def medicine_sales_print(sale_id):
         (sale_id,)
     ).fetchall()
 
-    created_by_id = sale_row[18]
+    created_by_id = sale_row[19]
     if created_by_id == 'root_admin':
         prepared_by = root_admin_username
     else:
@@ -1725,29 +1831,47 @@ def medicine_sales_print(sale_id):
             prepared_user = db.execute('SELECT username FROM users WHERE id = ?', (created_by_id,)).fetchone()
         prepared_by = prepared_user[0] if prepared_user and prepared_user[0] else 'Unknown user'
 
+    customer_phone = sale_row[3] or ''
+    customer_address = sale_row[4] or ''
+    if not customer_address and sale_row[2] and sale_row[2] != 'Walk-in Customer':
+        registered_customer = db.execute(
+            '''
+            SELECT phone, address
+            FROM patients
+            WHERE name = ?
+            ORDER BY id DESC
+            LIMIT 1
+            ''',
+            (sale_row[2],)
+        ).fetchone()
+        if registered_customer:
+            customer_phone = customer_phone or (registered_customer[0] or '')
+            customer_address = registered_customer[1] or ''
+
     sale = {
         'id': sale_row[0],
         'invoice_no': sale_row[1],
         'customer_name': sale_row[2],
-        'customer_phone': sale_row[3],
-        'subtotal': sale_row[4],
-        'discount_type': sale_row[5],
-        'discount_value': sale_row[6],
-        'discount_amount': sale_row[7],
-        'tax_type': sale_row[8],
-        'tax_value': sale_row[9],
-        'tax_amount': sale_row[10],
-        'delivery_cost': sale_row[11],
-        'grand_total': sale_row[12],
-        'received_amount': sale_row[13],
-        'due_amount': sale_row[14],
-        'change_amount': sale_row[15],
-        'payment_type': sale_row[16],
-        'sale_date': sale_row[17],
-        'sale_date_display': format_invoice_datetime(sale_row[17]),
+        'customer_phone': customer_phone,
+        'customer_address': customer_address,
+        'subtotal': sale_row[5],
+        'discount_type': sale_row[6],
+        'discount_value': sale_row[7],
+        'discount_amount': sale_row[8],
+        'tax_type': sale_row[9],
+        'tax_value': sale_row[10],
+        'tax_amount': sale_row[11],
+        'delivery_cost': sale_row[12],
+        'grand_total': sale_row[13],
+        'received_amount': sale_row[14],
+        'due_amount': sale_row[15],
+        'change_amount': sale_row[16],
+        'payment_type': sale_row[17],
+        'sale_date': sale_row[18],
+        'sale_date_display': format_invoice_date(sale_row[18]),
         'created_by': created_by_id,
-        'created_at': sale_row[19],
-        'created_at_display': format_invoice_datetime(sale_row[19]),
+        'created_at': sale_row[20],
+        'created_at_display': format_invoice_datetime(sale_row[20]),
         'barcode': sale_row[1],
     }
     items = [
@@ -1795,7 +1919,7 @@ def medicine_sales_list():
     selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
     sales_rows = db.execute(
         '''
-        SELECT id, invoice_no, customer_name, customer_phone, subtotal, discount_amount,
+        SELECT id, invoice_no, customer_name, customer_phone, customer_address, subtotal, discount_amount,
                tax_amount, delivery_cost, grand_total, received_amount, due_amount,
                change_amount, payment_type, sale_date, created_at
         FROM medicine_sales
@@ -1821,17 +1945,18 @@ def medicine_sales_list():
             'invoice_no': row[1],
             'customer_name': row[2],
             'customer_phone': row[3],
-            'subtotal': row[4],
-            'discount_amount': row[5],
-            'tax_amount': row[6],
-            'delivery_cost': row[7],
-            'grand_total': row[8],
-            'received_amount': row[9],
-            'due_amount': row[10],
-            'change_amount': row[11],
-            'payment_type': row[12],
-            'sale_date': row[13],
-            'created_at': row[14],
+            'customer_address': row[4],
+            'subtotal': row[5],
+            'discount_amount': row[6],
+            'tax_amount': row[7],
+            'delivery_cost': row[8],
+            'grand_total': row[9],
+            'received_amount': row[10],
+            'due_amount': row[11],
+            'change_amount': row[12],
+            'payment_type': row[13],
+            'sale_date': row[14],
+            'created_at': row[15],
             'items': [
                 {
                     'medicine_name': item[0],
@@ -3015,7 +3140,6 @@ def appointments_info():
 @app.route('/appointments_info/doctors/<int:doctor_id>')
 def appointment_doctors(doctor_id=None):
     if not isadmin() and not isuser(): return redirect(url_for('login'))
-    
     if doctor_id:
         doctor = db.execute("SELECT name FROM doctors WHERE id = ?", (doctor_id,)).fetchone()
         patients = db.execute('''
@@ -3071,5 +3195,9 @@ def appointment_patients(patient_id=None):
         return render_template('appointment_patients.html', patients=patients, view_type='list', search=search)
 
 #debug showing in web browser
+#if __name__ == '__main__':
+ #   app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)
+
+#debug showing in web browser
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True)    

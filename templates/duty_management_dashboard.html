@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duty Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/duty_management_dashboard.css') }}">
+</head>
+<body>
+    <main class="dashboard-page">
+        <header class="dashboard-header">
+            <div class="title-block">
+                <span class="eyebrow"><i class="fas fa-clipboard-check"></i> Duty Management</span>
+                <h1>Doctor and Nurse Duty Records</h1>
+                <p>All submitted duty form records in one clean dashboard.</p>
+            </div>
+
+            <div class="header-actions">
+                <a class="action-btn secondary" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </a>
+                <a class="action-btn primary" href="{{ url_for('duty_management') }}">
+                    <i class="fas fa-plus"></i>
+                    <span>Doctor &amp; Nurse Duty Form</span>
+                </a>
+                <a class="action-btn logout" href="{{ url_for('logout') }}" aria-label="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </header>
+
+        <section class="profile-strip" aria-label="Current session">
+            <span><i class="fas fa-user-shield"></i> Signed in as {{ profile_name }}</span>
+            <span><i class="fas fa-list-check"></i> {{ total_records }} total records</span>
+        </section>
+
+        <section class="summary-grid" aria-label="Duty summary">
+            <article class="summary-card">
+                <i class="fas fa-clipboard-list"></i>
+                <div>
+                    <span>Total Records</span>
+                    <strong>{{ total_records }}</strong>
+                </div>
+            </article>
+            <article class="summary-card doctor">
+                <i class="fas fa-user-doctor"></i>
+                <div>
+                    <span>Doctor Records</span>
+                    <strong>{{ doctor_records }}</strong>
+                </div>
+            </article>
+            <article class="summary-card nurse">
+                <i class="fas fa-user-nurse"></i>
+                <div>
+                    <span>Nurse Records</span>
+                    <strong>{{ nurse_records }}</strong>
+                </div>
+            </article>
+            <article class="summary-card completed">
+                <i class="fas fa-circle-check"></i>
+                <div>
+                    <span>Completed</span>
+                    <strong>{{ completed_records }}</strong>
+                </div>
+            </article>
+            <article class="summary-card pending">
+                <i class="fas fa-hourglass-half"></i>
+                <div>
+                    <span>Pending</span>
+                    <strong>{{ pending_records }}</strong>
+                </div>
+            </article>
+        </section>
+
+        <section class="records-section" aria-label="All duty records">
+            <div class="section-heading">
+                <div>
+                    <h2><i class="fas fa-table-list"></i> All Records</h2>
+                    <p>Doctor round and nurse duty entries submitted from the duty form.</p>
+                </div>
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="recordSearchInput" placeholder="Search records">
+                    <button type="button" id="recordSearchClearBtn" aria-label="Clear record search">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="records-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Role</th>
+                            <th>Name</th>
+                            <th>Duty Date</th>
+                            <th>Shift</th>
+                            <th>Ward / Unit</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        {% if duty_records %}
+                            {% for record in duty_records %}
+                            <tr>
+                                <td>#{{ record.id }}</td>
+                                <td>
+                                    <span class="role-pill {{ record.staff_role }}">
+                                        <i class="fas {{ 'fa-user-doctor' if record.staff_role == 'doctor' else 'fa-user-nurse' }}"></i>
+                                        {{ record.staff_role.title() }}
+                                    </span>
+                                </td>
+                                <td><strong>{{ record.staff_name }}</strong></td>
+                                <td>{{ format_date_display(record.duty_date) }}</td>
+                                <td>{{ record.shift }}</td>
+                                <td>{{ record.ward }}</td>
+                                <td>
+                                    <span class="status-pill {{ 'done' if record.round_completed else 'pending' }}">
+                                        {{ 'Completed' if record.round_completed else 'Not Done' }}
+                                    </span>
+                                </td>
+                                <td class="notes-cell">{{ record.notes or '-' }}</td>
+                                <td>{{ format_date_display(record.created_at) }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="empty-cell">
+                                    <i class="fas fa-clipboard"></i>
+                                    No doctor or nurse duty records found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const recordSearchInput = document.getElementById("recordSearchInput");
+        const recordSearchClearBtn = document.getElementById("recordSearchClearBtn");
+        const recordsTableBody = document.getElementById("recordsTableBody");
+
+        function filterRecords() {
+            const searchTerm = recordSearchInput.value.trim().toLowerCase();
+            recordsTableBody.querySelectorAll("tr").forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(searchTerm) ? "" : "none";
+            });
+        }
+
+        recordSearchInput.addEventListener("input", filterRecords);
+        recordSearchClearBtn.addEventListener("click", function () {
+            recordSearchInput.value = "";
+            filterRecords();
+            recordSearchInput.focus();
+        });
+    </script>
+</body>
+</html>

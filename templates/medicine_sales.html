@@ -73,13 +73,25 @@
 			<input class="input" id="productSearch" name="q" type="search" placeholder="Search medicine name or batch number" value="{{ search_query }}">
 		</div>
 		<div class="field">
-			<label for="customer">Customer</label>
+			<label for="customer">Registered Customer</label>
 			<select class="select" id="customer" name="customer">
-				<option value="Walk-in Customer">Walk-in Customer</option>
+				<option value="" data-name="" data-phone="" data-address="">Walk-in Customer</option>
 				{% for patient in customers %}
-				<option value="{{ patient.name }}|{{ patient.phone }}">{{ patient.name }} - {{ patient.phone }}</option>
+				<option value="{{ patient.name }}" data-name="{{ patient.name }}" data-phone="{{ patient.phone }}" data-address="{{ patient.address }}"{% if selected_customer == patient.name %} selected{% endif %}>{{ patient.name }} - {{ patient.phone }}</option>
 				{% endfor %}
 			</select>
+		</div>
+		<div class="field">
+			<label for="customerName">Customer Name</label>
+			<input class="input" id="customerName" name="customer_name" type="text" value="{{ customer_name_value }}" placeholder="Customer name">
+		</div>
+		<div class="field">
+			<label for="customerPhone">Phone Number</label>
+			<input class="input" id="customerPhone" name="customer_phone" type="tel" value="{{ customer_phone_value }}" placeholder="Phone number" maxlength="11" pattern="[0-9]{0,11}" inputmode="numeric" autocomplete="tel">
+		</div>
+		<div class="field customer-address-field">
+			<label for="customerAddress">Address</label>
+			<input class="input" id="customerAddress" name="customer_address" type="text" value="{{ customer_address_value }}" placeholder="Customer address">
 		</div>
 		<button class="search-btn" type="submit"><i class="fas fa-magnifying-glass-plus"></i> Find Medicine</button>
 	</form>
@@ -92,7 +104,7 @@
 			</div>
 			<div class="quick-card">
 				<span>Date</span>
-				<strong>{{ today }}</strong>
+				<strong>{{ format_date_display(today) }}</strong>
 			</div>
 			<div class="quick-card">
 				<span>Counter</span>
@@ -197,6 +209,16 @@
 					<h3>Sale Summary</h3>
 				</div>
 				<span class="status-pill"><i class="fas fa-receipt"></i> Ready</span>
+			</div>
+
+			<div class="selected-items-panel">
+				<div class="selected-items-head">
+					<strong>Selected Medicines</strong>
+					<span id="selectedItemQuantity">0 qty</span>
+				</div>
+				<div class="selected-items-list" id="selectedItemsList">
+					<div class="selected-empty">No medicines selected.</div>
+				</div>
 			</div>
 
 			<div class="summary-form">
@@ -311,10 +333,15 @@ const discountValue = document.getElementById('discountValue');
 const deliveryCost = document.getElementById('deliveryCost');
 const saleStatus = document.getElementById('saleStatus');
 const customerSelect = document.getElementById('customer');
+const customerNameInput = document.getElementById('customerName');
+const customerPhoneInput = document.getElementById('customerPhone');
+const customerAddressInput = document.getElementById('customerAddress');
 const paymentType = document.getElementById('paymentType');
 const savePrintButton = document.getElementById('savePrint');
 const cartMedicineSearch = document.getElementById('cartMedicineSearch');
 const clearCartSearch = document.getElementById('clearCartSearch');
+const selectedItemsList = document.getElementById('selectedItemsList');
+const selectedItemQuantity = document.getElementById('selectedItemQuantity');
 const cartColumnCount = Number(document.body.dataset.cartColumnCount || 7);
 
 function money(value) {
@@ -328,6 +355,23 @@ function optionalAmount(value) {
 
 function numericValue(input) {
 	return Math.max(parseFloat(input.value) || 0, 0);
+}
+
+function escapeHtml(value) {
+	return String(value || '').replace(/[&<>"']/g, function (character) {
+		return {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#39;',
+		}[character];
+	});
+}
+
+function titleCase(value) {
+	const text = String(value || '');
+	return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
 }
 
 function getRows() {
@@ -418,15 +462,49 @@ function resetSaleState(options) {
 	discountValue.value = '';
 	deliveryCost.value = '';
 	if (paymentType) paymentType.value = 'Cash';
-	if (customerSelect) customerSelect.value = 'Walk-in Customer';
+	if (customerSelect) customerSelect.value = '';
+	if (customerNameInput) customerNameInput.value = '';
+	if (customerPhoneInput) customerPhoneInput.value = '';
+	if (customerAddressInput) customerAddressInput.value = '';
 	saleStatus.textContent = settings.message || '';
 	updateSummary();
+}
+
+function renderSelectedItems(items) {
+	if (!selectedItemsList) return;
+
+	if (!items.length) {
+		selectedItemsList.innerHTML = '<div class="selected-empty">No medicines selected.</div>';
+		if (selectedItemQuantity) selectedItemQuantity.textContent = '0 qty';
+		return;
+	}
+
+	const totalQuantity = items.reduce(function (sum, item) {
+		return sum + item.quantity;
+	}, 0);
+
+	selectedItemsList.innerHTML = items.map(function (item) {
+		return `
+			<div class="selected-item">
+				<div>
+					<strong>${escapeHtml(item.product)}</strong>
+					<span>${escapeHtml(item.batch)} | ${escapeHtml(titleCase(item.unit))} | Qty ${item.quantity}</span>
+				</div>
+				<b>${money(item.total)}</b>
+			</div>
+		`;
+	}).join('');
+
+	if (selectedItemQuantity) {
+		selectedItemQuantity.textContent = totalQuantity + ' qty';
+	}
 }
 
 function updateSummary() {
 	let subtotal = 0;
 	const rows = getRows();
 	let activeRows = 0;
+	const selectedItems = [];
 
 	rows.forEach(function (row) {
 		const price = parseFloat(row.dataset.price) || 0;
@@ -441,7 +519,16 @@ function updateSummary() {
 		qtyInput.value = qty;
 		rowTotal.textContent = money(total);
 		subtotal += total;
-		if (qty > 0) activeRows += 1;
+		if (qty > 0) {
+			activeRows += 1;
+			selectedItems.push({
+				product: row.dataset.product || '',
+				batch: row.dataset.batch || 'General',
+				unit: row.dataset.unit || '',
+				quantity: qty,
+				total: total,
+			});
+		}
 	});
 
 	const orderDiscountValue = numericValue(discountValue);
@@ -458,15 +545,39 @@ function updateSummary() {
 	dueAmount.value = optionalAmount(due);
 	changeAmount.value = optionalAmount(change);
 	cartCount.textContent = activeRows;
+	renderSelectedItems(selectedItems);
 }
 
 function collectCustomer() {
-	const value = customerSelect ? customerSelect.value : 'Walk-in Customer';
-	if (value.includes('|')) {
-		const parts = value.split('|');
-		return { name: parts[0] || 'Walk-in Customer', phone: parts[1] || '' };
+	const selectedOption = customerSelect && customerSelect.selectedOptions ? customerSelect.selectedOptions[0] : null;
+	const selectedName = selectedOption ? (selectedOption.dataset.name || '').trim() : '';
+	const selectedPhone = selectedOption ? (selectedOption.dataset.phone || '').trim() : '';
+	const selectedAddress = selectedOption ? (selectedOption.dataset.address || '').trim() : '';
+	const typedName = customerNameInput ? customerNameInput.value.trim() : '';
+	const typedPhone = customerPhoneInput ? customerPhoneInput.value.trim() : '';
+	const typedAddress = customerAddressInput ? customerAddressInput.value.trim() : '';
+
+	return {
+		name: typedName || selectedName || 'Walk-in Customer',
+		phone: typedPhone || selectedPhone,
+		address: typedAddress || selectedAddress,
+	};
+}
+
+function applyCustomerSelection() {
+	if (!customerSelect) return;
+	const selectedOption = customerSelect.selectedOptions && customerSelect.selectedOptions[0];
+	if (!selectedOption) return;
+
+	if (customerNameInput) {
+		customerNameInput.value = selectedOption.dataset.name || '';
 	}
-	return { name: value || 'Walk-in Customer', phone: '' };
+	if (customerPhoneInput) {
+		customerPhoneInput.value = (selectedOption.dataset.phone || '').replace(/\D/g, '').slice(0, 11);
+	}
+	if (customerAddressInput) {
+		customerAddressInput.value = selectedOption.dataset.address || '';
+	}
 }
 
 function collectSalePayload() {
@@ -488,6 +599,7 @@ function collectSalePayload() {
 	return {
 		customerName: customer.name,
 		customerPhone: customer.phone,
+		customerAddress: customer.address,
 		items: items,
 		receivedAmount: numericValue(receiveAmount),
 		taxType: taxType.value,
@@ -549,12 +661,16 @@ function receiptHtml(sale) {
 			</div>
 			<div class="customer">
 				<div>
-					<p><strong>Customer</strong></p>
+					<p><strong>Registered Customer</strong></p>
 					<p>${sale.customer_name}</p>
 				</div>
 				<div>
 					<p><strong>Phone</strong></p>
 					<p>${sale.customer_phone || 'N/A'}</p>
+				</div>
+				<div>
+					<p><strong>Customer Address</strong></p>
+					<p>${sale.customer_address || 'N/A'}</p>
 				</div>
 			</div>
 			<table>
@@ -651,6 +767,16 @@ if (clearCartSearch && cartMedicineSearch) {
 		cartMedicineSearch.value = '';
 		filterCartRows();
 		cartMedicineSearch.focus();
+	});
+}
+
+if (customerSelect) {
+	customerSelect.addEventListener('change', applyCustomerSelection);
+}
+
+if (customerPhoneInput) {
+	customerPhoneInput.addEventListener('input', function () {
+		customerPhoneInput.value = customerPhoneInput.value.replace(/\D/g, '').slice(0, 11);
 	});
 }
 

@@ -104,7 +104,7 @@
 		</div>
 		<div>
 			<span>Inventory Date</span>
-			<strong>{{ today }}</strong>
+			<strong>{{ format_date_display(today) }}</strong>
 		</div>
 		<div>
 			<span>Deduction Source</span>
@@ -204,7 +204,7 @@
 									</span>
 								</td>
 								<td>TK {{ '%.2f'|format(item.latest_price) }}</td>
-								<td>{{ item.latest_date }}</td>
+								<td>{{ format_date_display(item.latest_date) }}</td>
 								<td>
 									<form class="summary-delete-form" method="POST" action="{{ url_for('delete_medicine_balance') }}" onsubmit="return confirm('Delete all stock movements for this medicine batch and unit?');">
 										<input type="hidden" name="medicine_name" value="{{ item.medicine_name }}">
@@ -255,7 +255,7 @@
 									<div class="movement-tags">
 										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
 										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
-										<span><i class="fas fa-calendar-day"></i> {{ item.transaction_date }}</span>
+										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
 									</div>
 									<p>{{ item.note }}</p>
 								</div>
@@ -313,7 +313,7 @@
 									<div class="movement-tags">
 										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
 										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
-										<span><i class="fas fa-calendar-day"></i> {{ item.transaction_date }}</span>
+										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
 									</div>
 									<p>{{ item.note }}</p>
 								</div>

@@ -296,11 +296,16 @@ select {
 
 .toolbar {
 	display: grid;
-	grid-template-columns: minmax(260px, 1.4fr) minmax(220px, 0.8fr) auto;
+	grid-template-columns: repeat(4, minmax(180px, 1fr));
 	gap: 14px;
 	padding: 18px;
 	border-radius: 20px;
 	margin-bottom: 22px;
+}
+
+.toolbar .field:first-child,
+.customer-address-field {
+	grid-column: span 2;
 }
 
 .field {
@@ -744,6 +749,82 @@ td {
 	font-size: 21px;
 }
 
+.selected-items-panel {
+	margin-bottom: 14px;
+	padding: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 16px;
+	background: rgba(10, 16, 40, 0.32);
+}
+
+.selected-items-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+	font-size: 13px;
+	color: rgba(255, 255, 255, 0.88);
+}
+
+.selected-items-head span {
+	padding: 4px 8px;
+	border-radius: 999px;
+	background: rgba(56, 193, 114, 0.16);
+	color: #9af0bb;
+	font-size: 12px;
+	font-weight: 800;
+	white-space: nowrap;
+}
+
+.selected-items-list {
+	display: grid;
+	gap: 8px;
+	max-height: 188px;
+	overflow-y: auto;
+	padding-right: 2px;
+}
+
+.selected-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 8px;
+	align-items: center;
+	padding: 9px 10px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.selected-item strong {
+	display: block;
+	margin-bottom: 3px;
+	color: #fff;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.selected-item span {
+	display: block;
+	color: rgba(255, 255, 255, 0.68);
+	font-size: 12px;
+	line-height: 1.25;
+}
+
+.selected-item b {
+	color: #9af0bb;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.selected-empty {
+	padding: 12px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.66);
+	font-size: 13px;
+	text-align: center;
+}
+
 .summary-form {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -900,6 +981,11 @@ td {
 
 	.toolbar {
 		grid-template-columns: 1fr;
+	}
+
+	.toolbar .field:first-child,
+	.customer-address-field {
+		grid-column: auto;
 	}
 
 	.sales-grid {

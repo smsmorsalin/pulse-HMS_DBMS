@@ -17,7 +17,7 @@
                 <button type="button" class="action-btn" onclick="printBill()">Print</button>
             </div>
 
-            <header class="bill-header">
+        <!---  <header class="bill-header">
                 <div class="hospital-brand">
                     <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital Logo" class="hospital-logo">
                     <div class="hospital-info">
@@ -26,10 +26,10 @@
                         <span>Phone: 017767617979 | Email: aljumirahospital@gmail.com</span>
                     </div>
                 </div>
-            </header>
+            </header> -->
 
             <section class="bill-title-row">
-                <h2 class="bill-title">MEDICINE SALES INVOICE</h2>
+                <h2 class="bill-title"> SALES INVOICE</h2>
                 <div class="customer-copy-row">
                     <h3 class="customer-copy-title">Customer Copy</h3>
                 </div>
@@ -41,6 +41,7 @@
                     <p><strong>Sale ID</strong><span>:</span> {{ sale.id }}</p>
                     <p class="bill-highlight"><strong>Customer</strong><span>:</span> {{ sale.customer_name or 'Walk-in Customer' }}</p>
                     <p><strong>Contact No</strong><span>:</span> {{ sale.customer_phone or '-' }}</p>
+                    <p><strong>Address</strong><span>:</span> {{ sale.customer_address or '-' }}</p>
                     <p><strong>Payment Type</strong><span>:</span> {{ sale.payment_type or 'Cash' }}</p>
                 </div>
 
