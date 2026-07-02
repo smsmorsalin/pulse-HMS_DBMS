@@ -72,6 +72,12 @@
 	background: linear-gradient(135deg, #1e3cfa, #38c172);
 }
 
+.report-btn.secondary {
+	color: #9af0bb;
+	background: rgba(56, 193, 114, 0.16);
+	border: 1px solid rgba(56, 193, 114, 0.35);
+}
+
 .report-btn.print {
 	color: #55b8f0;
 	background: rgba(255, 255, 255, 0.96);
@@ -234,6 +240,10 @@
 	min-width: 680px;
 }
 
+.date-product-table table {
+	min-width: 980px;
+}
+
 .report-table strong {
 	color: #fff;
 }
@@ -242,6 +252,32 @@
 	display: block;
 	font-size: 12px;
 	margin-top: 4px;
+}
+
+.report-row-delete {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 34px;
+	padding: 0 11px;
+	border: 1px solid rgba(255, 30, 86, 0.38);
+	border-radius: 10px;
+	background: rgba(255, 30, 86, 0.14);
+	color: #ffc6d2;
+	font-size: 13px;
+	font-weight: 800;
+	white-space: nowrap;
+	transition: 0.25s ease;
+}
+
+.report-row-delete:hover {
+	background: rgba(255, 30, 86, 0.26);
+	transform: translateY(-1px);
+}
+
+td form {
+	margin: 0;
 }
 
 .report-footer {
@@ -297,7 +333,8 @@
 
 	.sidebar,
 	.screen-header,
-	.report-toolbar {
+	.report-toolbar,
+	.no-print {
 		display: none;
 	}
 
@@ -391,6 +428,7 @@
 
 	.report-table table,
 	.daily-table table,
+	.date-product-table table,
 	table {
 		min-width: 0;
 		width: 100%;

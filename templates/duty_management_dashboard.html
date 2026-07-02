@@ -12,63 +12,56 @@
     <main class="dashboard-page">
         <header class="dashboard-header">
             <div class="title-block">
-                <span class="eyebrow"><i class="fas fa-clipboard-check"></i> Duty Management</span>
-                <h1>Doctor and Nurse Duty Records</h1>
-                <p>All submitted duty form records in one clean dashboard.</p>
+                <span class="eyebrow"><i class="fas fa-table-columns"></i> Duty Dashboard</span>
+                <h1>Duty Management Dashboard</h1>
+                <p>Signed in as {{ profile_name }}</p>
             </div>
 
-            <div class="header-actions">
-                <a class="action-btn secondary" href="{{ url_for('dashboard') }}" aria-label="Back to dashboard">
+            <nav class="header-actions" aria-label="Duty dashboard navigation">
+                <a class="icon-btn" href="{{ url_for('dashboard') }}" title="Back to dashboard" aria-label="Back to dashboard">
                     <i class="fas fa-arrow-left"></i>
-                    <span>Back</span>
                 </a>
-                <a class="action-btn primary" href="{{ url_for('duty_management') }}">
+                <a class="action-btn primary" href="{{ url_for('duty_management', date=selected_date) }}">
                     <i class="fas fa-plus"></i>
-                    <span>Doctor &amp; Nurse Duty Form</span>
+                    <span>New Duty Entry</span>
                 </a>
-                <a class="action-btn logout" href="{{ url_for('logout') }}" aria-label="Logout">
+                <a class="icon-btn danger" href="{{ url_for('logout') }}" title="Logout" aria-label="Logout">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
                 </a>
-            </div>
+            </nav>
         </header>
-
-        <section class="profile-strip" aria-label="Current session">
-            <span><i class="fas fa-user-shield"></i> Signed in as {{ profile_name }}</span>
-            <span><i class="fas fa-list-check"></i> {{ total_records }} total records</span>
-        </section>
 
         <section class="summary-grid" aria-label="Duty summary">
             <article class="summary-card">
-                <i class="fas fa-clipboard-list"></i>
+                <span class="summary-icon total"><i class="fas fa-clipboard-list"></i></span>
                 <div>
                     <span>Total Records</span>
                     <strong>{{ total_records }}</strong>
                 </div>
             </article>
-            <article class="summary-card doctor">
-                <i class="fas fa-user-doctor"></i>
+            <article class="summary-card">
+                <span class="summary-icon today"><i class="fas fa-calendar-day"></i></span>
                 <div>
-                    <span>Doctor Records</span>
+                    <span>Selected Day</span>
+                    <strong>{{ today_records }}</strong>
+                </div>
+            </article>
+            <article class="summary-card">
+                <span class="summary-icon doctor"><i class="fas fa-user-doctor"></i></span>
+                <div>
+                    <span>Doctor</span>
                     <strong>{{ doctor_records }}</strong>
                 </div>
             </article>
-            <article class="summary-card nurse">
-                <i class="fas fa-user-nurse"></i>
+            <article class="summary-card">
+                <span class="summary-icon nurse"><i class="fas fa-user-nurse"></i></span>
                 <div>
-                    <span>Nurse Records</span>
+                    <span>Nurse</span>
                     <strong>{{ nurse_records }}</strong>
                 </div>
             </article>
-            <article class="summary-card completed">
-                <i class="fas fa-circle-check"></i>
-                <div>
-                    <span>Completed</span>
-                    <strong>{{ completed_records }}</strong>
-                </div>
-            </article>
-            <article class="summary-card pending">
-                <i class="fas fa-hourglass-half"></i>
+            <article class="summary-card">
+                <span class="summary-icon pending"><i class="fas fa-hourglass-half"></i></span>
                 <div>
                     <span>Pending</span>
                     <strong>{{ pending_records }}</strong>
@@ -76,19 +69,68 @@
             </article>
         </section>
 
-        <section class="records-section" aria-label="All duty records">
+        <section class="completion-panel" aria-label="Completion progress">
+            <div>
+                <span>Completion Rate</span>
+                <strong>{{ completion_rate }}%</strong>
+            </div>
+            <div class="progress-track">
+                <span style="width: {{ completion_rate }}%;"></span>
+            </div>
+            <p>{{ completed_records }} completed from {{ total_records }} records</p>
+        </section>
+
+        <section class="records-section" aria-label="Day wise duty records">
             <div class="section-heading">
                 <div>
-                    <h2><i class="fas fa-table-list"></i> All Records</h2>
-                    <p>Doctor round and nurse duty entries submitted from the duty form.</p>
+                    <h2><i class="fas fa-table-list"></i> Duty Records</h2>
+                    <p>Day wise doctor and nurse entries for {{ format_date_display(selected_date) }}</p>
                 </div>
-                <div class="search-input-wrapper">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="recordSearchInput" placeholder="Search records">
-                    <button type="button" id="recordSearchClearBtn" aria-label="Clear record search">
-                        <i class="fas fa-xmark"></i>
+                <button type="button" class="print-btn" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    <span>Print Day</span>
+                </button>
+            </div>
+
+            <div class="filter-panel" aria-label="Record filters">
+                <form class="day-filter-form" method="GET" action="{{ url_for('duty_management_dashboard') }}">
+                    <label class="filter-field" for="dashboardDutyDate">
+                        <span>Duty Date</span>
+                        <i class="fas fa-calendar-day"></i>
+                        <input type="date" id="dashboardDutyDate" name="date" value="{{ selected_date }}" required>
+                    </label>
+                    <button type="submit" class="day-filter-btn">
+                        <i class="fas fa-filter"></i>
+                        <span>Show Day</span>
                     </button>
-                </div>
+                </form>
+                <label class="filter-field" for="recordSearchInput">
+                    <span>Search</span>
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="recordSearchInput" placeholder="Name, ward, shift, notes">
+                </label>
+                <label class="filter-field" for="roleFilter">
+                    <span>Role</span>
+                    <i class="fas fa-user"></i>
+                    <select id="roleFilter">
+                        <option value="all">All roles</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="nurse">Nurse</option>
+                    </select>
+                </label>
+                <label class="filter-field" for="statusFilter">
+                    <span>Status</span>
+                    <i class="fas fa-circle-check"></i>
+                    <select id="statusFilter">
+                        <option value="all">All status</option>
+                        <option value="done">Completed</option>
+                        <option value="pending">Not Done</option>
+                    </select>
+                </label>
+                <button type="button" class="clear-btn" id="recordSearchClearBtn">
+                    <i class="fas fa-rotate-left"></i>
+                    <span>Reset</span>
+                </button>
             </div>
 
             <div class="records-table">
@@ -96,8 +138,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Role</th>
-                            <th>Name</th>
+                            <th>Staff</th>
                             <th>Duty Date</th>
                             <th>Shift</th>
                             <th>Ward / Unit</th>
@@ -109,15 +150,19 @@
                     <tbody id="recordsTableBody">
                         {% if duty_records %}
                             {% for record in duty_records %}
-                            <tr>
+                            <tr data-role="{{ record.staff_role }}" data-status="{{ 'done' if record.round_completed else 'pending' }}" data-date="{{ record.duty_date }}">
                                 <td>#{{ record.id }}</td>
                                 <td>
-                                    <span class="role-pill {{ record.staff_role }}">
-                                        <i class="fas {{ 'fa-user-doctor' if record.staff_role == 'doctor' else 'fa-user-nurse' }}"></i>
-                                        {{ record.staff_role.title() }}
-                                    </span>
+                                    <div class="staff-cell">
+                                        <span class="role-icon {{ record.staff_role }}">
+                                            <i class="fas {{ 'fa-user-doctor' if record.staff_role == 'doctor' else 'fa-user-nurse' }}"></i>
+                                        </span>
+                                        <div>
+                                            <strong>{{ record.staff_name }}</strong>
+                                            <span>{{ record.staff_role.title() }}</span>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td><strong>{{ record.staff_name }}</strong></td>
                                 <td>{{ format_date_display(record.duty_date) }}</td>
                                 <td>{{ record.shift }}</td>
                                 <td>{{ record.ward }}</td>
@@ -132,7 +177,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="9" class="empty-cell">
+                                <td colspan="8" class="empty-cell">
                                     <i class="fas fa-clipboard"></i>
                                     No doctor or nurse duty records found.
                                 </td>
@@ -148,17 +193,31 @@
         const recordSearchInput = document.getElementById("recordSearchInput");
         const recordSearchClearBtn = document.getElementById("recordSearchClearBtn");
         const recordsTableBody = document.getElementById("recordsTableBody");
+        const roleFilter = document.getElementById("roleFilter");
+        const statusFilter = document.getElementById("statusFilter");
 
         function filterRecords() {
             const searchTerm = recordSearchInput.value.trim().toLowerCase();
-            recordsTableBody.querySelectorAll("tr").forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(searchTerm) ? "" : "none";
+            const roleValue = roleFilter.value;
+            const statusValue = statusFilter.value;
+
+            recordsTableBody.querySelectorAll("tr[data-role]").forEach(row => {
+                const matchesSearch = row.textContent.toLowerCase().includes(searchTerm);
+                const matchesRole = roleValue === "all" || row.dataset.role === roleValue;
+                const matchesStatus = statusValue === "all" || row.dataset.status === statusValue;
+                row.hidden = !(matchesSearch && matchesRole && matchesStatus);
             });
         }
 
-        recordSearchInput.addEventListener("input", filterRecords);
+        [recordSearchInput, roleFilter, statusFilter].forEach(control => {
+            control.addEventListener("input", filterRecords);
+            control.addEventListener("change", filterRecords);
+        });
+
         recordSearchClearBtn.addEventListener("click", function () {
             recordSearchInput.value = "";
+            roleFilter.value = "all";
+            statusFilter.value = "all";
             filterRecords();
             recordSearchInput.focus();
         });

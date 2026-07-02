@@ -3,209 +3,382 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pathology Lab Dashboard</title>
+<title>Pathology Workbench</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pathology_dashboard.css') }}">
 </head>
-<body>
-<aside class="sidebar">
-	<div class="brand">
-		<a href="{{ url_for('dashboard') }}" class="brand-link">
-			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
-			<span class="brand-text">AJH</span>
-		</a>
-	</div>
-
-	<ul class="nav-list">
-		{% if can_access_page('dashboard') %}
-		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-		{% endif %}
-		{% if can_access_page('pathology_dashboard') %}
-		<li><a class="nav-link active" href="{{ url_for('pathology_dashboard') }}"><i class="fas fa-microscope"></i> <span>Pathology</span></a></li>
-		{% endif %}
-		{% if can_access_page('service_desk') %}
-		<li><a class="nav-link" href="{{ url_for('service_desk') }}"><i class="fas fa-headset"></i> <span>Service Desk</span></a></li>
-		{% endif %}
-		{% if can_access_page('tests') %}
-		<li><a class="nav-link" href="{{ url_for('tests') }}"><i class="fas fa-vial"></i> <span>Test Catalog</span></a></li>
-		{% endif %}
-		{% if can_access_page('billing') %}
-		<li><a class="nav-link" href="{{ url_for('billing') }}"><i class="fas fa-file-invoice"></i> <span>Billing</span></a></li>
-		{% endif %}
-		{% if admin %}
-		<li><a class="nav-link" href="{{ url_for('services') }}"><i class="fas fa-sliders"></i> <span>Services</span></a></li>
-		{% endif %}
-	</ul>
-</aside>
-
-<main class="content">
-	<header class="top-header">
-		<div class="title-group">
-			<p class="eyebrow">Pathology Lab</p>
-			<h1>Pathology Dashboard</h1>
-			<h2>Monitor lab orders, test catalog activity, and billed pathology revenue from one focused workspace.</h2>
+<body data-selected-item="{{ selected_item or '' }}">
+<main class="pathology-shell">
+	<header class="lab-topbar">
+		<div class="lab-brand">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo">
+			<div>
+				<strong>AL-JUMIRA HOSPITAL</strong>
+				<span>Pathology Laboratory Workbench</span>
+			</div>
 		</div>
 
-		<div class="header-tools">
-			{% if can_access_page('service_desk') %}
-			<a class="header-action" href="{{ url_for('service_desk') }}">
-				<i class="fas fa-plus"></i>
-				New Lab Order
-			</a>
-			{% endif %}
-			<div class="profile" id="adminMenu">
-				<button class="admin-btn" id="adminBtn" type="button">
-					<i class="fas fa-user-circle"></i>
-					{{ profile_name }}
-					<i class="fas fa-chevron-down chevron"></i>
-				</button>
-				<div class="admin-dropdown" id="adminDropdown">
-					<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
-					<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-				</div>
+		<div class="lab-search">
+			<i class="fas fa-magnifying-glass"></i>
+			<input type="text" id="globalSearch" placeholder="Search patient, UHID, invoice, phone, doctor, test">
+			<kbd>Ctrl K</kbd>
+		</div>
+
+		<div class="lab-user" id="adminMenu">
+			<button type="button" id="adminBtn">
+				<i class="fas fa-user-circle"></i>
+				<span>
+					<strong>{{ profile_name }}</strong>
+					<small>{% if admin %}Administrator{% else %}Lab operator{% endif %}</small>
+				</span>
+				<i class="fas fa-chevron-down chevron"></i>
+			</button>
+			<div class="admin-dropdown" id="adminDropdown">
+				<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
 			</div>
 		</div>
 	</header>
 
-	<section class="control-strip">
+	<section class="lab-hero">
+		<div>
+			<p>Pathology Control Desk</p>
+			<h1>Patient test tracking, sample status, and result entry in one professional lab screen.</h1>
+			<span>{{ date_label }}</span>
+		</div>
 		<form class="date-filter" method="GET" action="{{ url_for('pathology_dashboard') }}">
-			<label for="pathologyDate"><i class="fas fa-calendar-day"></i> Date</label>
+			<label for="pathologyDate">Filter by date</label>
 			<input id="pathologyDate" name="date" type="date" value="{{ selected_date }}">
-			<button type="submit"><i class="fas fa-filter"></i> Show</button>
+			<button type="submit"><i class="fas fa-filter"></i> Apply</button>
+			<a href="{{ url_for('pathology_dashboard') }}">All records</a>
 		</form>
-		<div class="quick-actions">
-			{% if can_access_page('tests') %}
-			<a href="{{ url_for('tests') }}"><i class="fas fa-list-check"></i> Tests</a>
-			{% endif %}
-			{% if can_access_page('billing') %}
-			<a href="{{ url_for('billing') }}"><i class="fas fa-receipt"></i> Billing</a>
-			{% endif %}
-			{% if admin %}
-			<a href="{{ url_for('services') }}"><i class="fas fa-gear"></i> Manage</a>
-			{% endif %}
+	</section>
+
+	<section class="metrics-grid" aria-label="Pathology overview">
+		<div class="metric-card">
+			<span class="metric-icon blue"><i class="fas fa-hospital-user"></i></span>
+			<p>Patient Cases</p>
+			<strong>{{ total_patients }}</strong>
+			<small>{{ total_bills }} pathology invoices</small>
+		</div>
+		<div class="metric-card">
+			<span class="metric-icon teal"><i class="fas fa-vials"></i></span>
+			<p>Tests Ordered</p>
+			<strong>{{ total_test_items }}</strong>
+			<small>{{ available_tests }} tests in catalog</small>
+		</div>
+		<div class="metric-card">
+			<span class="metric-icon amber"><i class="fas fa-microscope"></i></span>
+			<p>Awaiting Results</p>
+			<strong>{{ open_result_items }}</strong>
+			<small>Need result entry</small>
+		</div>
+		<div class="metric-card">
+			<span class="metric-icon green"><i class="fas fa-file-circle-check"></i></span>
+			<p>Results Completed</p>
+			<strong>{{ resulted_items }}</strong>
+			<small>{{ delivered_count }} delivered</small>
+		</div>
+		<div class="metric-card">
+			<span class="metric-icon red"><i class="fas fa-hand-holding-dollar"></i></span>
+			<p>Outstanding Due</p>
+			<strong>Tk {{ '%.2f'|format(total_due) }}</strong>
+			<small>Tk {{ '%.2f'|format(total_revenue) }} total value</small>
 		</div>
 	</section>
 
-	<section class="stats-grid">
-		<div class="stat-card">
-			<span class="stat-icon"><i class="fas fa-vials"></i></span>
-			<p>Available Tests</p>
-			<strong>{{ available_tests }}</strong>
+	<section class="lab-filters" aria-label="Queue filters">
+		<div class="filter-tabs">
+			<button type="button" class="filter-chip active" data-status="all">All samples</button>
+			<button type="button" class="filter-chip" data-status="Pending">Pending</button>
+			<button type="button" class="filter-chip" data-status="Collected">Collected</button>
+			<button type="button" class="filter-chip" data-status="Delivered">Delivered</button>
 		</div>
-		<div class="stat-card">
-			<span class="stat-icon green"><i class="fas fa-clipboard-list"></i></span>
-			<p>Orders Today</p>
-			<strong>{{ day_orders }}</strong>
-		</div>
-		<div class="stat-card">
-			<span class="stat-icon cyan"><i class="fas fa-users"></i></span>
-			<p>Lab Patients</p>
-			<strong>{{ day_patients }}</strong>
-		</div>
-		<div class="stat-card">
-			<span class="stat-icon amber"><i class="fas fa-sack-dollar"></i></span>
-			<p>Monthly Revenue</p>
-			<strong>Tk {{ '%.2f'|format(month_revenue) }}</strong>
+		<div class="filter-selects">
+			<select id="statusFilter" aria-label="Sample status">
+				<option value="all">All sample status</option>
+				<option value="Pending">Pending</option>
+				<option value="Collected">Collected</option>
+				<option value="Delivered">Delivered</option>
+			</select>
+			<select id="resultFilter" aria-label="Result status">
+				<option value="all">All result status</option>
+				<option value="open">Awaiting result</option>
+				<option value="done">Result completed</option>
+			</select>
 		</div>
 	</section>
 
-	<section class="dashboard-grid">
-		<div class="panel activity-panel">
-			<div class="panel-header">
+	<section class="workbench-grid">
+		<aside class="panel patient-panel">
+			<div class="panel-title">
 				<div>
-					<p class="panel-kicker">Last 7 Days</p>
-					<h3>Lab Activity</h3>
+					<p>Patients</p>
+					<h2>Pathology Cases</h2>
 				</div>
-				<span class="status-pill">{{ month_orders }} monthly orders</span>
+				<span id="caseCount">{{ patient_cases|length }}</span>
 			</div>
-
-			<div class="activity-bars">
-				{% for day in day_activity %}
-				<div class="activity-day">
-					<div class="bar-track">
-						<span class="bar-fill bar-fill-{{ loop.index }}" data-percent="{{ day.percent }}"></span>
+			<div class="case-list" id="caseList">
+				{% if patient_cases %}
+					{% for case in patient_cases %}
+					<article class="case-row" data-status="{{ case.sample_status }}" data-invoice="{{ case.invoice_no }}">
+						<div class="case-main">
+							<strong>{{ case.patient_name }}</strong>
+							<span>UHID {{ case.patient_uhid or '-' }} | {{ case.phone }}</span>
+							<small>{{ case.age }} {{ case.age_unit }} / {{ case.gender }} | {{ format_date_display(case.created_at) }}</small>
+						</div>
+						<div class="case-progress">
+							<span class="status-pill {{ case.sample_status|lower }}">{{ case.sample_status }}</span>
+							<em>{{ case.completed_count }}/{{ case.test_count }} results</em>
+						</div>
+						<p>{{ case.test_names }}</p>
+						<button type="button" class="case-open" data-invoice="{{ case.invoice_no }}">
+							<i class="fas fa-arrow-right"></i>
+							View tests
+						</button>
+					</article>
+					{% endfor %}
+				{% else %}
+					<div class="empty-state">
+						<i class="fas fa-folder-open"></i>
+						<span>No pathology patient cases found.</span>
 					</div>
-					<strong>{{ day.count }}</strong>
-					<span>{{ day.label }}</span>
+				{% endif %}
+			</div>
+		</aside>
+
+		<section class="panel queue-panel" id="testQueue">
+			<div class="panel-title">
+				<div>
+					<p>Accession Queue</p>
+					<h2>Patient Test Information</h2>
+				</div>
+				<span id="queueCount">{{ pathology_orders|length }}</span>
+			</div>
+			<div class="queue-table">
+				<table>
+					<thead>
+						<tr>
+							<th>Patient / Invoice</th>
+							<th>Test</th>
+							<th>Doctor</th>
+							<th>Result</th>
+							<th>Sample</th>
+							<th>Status Update</th>
+						</tr>
+					</thead>
+					<tbody id="pathologyTableBody">
+						{% if pathology_orders %}
+							{% for order in pathology_orders %}
+							<tr class="queue-row {% if order.result_value %}result-done{% else %}result-open{% endif %}"
+								data-status="{{ order.sample_status }}"
+								data-result-state="{% if order.result_value %}done{% else %}open{% endif %}"
+								data-invoice="{{ order.invoice_no }}">
+								<td>
+									<strong>{{ order.patient_name }}</strong>
+									<span>{{ order.invoice_no }} | UHID {{ order.patient_uhid or '-' }}</span>
+									<small>{{ order.phone }} | {{ format_date_display(order.created_at) }}</small>
+								</td>
+								<td>
+									<button
+										type="button"
+										class="test-pick"
+										data-item-id="{{ order.item_id }}"
+										data-action="/pathology_dashboard/result/{{ order.item_id }}"
+										data-patient="{{ order.patient_name }}"
+										data-phone="{{ order.phone }}"
+										data-age="{{ order.age }} {{ order.age_unit }}"
+										data-gender="{{ order.gender }}"
+										data-uhid="{{ order.patient_uhid or '' }}"
+										data-invoice="{{ order.invoice_no }}"
+										data-test="{{ order.test_name }}"
+										data-doctor="{{ order.doctor_name or '-' }}"
+										data-referred="{{ order.referred_by or '' }}"
+										data-delivery="{{ order.delivery_time or '-' }}"
+										data-status="{{ order.sample_status }}"
+										data-result="{{ order.result_value }}"
+										data-note="{{ order.result_note }}"
+										data-updated-at="{{ format_date_display(order.result_updated_at) if order.result_updated_at else '' }}"
+										data-updated-by="{{ order.result_updated_by }}"
+										data-price="{{ '%.2f'|format(order.price or 0) }}">
+										<i class="fas fa-vial"></i>
+										<span>
+											<strong>{{ order.test_name }}</strong>
+											<small>Tk {{ '%.2f'|format(order.price or 0) }}</small>
+										</span>
+									</button>
+								</td>
+								<td>
+									{{ order.doctor_name or '-' }}
+									{% if order.referred_by %}<span>Ref: {{ order.referred_by }}</span>{% endif %}
+								</td>
+								<td>
+									<span class="result-pill {% if order.result_value %}done{% else %}open{% endif %}">
+										{% if order.result_value %}Completed{% else %}Awaiting{% endif %}
+									</span>
+									{% if order.result_value %}<small>{{ order.result_value }}</small>{% endif %}
+								</td>
+								<td><span class="status-pill {{ order.sample_status|lower }}">{{ order.sample_status }}</span></td>
+								<td>
+									<form class="status-form" method="POST" action="{{ url_for('update_pathology_status', test_bill_id=order.bill_id) }}">
+										<input type="hidden" name="selected_date" value="{{ selected_date }}">
+										<select name="sample_status" aria-label="Update sample status">
+											<option value="Pending" {% if order.sample_status == 'Pending' %}selected{% endif %}>Pending</option>
+											<option value="Collected" {% if order.sample_status == 'Collected' %}selected{% endif %}>Collected</option>
+											<option value="Delivered" {% if order.sample_status == 'Delivered' %}selected{% endif %}>Delivered</option>
+										</select>
+										<button type="submit" title="Save sample status"><i class="fas fa-check"></i></button>
+									</form>
+								</td>
+							</tr>
+							{% endfor %}
+						{% else %}
+							<tr>
+								<td colspan="6">
+									<div class="empty-state">
+										<i class="fas fa-flask-vial"></i>
+										<span>No patient test information found.</span>
+									</div>
+								</td>
+							</tr>
+						{% endif %}
+						<tr class="hidden" id="noMatchRow">
+							<td colspan="6">
+								<div class="empty-state">
+									<i class="fas fa-magnifying-glass"></i>
+									<span>No matching patient or test found.</span>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<aside class="panel result-panel" id="resultPanel">
+			<div class="panel-title">
+				<div>
+					<p>Result Console</p>
+					<h2>Test Result Entry</h2>
+				</div>
+				<span class="result-panel-state open" id="resultPanelState">Awaiting</span>
+			</div>
+			<div class="selected-test-card">
+				<i class="fas fa-microscope"></i>
+				<div>
+					<strong id="selectedTestName">Select a test</strong>
+					<span id="selectedPatient">Choose any test from the queue.</span>
+				</div>
+			</div>
+			<div class="result-detail-grid">
+				<div><span>Invoice</span><strong id="selectedInvoice">-</strong></div>
+				<div><span>Phone</span><strong id="selectedPhone">-</strong></div>
+				<div><span>Age / Gender</span><strong id="selectedAgeGender">-</strong></div>
+				<div><span>Delivery</span><strong id="selectedDelivery">-</strong></div>
+				<div><span>Doctor</span><strong id="selectedDoctor">-</strong></div>
+				<div><span>Sample</span><strong id="selectedSampleStatus">-</strong></div>
+			</div>
+			<form class="result-form" id="resultForm" method="POST" action="">
+				<input type="hidden" name="selected_date" value="{{ selected_date }}">
+				<label>
+					<span>Observed value / findings</span>
+					<textarea id="resultValue" name="result_value" rows="5" placeholder="Enter result value, range, or findings"></textarea>
+				</label>
+				<label>
+					<span>Clinical note</span>
+					<textarea id="resultNote" name="result_note" rows="3" placeholder="Optional note for report"></textarea>
+				</label>
+				<p class="result-meta" id="resultMeta"></p>
+				<button type="submit" id="saveResultBtn" disabled>
+					<i class="fas fa-floppy-disk"></i>
+					Save Result
+				</button>
+			</form>
+		</aside>
+	</section>
+
+	<section class="insight-grid">
+		<div class="panel">
+			<div class="panel-title">
+				<div>
+					<p>Sample Pipeline</p>
+					<h2>Current Lab Status</h2>
+				</div>
+			</div>
+			<div class="pipeline-list">
+				{% for item in pending_summary %}
+				<div class="pipeline-item">
+					<span class="{{ item.tone }}"><i class="{{ item.icon }}"></i></span>
+					<strong>{{ item.label }}</strong>
+					<em>{{ item.value }}</em>
 				</div>
 				{% endfor %}
 			</div>
 		</div>
 
-		<div class="panel top-tests-panel">
-			<div class="panel-header">
+		<div class="panel">
+			<div class="panel-title">
 				<div>
-					<p class="panel-kicker">This Month</p>
-					<h3>Top Tests</h3>
+					<p>Workload</p>
+					<h2>Recent Daily Volume</h2>
 				</div>
 			</div>
-
-			<div class="test-list">
-				{% if popular_tests %}
-					{% for test in popular_tests %}
-					<div class="test-row">
-						<div>
-							<strong>{{ test[0] }}</strong>
-							<span>Tk {{ '%.2f'|format(test[1]) }}</span>
-						</div>
-						<div class="test-volume">
-							<progress value="{{ test[2] }}" max="{{ max_test_orders if max_test_orders else 1 }}"></progress>
-							<span>{{ test[2] }} orders</span>
-						</div>
+			<div class="trend-bars">
+				{% if trend_points %}
+					{% for point in trend_points %}
+					<div class="trend-bar" style="--bar-height: {{ 12 + (point.invoices * 9) if point.invoices < 10 else 100 }}%">
+						<span></span>
+						<small>{{ point.date[5:] }}</small>
+						<em>{{ point.invoices }}</em>
 					</div>
 					{% endfor %}
 				{% else %}
-					<p class="empty-state">No test catalog entries found.</p>
+					<div class="empty-state small"><i class="fas fa-chart-simple"></i><span>No workload data.</span></div>
 				{% endif %}
 			</div>
 		</div>
-	</section>
 
-	<section class="panel orders-panel">
-		<div class="panel-header">
-			<div>
-				<p class="panel-kicker">Selected Date</p>
-				<h3>Recent Lab Orders</h3>
+		<div class="panel">
+			<div class="panel-title">
+				<div>
+					<p>Test Mix</p>
+					<h2>Test Categories</h2>
+				</div>
 			</div>
-			<a class="panel-link" href="{{ url_for('service_desk') }}"><i class="fas fa-arrow-right"></i> Add Order</a>
+			<div class="category-list">
+				{% if test_categories %}
+					{% for category in test_categories %}
+					<div>
+						<span style="--dot-color: {{ category.color }}"></span>
+						<strong>{{ category.name }}</strong>
+						<em>{{ category.count }} tests</em>
+					</div>
+					{% endfor %}
+				{% else %}
+					<div class="empty-state small"><i class="fas fa-layer-group"></i><span>No category data.</span></div>
+				{% endif %}
+			</div>
 		</div>
 
-		<div class="table-wrap">
-			<table>
-				<thead>
-					<tr>
-						<th>Order</th>
-						<th>Patient</th>
-						<th>Phone</th>
-						<th>Test</th>
-						<th>Price</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% if recent_orders %}
-						{% for order in recent_orders %}
-						<tr>
-							<td>#{{ order[0] }}</td>
-							<td>{{ order[1] }}</td>
-							<td>{{ order[2] }}</td>
-							<td>{{ order[3] }}</td>
-							<td>Tk {{ '%.2f'|format(order[4]) }}</td>
-							<td><span class="order-status">In Queue</span></td>
-						</tr>
-						{% endfor %}
-					{% else %}
-						<tr>
-							<td colspan="6">
-								<div class="empty-table">
-									<i class="fas fa-flask-vial"></i>
-									<span>No pathology orders found for {{ format_date_display(selected_date) }}.</span>
-								</div>
-							</td>
-						</tr>
-					{% endif %}
-				</tbody>
-			</table>
+		<div class="panel">
+			<div class="panel-title">
+				<div>
+					<p>Reports</p>
+					<h2>Completed Results</h2>
+				</div>
+			</div>
+			<div class="report-list">
+				{% if recent_reports %}
+					{% for report in recent_reports %}
+					<a href="{{ url_for('test_bill_print', test_bill_id=report.bill_id) }}">
+						<strong>{{ report.invoice_no }}</strong>
+						<span>{{ report.patient_name }}</span>
+						<em>{{ report.test_name }}</em>
+					</a>
+					{% endfor %}
+				{% else %}
+					<div class="empty-state small"><i class="fas fa-file-medical"></i><span>No completed reports.</span></div>
+				{% endif %}
+			</div>
 		</div>
 	</section>
 </main>
@@ -214,24 +387,145 @@
 const adminBtn = document.getElementById('adminBtn');
 const adminDropdown = document.getElementById('adminDropdown');
 const chevron = document.querySelector('.chevron');
+const globalSearch = document.getElementById('globalSearch');
+const statusFilter = document.getElementById('statusFilter');
+const resultFilter = document.getElementById('resultFilter');
+const pathologyTableBody = document.getElementById('pathologyTableBody');
+const noMatchRow = document.getElementById('noMatchRow');
+const caseCount = document.getElementById('caseCount');
+const queueCount = document.getElementById('queueCount');
+const testButtons = Array.from(document.querySelectorAll('.test-pick'));
+const resultPanel = document.getElementById('resultPanel');
+const resultPanelState = document.getElementById('resultPanelState');
+const resultForm = document.getElementById('resultForm');
+const resultValue = document.getElementById('resultValue');
+const resultNote = document.getElementById('resultNote');
+const saveResultBtn = document.getElementById('saveResultBtn');
+const resultMeta = document.getElementById('resultMeta');
 
 if (adminBtn && adminDropdown && chevron) {
-	adminBtn.addEventListener('click', function () {
+	adminBtn.addEventListener('click', () => {
 		adminDropdown.classList.toggle('show');
 		chevron.classList.toggle('rotate');
 	});
-
-	window.addEventListener('click', function (event) {
-		if (!document.getElementById('adminMenu').contains(event.target)) {
+	window.addEventListener('click', event => {
+		const menu = document.getElementById('adminMenu');
+		if (menu && !menu.contains(event.target)) {
 			adminDropdown.classList.remove('show');
 			chevron.classList.remove('rotate');
 		}
 	});
 }
 
-document.querySelectorAll('.bar-fill').forEach(function (bar) {
-	bar.style.height = Math.max(Number(bar.dataset.percent || 0), 4) + '%';
+function setText(id, value) {
+	document.getElementById(id).textContent = value || '-';
+}
+
+function filterWorkbench() {
+	const query = (globalSearch.value || '').trim().toLowerCase();
+	const status = statusFilter.value;
+	const resultState = resultFilter.value;
+	let visibleRows = 0;
+	let visibleCases = 0;
+
+	document.querySelectorAll('.queue-row').forEach(row => {
+		const matchesQuery = row.textContent.toLowerCase().includes(query);
+		const matchesStatus = status === 'all' || row.dataset.status === status;
+		const matchesResult = resultState === 'all' || row.dataset.resultState === resultState;
+		const visible = matchesQuery && matchesStatus && matchesResult;
+		row.hidden = !visible;
+		if (visible) visibleRows += 1;
+	});
+
+	document.querySelectorAll('.case-row').forEach(row => {
+		const matchesQuery = row.textContent.toLowerCase().includes(query);
+		const matchesStatus = status === 'all' || row.dataset.status === status;
+		row.hidden = !(matchesQuery && matchesStatus);
+		if (!row.hidden) visibleCases += 1;
+	});
+
+	noMatchRow.classList.toggle('hidden', visibleRows !== 0 || testButtons.length === 0);
+	queueCount.textContent = visibleRows;
+	caseCount.textContent = visibleCases;
+}
+
+function setActiveStatusChip(status) {
+	document.querySelectorAll('.filter-chip').forEach(chip => {
+		chip.classList.toggle('active', chip.dataset.status === status);
+	});
+}
+
+function updatePanelColor() {
+	const hasValue = resultValue.value.trim().length > 0;
+	resultPanel.classList.toggle('has-result', hasValue);
+	resultPanel.classList.toggle('needs-result', !hasValue);
+	resultPanelState.className = 'result-panel-state ' + (hasValue ? 'done' : 'open');
+	resultPanelState.textContent = hasValue ? 'Completed' : 'Awaiting';
+}
+
+function selectTest(button, focusValue = true) {
+	const row = button.closest('tr');
+	document.querySelectorAll('.queue-row.selected').forEach(item => item.classList.remove('selected'));
+	if (row) row.classList.add('selected');
+
+	resultForm.action = button.dataset.action || '';
+	saveResultBtn.disabled = !button.dataset.action;
+	setText('selectedTestName', button.dataset.test);
+	setText('selectedPatient', `${button.dataset.patient || '-'} | UHID ${button.dataset.uhid || '-'} | ${button.dataset.invoice || '-'}`);
+	setText('selectedInvoice', button.dataset.invoice);
+	setText('selectedPhone', button.dataset.phone);
+	setText('selectedAgeGender', `${button.dataset.age || '-'} / ${button.dataset.gender || '-'}`);
+	setText('selectedDelivery', button.dataset.delivery);
+	setText('selectedDoctor', button.dataset.doctor);
+	setText('selectedSampleStatus', button.dataset.status);
+	resultValue.value = button.dataset.result || '';
+	resultNote.value = button.dataset.note || '';
+	resultMeta.textContent = button.dataset.updatedAt
+		? `Last saved ${button.dataset.updatedAt}${button.dataset.updatedBy ? ' by ' + button.dataset.updatedBy : ''}.`
+		: '';
+	updatePanelColor();
+	if (focusValue) resultValue.focus();
+}
+
+testButtons.forEach(button => button.addEventListener('click', () => selectTest(button)));
+document.querySelectorAll('.filter-chip').forEach(chip => {
+	chip.addEventListener('click', () => {
+		statusFilter.value = chip.dataset.status;
+		setActiveStatusChip(chip.dataset.status);
+		filterWorkbench();
+	});
 });
+document.querySelectorAll('.case-open').forEach(button => {
+	button.addEventListener('click', () => {
+		globalSearch.value = button.dataset.invoice || '';
+		filterWorkbench();
+		document.getElementById('testQueue').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		const firstVisible = Array.from(document.querySelectorAll('.queue-row')).find(row => !row.hidden);
+		const testButton = firstVisible ? firstVisible.querySelector('.test-pick') : null;
+		if (testButton) selectTest(testButton, false);
+	});
+});
+
+globalSearch.addEventListener('input', filterWorkbench);
+statusFilter.addEventListener('change', () => {
+	setActiveStatusChip(statusFilter.value);
+	filterWorkbench();
+});
+resultFilter.addEventListener('change', filterWorkbench);
+resultValue.addEventListener('input', updatePanelColor);
+window.addEventListener('keydown', event => {
+	if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+		event.preventDefault();
+		globalSearch.focus();
+	}
+});
+
+const selectedItem = document.body.dataset.selectedItem;
+const initialButton = selectedItem
+	? testButtons.find(button => button.dataset.itemId === selectedItem)
+	: testButtons[0];
+if (initialButton) selectTest(initialButton, false);
+filterWorkbench();
 </script>
 </body>
 </html>

@@ -1,0 +1,72 @@
+<section class="panel recent-panel" id="dayBillsPanel">
+    <div class="panel-header">
+        <div>
+            <p class="panel-kicker">Billing Records</p>
+            <h2>Day Wise Pathology Bills</h2>
+            <span class="day-bill-caption">Showing bills for {{ bill_date_label }}</span>
+        </div>
+        <form class="recent-search day-bill-filter" method="GET" action="{{ url_for('test_billing') }}" data-today-date="{{ today_bill_date }}">
+            <label class="recent-filter-field date-field" for="billDatePicker">
+                <span>Bill Date</span>
+                <input type="date" id="billDatePicker" name="bill_date" value="{{ bill_date }}">
+            </label>
+            <div class="day-bill-search-tools">
+                <input type="text" id="billKeyword" name="keyword" value="{{ keyword }}" placeholder="Search by UHID, Invoice No, or Phone Number">
+                <button type="button" id="billSearchClearBtn">Clear</button>
+            </div>
+            <div class="recent-filter-actions">
+                {% if bill_date != today_bill_date or keyword %}
+                    <a class="today-bills-link" href="{{ url_for('test_billing') }}">Today</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice</th>
+                    <th>Patient</th>
+                    <th>Phone</th>
+                    <th>Total</th>
+                    <th>Due</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_bills %}
+                    {% for bill in recent_bills %}
+                        <tr>
+                            <td>{{ bill[1] }}</td>
+                            <td>{{ bill[2] }}</td>
+                            <td>{{ bill[3] }}</td>
+                            <td>Tk {{ '%.2f'|format(bill[4] or 0) }}</td>
+                            <td>Tk {{ '%.2f'|format(bill[5] or 0) }}</td>
+                            <td>{{ format_date_display(bill[6]) }}</td>
+                            <td>
+                                <div class="bill-row-actions">
+                                    {% if bill[5] and bill[5] > 0 %}
+                                        <form class="quick-due-form" method="POST" action="{{ url_for('collect_test_due', test_bill_id=bill[0]) }}">
+                                            <input type="hidden" name="collection_amount" value="{{ '%.2f'|format(bill[5] or 0) }}">
+                                            <button type="submit" class="due-link">Due</button>
+                                        </form>
+                                    {% endif %}
+                                    <a class="print-link" href="{{ url_for('test_bill_print', test_bill_id=bill[0]) }}">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-cell">No pathology bills found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

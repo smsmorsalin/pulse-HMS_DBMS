@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Due Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_due-collection.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="due-page">
+        {% if message %}
+            <p class="flash-message"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+        {% endif %}
+
+        <section class="panel due-hero">
+            <div class="hero-title">
+                <p class="panel-kicker">Pathology Accounts</p>
+                <h1><i class="fas fa-hand-holding-dollar"></i> Test Due Collection</h1>
+                <p>Collect pending pathology dues with quick patient lookup and receipt printing.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="soft-link" href="{{ url_for('test_billing') }}">
+                    <i class="fas fa-file-medical-alt"></i>
+                    New Test Bill
+                </a>
+                <a class="back-btn" href="{{ url_for('tests') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    Tests
+                </a>
+            </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Due collection summary">
+            <div class="stat-card">
+                <span><i class="fas fa-receipt"></i> Pending Bills</span>
+                <strong>{{ summary.pending_count }}</strong>
+            </div>
+            <div class="stat-card urgent">
+                <span><i class="fas fa-sack-dollar"></i> Total Due</span>
+                <strong>Tk {{ '%.2f'|format(summary.total_due) }}</strong>
+            </div>
+            <div class="stat-card">
+                <span><i class="fas fa-calendar-day"></i> Today's Due</span>
+                <strong>Tk {{ '%.2f'|format(summary.today_due) }}</strong>
+            </div>
+            <div class="stat-card">
+                <span><i class="fas fa-clock"></i> Oldest Due</span>
+                <strong>{{ format_date_display(summary.oldest_due_date) if summary.oldest_due_date else 'None' }}</strong>
+            </div>
+        </section>
+
+        <section class="panel collection-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Collection Desk</p>
+                    <h2>Pending Pathology Invoices</h2>
+                </div>
+                <form class="due-search" method="GET" action="/test-billing/due-collection">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="Invoice, patient, phone, doctor, test">
+                    <select name="sort" aria-label="Sort due bills">
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                        <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest due</option>
+                        <option value="patient" {% if sort == 'patient' %}selected{% endif %}>Patient name</option>
+                    </select>
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+
+            <div class="quick-filter">
+                <i class="fas fa-filter"></i>
+                <input type="text" id="quickFilterInput" placeholder="Filter visible rows on this page">
+                <a href="/test-billing/due-collection">Reset</a>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Invoice</th>
+                            <th>Tests</th>
+                            <th>Bill</th>
+                            <th>Paid</th>
+                            <th>Due</th>
+                            <th>Date</th>
+                            <th>Collect</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dueTableBody">
+                        {% if due_bills %}
+                            {% for bill in due_bills %}
+                                <tr data-search="{{ (bill.patient_uhid ~ ' ' ~ bill.patient_name ~ ' ' ~ bill.phone ~ ' ' ~ bill.invoice_no ~ ' ' ~ bill.doctor_name ~ ' ' ~ bill.test_names)|lower }}">
+                                    <td>
+                                        <div class="patient-cell">
+                                            <strong>{{ bill.patient_name }}</strong>
+                                            <span>
+                                                {% if bill.patient_uhid %}UHID {{ bill.patient_uhid }} | {% endif %}
+                                                {{ bill.phone or 'No phone' }}
+                                            </span>
+                                            <small>{{ bill.doctor_name }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a class="invoice-link" href="{{ url_for('test_bill_print', test_bill_id=bill.id) }}">
+                                            {{ bill.invoice_no }}
+                                        </a>
+                                    </td>
+                                    <td class="test-list-cell">{{ bill.test_names }}</td>
+                                    <td>Tk {{ '%.2f'|format(bill.total_amount) }}</td>
+                                    <td>Tk {{ '%.2f'|format(bill.received_amount) }}</td>
+                                    <td><strong class="due-amount">Tk {{ '%.2f'|format(bill.due_amount) }}</strong></td>
+                                    <td>{{ format_date_display(bill.created_at) }}</td>
+                                    <td>
+                                        <form class="collect-form" method="POST" action="{{ url_for('collect_test_due', test_bill_id=bill.id) }}">
+                                            <input type="number" name="collection_amount" min="0" max="{{ '%.2f'|format(bill.due_amount) }}" step="0.01" value="{{ '%.2f'|format(bill.due_amount) }}" aria-label="Collection amount for {{ bill.invoice_no }}">
+                                            <select name="payment_method" aria-label="Payment method for {{ bill.invoice_no }}">
+                                                <option>Cash</option>
+                                                <option>Bkash</option>
+                                                <option>Nagad</option>
+                                                <option>Card</option>
+                                            </select>
+                                            <button type="submit">
+                                                <i class="fas fa-print"></i>
+                                                Collect
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="empty-row">
+                                <td colspan="8">
+                                    <i class="fas fa-circle-check"></i>
+                                    No pending test due found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const quickFilterInput = document.getElementById("quickFilterInput");
+        const dueTableBody = document.getElementById("dueTableBody");
+        const dueRows = Array.from(dueTableBody.querySelectorAll("tr[data-search]"));
+
+        quickFilterInput.addEventListener("input", () => {
+            const query = quickFilterInput.value.trim().toLowerCase();
+            dueRows.forEach((row) => {
+                row.hidden = query && !(row.dataset.search || "").includes(query);
+            });
+        });
+    </script>
+</body>
+</html>

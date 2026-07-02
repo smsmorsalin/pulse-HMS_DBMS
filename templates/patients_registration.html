@@ -124,7 +124,7 @@
                         {% if patients %}
                             {% for patient in patients %}
                             <tr>
-                                <td class="id-col">{{ patient[0] }}</td>
+                                <td class="id-col">{{ patient[8] or patient[0] }}</td>
                                 <td class="ticket-col">{{ patient[1] or '-' }}</td>
                                 <td class="name-col">{{ patient[2] }}</td>
                                 <td class="age-col">{{ patient[3] }} {{ patient[4] }}</td>
@@ -174,9 +174,27 @@
 
             <form id="patientRegistrationForm" class="glass-form" action="{{ url_for('add_patient', next='patients_registration') }}" method="POST">
                 <div class="patient-form-header">
-                    <h2><i class="fas fa-hospital-user"></i> Patient Registration</h2>
+                    <div class="patient-title-actions">
+                        <h2><i class="fas fa-hospital-user"></i> Patient Registration</h2>
+                        <button type="button" class="old-patient-search-toggle" id="oldPatientSearchToggle">
+                            <i class="fas fa-search"></i>
+                            <span>Search Old Patient</span>
+                        </button>
+                    </div>
                     <div class="entry-timestamp">
                         <strong>Date & Time:</strong> <span id="printedTimestamp">--</span>
+                    </div>
+                </div>
+
+                <div class="old-patient-search-panel" id="oldPatientSearchPanel">
+                    <div class="old-patient-search-bar">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="oldPatientSearchInput" placeholder="Search old patient by UHID, Ticket No, Name, or Phone">
+                        <button type="button" id="oldPatientSearchBtn">Search</button>
+                        <button type="button" id="oldPatientClearBtn">Clear</button>
+                    </div>
+                    <div class="old-patient-results" id="oldPatientResults">
+                        <p>Search your All Patients List, then select a patient to create today's bill.</p>
                     </div>
                 </div>
 
@@ -328,16 +346,17 @@
                 </div>
 
                 <input type="hidden" id="patientSaveAction" name="save_action" value="register">
+                <input type="hidden" id="existingPatientId" name="existing_patient_id" value="">
 
                 <div class="form-actions">
                     <button type="submit" class="submit-btn" id="registerPatientBtn" data-save-action="register">
                         <i class="fas fa-user-plus"></i>
                         <span>Register Patient</span>
                     </button>
-                    <button type="button" class="submit-btn all-patients-btn" id="allPatientsFormBtn" data-all-url="{{ url_for('patients_registration', view='all') }}">
-                        <i class="fas fa-users"></i>
-                        <span>All Patients List</span>
-                    </button>
+                    <a class="submit-btn test-page-btn" href="{{ url_for('test_billing') }}">
+                        <i class="fas fa-vial"></i>
+                        <span>Test</span>
+                    </a>
                     <button type="submit" class="submit-btn save-print-btn" id="savePrintPatientBtn" data-save-action="save_print">
                         <i class="fas fa-print"></i>
                         <span>Save &amp; Print</span>
@@ -370,17 +389,36 @@
     const ageInput = document.getElementById("age");
     const doctorNameSelect = document.getElementById("doctorname");
     const doctorDesignationInput = document.getElementById("doctorDesignation");
-    const submitButtons = patientForm.querySelectorAll(".submit-btn");
+    const submitButtons = patientForm.querySelectorAll("button.submit-btn");
     const registerPatientBtn = document.getElementById("registerPatientBtn");
-    const allPatientsFormBtn = document.getElementById("allPatientsFormBtn");
     const savePrintPatientBtn = document.getElementById("savePrintPatientBtn");
     const patientSaveActionInput = document.getElementById("patientSaveAction");
     const patientSearchInput = document.getElementById("patientSearchInput");
     const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
+    const oldPatientSearchToggle = document.getElementById("oldPatientSearchToggle");
+    const oldPatientSearchPanel = document.getElementById("oldPatientSearchPanel");
+    const oldPatientSearchInput = document.getElementById("oldPatientSearchInput");
+    const oldPatientSearchBtn = document.getElementById("oldPatientSearchBtn");
+    const oldPatientClearBtn = document.getElementById("oldPatientClearBtn");
+    const oldPatientResults = document.getElementById("oldPatientResults");
+    const existingPatientIdInput = document.getElementById("existingPatientId");
+    const patientUHID = document.getElementById("patientUHID");
     const dashboardNav = document.getElementById("dashboardNav");
     const billingNav = document.getElementById("billingNav");
     const hmsBrand = document.getElementById("hmsBrand");
     const sidebarItems = document.querySelectorAll("#patientSidebarMenu .sidebar-item");
+    const fullNameInput = document.getElementById("fullName");
+    const ageUnitSelect = document.getElementById("ageUnit");
+    const genderSelect = document.getElementById("gender");
+    const phoneInput = document.getElementById("phone");
+    const bloodGroupSelect = document.getElementById("bloodGroup");
+    const addressInput = document.getElementById("address");
+    const patientStatusSelect = document.getElementById("patientStatus");
+    const refererNameSelect = document.getElementById("refererName");
+    const emergencyContactNumberInput = document.getElementById("emergencyContactNumber");
+    const doctorFeeInput = document.getElementById("doctorFee");
+    let oldPatientSearchTimer = null;
+    let oldPatientSearchRequestId = 0;
 
     function setActiveSidebarItem(activeItem) {
         sidebarItems.forEach(function (item) {
@@ -437,10 +475,158 @@
         doctorDesignationInput.classList.toggle("has-value", designation !== "");
     }
 
+    function markFieldHasValue(field) {
+        if (!field) return;
+        const hasValue = field.value !== "";
+        field.classList.toggle("has-value", hasValue);
+        if (field === ageInput) {
+            updateAgeState();
+        }
+    }
+
+    function setSelectValue(select, value) {
+        if (!select) return;
+        const cleanValue = value || "";
+        const option = Array.from(select.options).find(function (item) {
+            return item.value === cleanValue || item.textContent.trim() === cleanValue;
+        });
+
+        if (option) {
+            select.value = option.value;
+        } else {
+            select.value = "";
+        }
+        markFieldHasValue(select);
+    }
+
+    function fillOldPatient(patient) {
+        existingPatientIdInput.value = patient.id || "";
+        patientUHID.textContent = patient.id ? "Old UHID " + patient.id : "Auto";
+        fullNameInput.value = patient.name || "";
+        ageInput.value = patient.age || "";
+        setSelectValue(ageUnitSelect, patient.age_unit || "Y");
+        setSelectValue(genderSelect, patient.gender || "");
+        phoneInput.value = patient.phone || "";
+        setSelectValue(bloodGroupSelect, patient.blood_group || "");
+        addressInput.value = patient.address || "";
+        setSelectValue(patientStatusSelect, "OLD");
+        setSelectValue(doctorNameSelect, patient.doctor_name || "");
+        doctorDesignationInput.value = patient.doctor_designation || "";
+        setSelectValue(refererNameSelect, patient.referer_name || "Self");
+        emergencyContactNumberInput.value = patient.emergency_contact_phone || "";
+        doctorFeeInput.value = patient.doctor_fee || "";
+
+        [
+            fullNameInput, ageInput, phoneInput, bloodGroupSelect, addressInput,
+            patientStatusSelect, doctorNameSelect, doctorDesignationInput,
+            refererNameSelect, emergencyContactNumberInput, doctorFeeInput
+        ].forEach(markFieldHasValue);
+        updateDoctorDesignation();
+        if (patient.doctor_designation && !doctorDesignationInput.value) {
+            doctorDesignationInput.value = patient.doctor_designation;
+            markFieldHasValue(doctorDesignationInput);
+        }
+        oldPatientResults.innerHTML = "<p class=\"old-patient-selected\"><i class=\"fas fa-circle-check\"></i> Old patient selected: " + (patient.name || "") + " | UHID " + (patient.id || "") + ". Now create today's bill and print.</p>";
+    }
+
+    function clearOldPatientSelection() {
+        existingPatientIdInput.value = "";
+        patientUHID.textContent = "Auto";
+        oldPatientSearchInput.value = "";
+        oldPatientResults.innerHTML = "<p>Search your All Patients List, then select a patient to create today's bill.</p>";
+    }
+
+    function renderOldPatientResults(patients) {
+        if (!patients.length) {
+            oldPatientResults.innerHTML = '<p>No old patient found in All Patients List.</p>';
+            return;
+        }
+
+        oldPatientResults.innerHTML = patients.map(function (patient) {
+            return '<button type="button" class="old-patient-result" data-patient-id="' + patient.id + '">' +
+                '<strong>' + patient.name + '</strong>' +
+                '<span>UHID ' + patient.id + ' | ' + (patient.phone || '-') + ' | ' + (patient.age || '-') + ' ' + (patient.age_unit || '') + ' | ' + (patient.gender || '-') + '</span>' +
+                '<small>' + (patient.address || '') + '</small>' +
+            '</button>';
+        }).join("");
+
+        oldPatientResults.querySelectorAll(".old-patient-result").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const selectedPatient = patients.find(function (patient) {
+                    return String(patient.id) === String(button.dataset.patientId);
+                });
+                if (selectedPatient) {
+                    fillOldPatient(selectedPatient);
+                }
+            });
+        });
+    }
+
+    function searchOldPatients() {
+        const keyword = oldPatientSearchInput.value.trim();
+        if (keyword.length < 2) {
+            oldPatientResults.innerHTML = "<p>Please type at least 2 characters.</p>";
+            return;
+        }
+
+        const requestId = ++oldPatientSearchRequestId;
+        oldPatientResults.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Searching old patients...</p>';
+        fetch("/patients-registration/search?keyword=" + encodeURIComponent(keyword), {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (requestId !== oldPatientSearchRequestId || oldPatientSearchInput.value.trim() !== keyword) {
+                    return;
+                }
+                renderOldPatientResults(data.patients || []);
+            })
+            .catch(function () {
+                if (requestId !== oldPatientSearchRequestId) {
+                    return;
+                }
+                oldPatientResults.innerHTML = "<p>Search failed. Please try again.</p>";
+            });
+    }
+
+    function scheduleOldPatientSearch() {
+        clearTimeout(oldPatientSearchTimer);
+        existingPatientIdInput.value = "";
+        patientUHID.textContent = "Auto";
+
+        const keyword = oldPatientSearchInput.value.trim();
+        if (keyword.length < 2) {
+            oldPatientSearchRequestId += 1;
+            oldPatientResults.innerHTML = "<p>Type at least 2 characters to search automatically.</p>";
+            return;
+        }
+
+        oldPatientResults.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Searching old patients...</p>';
+        oldPatientSearchTimer = setTimeout(searchOldPatients, 350);
+    }
+
     if (doctorNameSelect) {
         doctorNameSelect.addEventListener("change", updateDoctorDesignation);
         updateDoctorDesignation();
     }
+
+    oldPatientSearchToggle.addEventListener("click", function () {
+        oldPatientSearchPanel.classList.toggle("show");
+        if (oldPatientSearchPanel.classList.contains("show")) {
+            oldPatientSearchInput.focus();
+        }
+    });
+
+    oldPatientSearchBtn.addEventListener("click", searchOldPatients);
+    oldPatientSearchInput.addEventListener("input", scheduleOldPatientSearch);
+    oldPatientSearchInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            clearTimeout(oldPatientSearchTimer);
+            searchOldPatients();
+        }
+    });
+    oldPatientClearBtn.addEventListener("click", clearOldPatientSelection);
 
     patientSearchInput.addEventListener("input", function () {
         const searchTerm = this.value.trim().toLowerCase();
@@ -557,12 +743,6 @@
     if (newPatientHeaderBtn) {
         newPatientHeaderBtn.addEventListener("click", function () {
             showPatientFormView();
-        });
-    }
-
-    if (allPatientsFormBtn) {
-        allPatientsFormBtn.addEventListener("click", function () {
-            window.location.href = allPatientsFormBtn.dataset.allUrl || "/patients-registration?view=all";
         });
     }
 

@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, jsonify
 import sqlite3
 from datetime import datetime, timedelta
+import time
+import os
 from werkzeug.security import check_password_hash, generate_password_hash
 
 root_admin_username = "admin"
@@ -9,8 +11,10 @@ root_admin_password = "admin123"  # In a production environment, use a strong pa
 app = Flask(__name__)
 app.secret_key = 'xs12a'  # Required for session management
 
-db = sqlite3.connect('hospital.db', check_same_thread=False)  # Connect to the SQLite database
-db.execute("PRAGMA foreign_keys = ON")  # Enable foreign key support
+# Path to the SQLite database file. Init runs with a short-lived connection
+# to perform migrations, then a long-lived global connection is opened.
+DB_PATH = 'hospital.db'
+
 
 PAGE_OPTIONS = [
     {'key': 'dashboard', 'label': 'Dashboard', 'endpoint': 'dashboard', 'icon': 'fas fa-home'},
@@ -23,12 +27,14 @@ PAGE_OPTIONS = [
     {'key': 'appointment_doctors', 'label': 'Appointment Doctors', 'endpoint': 'appointment_doctors', 'icon': 'fas fa-stethoscope'},
     {'key': 'appointment_patients', 'label': 'Appointment Patients', 'endpoint': 'appointment_patients', 'icon': 'fas fa-hospital-user'},
     {'key': 'pathology_dashboard', 'label': 'Pathology', 'endpoint': 'pathology_dashboard', 'icon': 'fas fa-microscope'},
+    {'key': 'test_billing', 'label': 'Test', 'endpoint': 'test_billing', 'icon': 'fas fa-file-medical-alt'},
     {'key': 'tests', 'label': 'View Tests', 'endpoint': 'tests', 'icon': 'fas fa-vial'},
     {'key': 'service_desk', 'label': 'Services', 'endpoint': 'service_desk', 'icon': 'fas fa-hand-holding-medical'},
     {'key': 'patient_service', 'label': 'Patient Service Order', 'endpoint': None, 'icon': 'fas fa-notes-medical', 'nav': False},
     {'key': 'medicine_sales', 'label': 'Medicine Sales', 'endpoint': 'medicine_sales', 'icon': 'fas fa-pills'},
     {'key': 'medicine_sales_print', 'label': 'Medicine Sales Print', 'endpoint': None, 'icon': 'fas fa-print', 'nav': False},
     {'key': 'medicine_sales_list', 'label': 'Medicine Sales List', 'endpoint': 'medicine_sales_list', 'icon': 'fas fa-calendar-days'},
+    {'key': 'medicine_monthly_report', 'label': 'Medicine Monthly Report', 'endpoint': 'medicine_monthly_report', 'icon': 'fas fa-chart-column'},
     {'key': 'billing', 'label': 'Billing', 'endpoint': 'billing', 'icon': 'fas fa-file-invoice'},
     {'key': 'bill_print', 'label': 'Bill Print', 'endpoint': None, 'icon': 'fas fa-receipt', 'nav': False},
     {'key': 'services', 'label': 'Service Catalog', 'endpoint': 'services', 'icon': 'fas fa-procedures'},
@@ -41,6 +47,7 @@ DASHBOARD_NAV_KEYS = (
     'admissions',
     'appointments_info',
     'pathology_dashboard',
+    'test_billing',
     'tests',
     'service_desk',
     'medicine_sales',
@@ -58,6 +65,7 @@ ENDPOINT_PERMISSIONS = {
     'patients_registration': ('patients_registration',),
     'patient': ('patients_registration',),
     'add_patient': ('patients_registration',),
+    'search_registered_patient': ('patients_registration',),
     'ticket_print': ('ticket_print', 'patients_registration'),
     'tickets': ('patients_registration',),
     'doctors': ('doctors',),
@@ -70,6 +78,13 @@ ENDPOINT_PERMISSIONS = {
     'appointment_doctors': ('appointment_doctors', 'appointments_info'),
     'appointment_patients': ('appointment_patients', 'appointments_info'),
     'pathology_dashboard': ('pathology_dashboard',),
+    'update_pathology_status': ('pathology_dashboard',),
+    'save_pathology_result': ('pathology_dashboard',),
+    'test_billing': ('test_billing',),
+    'test_bill_print': ('test_billing',),
+    'due': ('tests', 'test_billing'),
+    'test_due_collection': ('tests', 'test_billing'),
+    'collect_test_due': ('tests', 'test_billing'),
     'tests': ('tests',),
     'service_desk': ('service_desk',),
     'patient_service': ('patient_service', 'service_desk'),
@@ -82,7 +97,9 @@ ENDPOINT_PERMISSIONS = {
     'save_medicine_sale': ('medicine_sales',),
     'medicine_sales_print': ('medicine_sales_print', 'medicine_sales', 'medicine_sales_list'),
     'medicine_sales_list': ('medicine_sales_list',),
-    'medicine_monthly_report': ('medicine_monthly_report',),
+    'medicine_monthly_report': ('medicine_monthly_report', 'medicine_sales', 'medicine_sales_list'),
+    'delete_medicine_monthly_day_sales': ('medicine_monthly_report',),
+    'delete_medicine_monthly_product_sales': ('medicine_monthly_report',),
     'delete_medicine_sale': ('medicine_sales_list',),
     'billing': ('billing',),
     'services': ('services',),
@@ -94,7 +111,17 @@ ENDPOINT_PERMISSIONS = {
 # Function to initialize the database and create tables if they don't exist
 def init_db():
     """Initialize the hospital database with required tables if they don't exist."""
-    cursor = db.cursor()
+    # Use a short-lived connection for initialization/migrations to avoid
+    # holding the module-global connection during potentially long-running
+    # migrations which can cause 'database is locked' errors.
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA busy_timeout = 5000")
+    except Exception:
+        pass
+    cursor = conn.cursor()
 
     #users table
     cursor.execute('''
@@ -140,10 +167,16 @@ def init_db():
         print("User permissions table created successfully.")
     else:
         placeholders = ','.join('?' for _ in PAGE_KEYS)
-        cursor.execute(
-            f'DELETE FROM user_permissions WHERE page_key NOT IN ({placeholders})',
-            PAGE_KEYS
-        )
+        params = PAGE_KEYS
+        # Retry transient locked errors when cleaning up obsolete permission rows
+        for attempt in range(6):
+            try:
+                cursor.execute(f'DELETE FROM user_permissions WHERE page_key NOT IN ({placeholders})', params)
+                break
+            except sqlite3.OperationalError:
+                if attempt == 5:
+                    raise
+                time.sleep(0.25)
     
     #admins table
     cursor.execute('''
@@ -193,7 +226,8 @@ def init_db():
                 doctor_name TEXT,
                 doctor_designation TEXT,
                 referer_name TEXT,
-                doctor_fee REAL DEFAULT 0
+                doctor_fee REAL DEFAULT 0,
+                source_patient_id INTEGER
              )
         ''')
         print("Patients table created successfully.")
@@ -220,6 +254,8 @@ def init_db():
             cursor.execute("ALTER TABLE patients ADD COLUMN referer_name TEXT")
         if 'doctor_fee' not in patients_columns:
             cursor.execute("ALTER TABLE patients ADD COLUMN doctor_fee REAL DEFAULT 0")
+        if 'source_patient_id' not in patients_columns:
+            cursor.execute("ALTER TABLE patients ADD COLUMN source_patient_id INTEGER")
 
         patients_missing_daily_id = cursor.execute('''
             SELECT id, COALESCE(date(created_at), date('now', '+6 hours')) AS entry_date
@@ -315,6 +351,65 @@ def init_db():
             )
         ''')
         print("Test Orders table created successfully.")
+
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="test_bills"')
+    test_bills_exists = cursor.fetchone() is not None
+    if not test_bills_exists:
+        cursor.execute('''
+            CREATE TABLE test_bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoice_no TEXT UNIQUE NOT NULL,
+                patient_id INTEGER NOT NULL,
+                doctor_name TEXT,
+                referred_by TEXT,
+                sample_status TEXT,
+                delivery_time TEXT,
+                subtotal REAL NOT NULL DEFAULT 0,
+                discount_amount REAL NOT NULL DEFAULT 0,
+                total_amount REAL NOT NULL DEFAULT 0,
+                received_amount REAL NOT NULL DEFAULT 0,
+                due_amount REAL NOT NULL DEFAULT 0,
+                change_amount REAL NOT NULL DEFAULT 0,
+                payment_method TEXT,
+                remarks TEXT,
+                created_by TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (patient_id) REFERENCES patients(id)
+            )
+        ''')
+        print("Test Bills table created successfully.")
+
+    cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="test_bill_items"')
+    test_bill_items_exists = cursor.fetchone() is not None
+    if not test_bill_items_exists:
+        cursor.execute('''
+            CREATE TABLE test_bill_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                test_bill_id INTEGER NOT NULL,
+                service_id INTEGER,
+                test_name TEXT NOT NULL,
+                price REAL NOT NULL DEFAULT 0,
+                result_value TEXT,
+                result_note TEXT,
+                result_updated_at TEXT,
+                result_updated_by TEXT,
+                FOREIGN KEY (test_bill_id) REFERENCES test_bills(id) ON DELETE CASCADE,
+                FOREIGN KEY (service_id) REFERENCES services(id)
+            )
+        ''')
+        print("Test Bill Items table created successfully.")
+    else:
+        cursor.execute('PRAGMA table_info(test_bill_items)')
+        test_bill_items_columns = {row[1] for row in cursor.fetchall()}
+        test_bill_item_migrations = {
+            'result_value': 'ALTER TABLE test_bill_items ADD COLUMN result_value TEXT',
+            'result_note': 'ALTER TABLE test_bill_items ADD COLUMN result_note TEXT',
+            'result_updated_at': 'ALTER TABLE test_bill_items ADD COLUMN result_updated_at TEXT',
+            'result_updated_by': 'ALTER TABLE test_bill_items ADD COLUMN result_updated_by TEXT',
+        }
+        for column_name, alter_sql in test_bill_item_migrations.items():
+            if column_name not in test_bill_items_columns:
+                cursor.execute(alter_sql)
 
     #bills table
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="bills"')
@@ -535,22 +630,49 @@ def init_db():
         END;
         ''')
 
-    # commit the changes to the database
-    db.commit()
+    # commit the changes to the database and close the temporary connection
+    conn.commit()
+    conn.close()
     print("Hospital database initialized successfully.")
 
-# Initialize database on app startup
+# Initialize database on app startup (run migrations using a temp connection)
 init_db()
+
+# Now open the long-lived global connection used by the app
+db = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
+db.execute("PRAGMA foreign_keys = ON")
+try:
+    db.execute("PRAGMA journal_mode = WAL")
+    db.execute("PRAGMA busy_timeout = 5000")
+except Exception:
+    pass
+
+def _current_session_user_id():
+    user_id = session.get('user_id')
+    if user_id in (None, ''):
+        return None
+    if isinstance(user_id, (int, str)):
+        return user_id
+    return None
+
 
 def isadmin():
     """Helper function to check if the current user is an admin."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    return session.get('user_id') == 'root_admin' or (admin_checker and admin_checker[0] == session.get('user_id'))
+    user_id = _current_session_user_id()
+    if not user_id:
+        return False
+    if user_id == 'root_admin':
+        return True
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (user_id,)).fetchone()
+    return bool(admin_checker and admin_checker[0] == user_id)
 
 def isuser():
     """Helper function to check if the current user is a regular user."""
-    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
-    return user_checker and user_checker[0] == session.get('user_id')
+    user_id = _current_session_user_id()
+    if not user_id:
+        return False
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+    return bool(user_checker and user_checker[0] == user_id)
 
 def get_user_page_keys(user_id=None):
     """Return page keys assigned to a regular user."""
@@ -616,6 +738,7 @@ def inject_permission_helpers():
         'page_options': PAGE_OPTIONS,
         'can_access_page': can_access_page,
         'format_date_display': format_date_display,
+        'format_invoice_date': format_invoice_date,
     }
 
 @app.before_request
@@ -853,6 +976,7 @@ def register():
     return render_template("register.html")
 
 @app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     session.clear()  # Clear any existing session data
     if request.method == 'POST':
@@ -1200,7 +1324,7 @@ def follow_up_dashboard():
 
 @app.route('/duty-management-dashboard')
 def duty_management_dashboard():
-    """Records-only dashboard for all doctor and nurse duty submissions."""
+    """Records-only dashboard for one selected doctor and nurse duty day."""
     if not isadmin() and not isuser():
         return redirect(url_for('login'))
 
@@ -1215,12 +1339,20 @@ def duty_management_dashboard():
     else:
         profile_name = 'User'
 
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    try:
+        datetime.strptime(selected_date, '%Y-%m-%d')
+    except ValueError:
+        selected_date = datetime.now().strftime('%Y-%m-%d')
+
     duty_rows = db.execute(
         '''
         SELECT id, staff_role, staff_name, duty_date, shift, ward, round_completed, notes, created_by, created_at
         FROM duty_records
+        WHERE date(duty_date) = ?
         ORDER BY date(duty_date) DESC, created_at DESC, id DESC
-        '''
+        ''',
+        (selected_date,)
     ).fetchall()
 
     duty_records = [
@@ -1242,16 +1374,21 @@ def duty_management_dashboard():
     completed_records = sum(1 for row in duty_records if row['round_completed'])
     doctor_records = sum(1 for row in duty_records if row['staff_role'] == 'doctor')
     nurse_records = sum(1 for row in duty_records if row['staff_role'] == 'nurse')
+    today_records = total_records
+    completion_rate = round((completed_records / total_records) * 100) if total_records else 0
 
     return render_template(
         'duty_management_dashboard.html',
         profile_name=profile_name,
+        selected_date=selected_date,
         duty_records=duty_records,
         total_records=total_records,
         completed_records=completed_records,
         pending_records=total_records - completed_records,
         doctor_records=doctor_records,
         nurse_records=nurse_records,
+        today_records=today_records,
+        completion_rate=completion_rate,
     )
 
 
@@ -1284,7 +1421,7 @@ def dashboard():
 
 @app.route('/pathology_dashboard')
 def pathology_dashboard():
-    """Pathology lab dashboard backed by test services and test orders."""
+    """Professional pathology workbench backed by patient test invoices."""
     if not isadmin() and not isuser():
         return redirect(url_for('login'))
 
@@ -1298,108 +1435,406 @@ def pathology_dashboard():
     else:
         profile_name = user_checker[1]
 
-    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
-    try:
-        selected_day = datetime.strptime(selected_date, '%Y-%m-%d')
-    except ValueError:
-        selected_date = datetime.now().strftime('%Y-%m-%d')
-        selected_day = datetime.strptime(selected_date, '%Y-%m-%d')
+    selected_date = request.args.get('date', '').strip()
+    if selected_date:
+        try:
+            datetime.strptime(selected_date, '%Y-%m-%d')
+        except ValueError:
+            selected_date = ''
 
-    selected_month = selected_date[:7]
-    week_start = (selected_day - timedelta(days=6)).strftime('%Y-%m-%d')
+    date_where = 'WHERE date(tb.created_at) = ?' if selected_date else ''
+    bill_date_where = 'WHERE date(created_at) = ?' if selected_date else ''
+    query_params = (selected_date,) if selected_date else ()
+    date_label = format_date_display(selected_date) if selected_date else 'All pathology records'
 
     available_tests = db.execute("SELECT COUNT(*) FROM services WHERE type = 'test'").fetchone()[0]
-    day_orders = db.execute(
-        "SELECT COUNT(*) FROM test_orders WHERE date(test_date) = ?",
-        (selected_date,)
+    total_bills = db.execute(
+        f"SELECT COUNT(*) FROM test_bills {bill_date_where}",
+        query_params
     ).fetchone()[0]
-    day_patients = db.execute(
-        "SELECT COUNT(DISTINCT patient_id) FROM test_orders WHERE date(test_date) = ?",
-        (selected_date,)
+    total_patients = db.execute(
+        f"SELECT COUNT(DISTINCT patient_id) FROM test_bills {bill_date_where}",
+        query_params
     ).fetchone()[0]
-    month_orders = db.execute(
-        "SELECT COUNT(*) FROM test_orders WHERE strftime('%Y-%m', test_date) = ?",
-        (selected_month,)
-    ).fetchone()[0]
-    month_revenue = db.execute(
+    total_test_items = db.execute(
         '''
-        SELECT COALESCE(SUM(bi.price * bi.quantity), 0)
-        FROM bill_items bi
-        JOIN bills b ON b.id = bi.bill_id
-        JOIN services s ON s.id = bi.service_id
-        WHERE s.type = 'test'
-          AND strftime('%Y-%m', b.created_at) = ?
-        ''',
-        (selected_month,)
-    ).fetchone()[0] or 0
+        SELECT COUNT(*)
+        FROM test_bill_items tbi
+        JOIN test_bills tb ON tb.id = tbi.test_bill_id
+        {date_where}
+        '''.format(date_where=date_where),
+        query_params
+    ).fetchone()[0]
+    resulted_items = db.execute(
+        '''
+        SELECT COUNT(*)
+        FROM test_bill_items tbi
+        JOIN test_bills tb ON tb.id = tbi.test_bill_id
+        {date_where}
+        {where_joiner} NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NOT NULL
+        '''.format(
+            date_where=date_where,
+            where_joiner='AND' if date_where else 'WHERE'
+        ),
+        query_params
+    ).fetchone()[0]
+    open_result_items = max(int(total_test_items or 0) - int(resulted_items or 0), 0)
+    totals = db.execute(
+        '''
+        SELECT
+            COALESCE(SUM(total_amount), 0),
+            COALESCE(SUM(due_amount), 0),
+            SUM(CASE WHEN sample_status = 'Pending' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN sample_status = 'Collected' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN sample_status = 'Delivered' THEN 1 ELSE 0 END)
+        FROM test_bills
+        {bill_date_where}
+        '''.format(bill_date_where=bill_date_where),
+        query_params
+    ).fetchone()
 
-    recent_orders = db.execute(
+    pathology_orders = db.execute(
         '''
-        SELECT t.id, p.name, p.phone, s.name, s.price, t.test_date
-        FROM test_orders t
-        JOIN patients p ON p.id = t.patient_id
-        JOIN services s ON s.id = t.service_id
-        WHERE date(t.test_date) = ?
-        ORDER BY t.id DESC
-        LIMIT 10
-        ''',
-        (selected_date,)
+        SELECT
+            tbi.id,
+            tb.id,
+            tb.invoice_no,
+            tb.created_at,
+            tb.doctor_name,
+            tb.referred_by,
+            tb.sample_status,
+            tb.delivery_time,
+            tb.total_amount,
+            tb.due_amount,
+            p.name,
+            p.phone,
+            p.age,
+            COALESCE(NULLIF(p.age_unit, ''), 'Y'),
+            p.gender,
+            COALESCE(p.source_patient_id, p.id) AS patient_uhid,
+            tbi.test_name,
+            tbi.price,
+            tbi.result_value,
+            tbi.result_note,
+            tbi.result_updated_at,
+            tbi.result_updated_by
+        FROM test_bills tb
+        JOIN patients p ON p.id = tb.patient_id
+        JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
+        {date_where}
+        ORDER BY
+            CASE WHEN NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NULL THEN 1 ELSE 2 END,
+            CASE tb.sample_status
+                WHEN 'Pending' THEN 1
+                WHEN 'Collected' THEN 2
+                WHEN 'Delivered' THEN 3
+                ELSE 4
+            END,
+            datetime(tb.created_at) DESC,
+            tb.id DESC,
+            tbi.id ASC
+        '''.format(date_where=date_where),
+        query_params
     ).fetchall()
 
-    popular_tests = db.execute(
+    patient_cases = db.execute(
         '''
-        SELECT s.name, s.price, COUNT(t.id) AS order_count
-        FROM services s
-        LEFT JOIN test_orders t
-            ON t.service_id = s.id
-           AND strftime('%Y-%m', t.test_date) = ?
-        WHERE s.type = 'test'
-        GROUP BY s.id, s.name, s.price
-        ORDER BY order_count DESC, s.name ASC
-        LIMIT 6
-        ''',
-        (selected_month,)
+        SELECT
+            tb.id,
+            tb.invoice_no,
+            tb.created_at,
+            tb.sample_status,
+            tb.delivery_time,
+            tb.total_amount,
+            tb.due_amount,
+            p.name,
+            p.phone,
+            p.age,
+            COALESCE(NULLIF(p.age_unit, ''), 'Y'),
+            p.gender,
+            COALESCE(p.source_patient_id, p.id) AS patient_uhid,
+            tb.doctor_name,
+            tb.referred_by,
+            COUNT(tbi.id) AS test_count,
+            SUM(CASE WHEN NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS completed_count,
+            GROUP_CONCAT(tbi.test_name, ', ') AS test_names
+        FROM test_bills tb
+        JOIN patients p ON p.id = tb.patient_id
+        JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
+        {date_where}
+        GROUP BY tb.id
+        ORDER BY
+            CASE tb.sample_status
+                WHEN 'Pending' THEN 1
+                WHEN 'Collected' THEN 2
+                WHEN 'Delivered' THEN 3
+                ELSE 4
+            END,
+            datetime(tb.created_at) DESC,
+            tb.id DESC
+        '''.format(date_where=date_where),
+        query_params
     ).fetchall()
-    max_test_orders = max([row[2] for row in popular_tests], default=0)
+    patient_cases = [
+        {
+            'bill_id': row[0],
+            'invoice_no': row[1],
+            'created_at': row[2],
+            'sample_status': row[3] or 'Pending',
+            'delivery_time': row[4],
+            'total_amount': float(row[5] or 0),
+            'due_amount': float(row[6] or 0),
+            'patient_name': row[7],
+            'phone': row[8],
+            'age': row[9],
+            'age_unit': row[10],
+            'gender': row[11],
+            'patient_uhid': row[12],
+            'doctor_name': row[13],
+            'referred_by': row[14],
+            'test_count': int(row[15] or 0),
+            'completed_count': int(row[16] or 0),
+            'test_names': row[17] or '',
+        }
+        for row in patient_cases
+    ]
 
-    daily_rows = db.execute(
+    category_rows = db.execute(
         '''
-        SELECT date(test_date), COUNT(*)
-        FROM test_orders
-        WHERE date(test_date) BETWEEN ? AND ?
-        GROUP BY date(test_date)
-        ''',
-        (week_start, selected_date)
+        SELECT tbi.test_name, COUNT(*)
+        FROM test_bill_items tbi
+        JOIN test_bills tb ON tb.id = tbi.test_bill_id
+        {date_where}
+        GROUP BY tbi.test_name
+        '''.format(date_where=date_where),
+        query_params
     ).fetchall()
-    daily_counts = {row[0]: row[1] for row in daily_rows}
-    day_activity = []
-    max_day_orders = max(daily_counts.values(), default=0)
-    for offset in range(7):
-        current_day = selected_day - timedelta(days=6 - offset)
-        date_key = current_day.strftime('%Y-%m-%d')
-        count = daily_counts.get(date_key, 0)
-        day_activity.append({
-            'label': current_day.strftime('%a'),
-            'date': date_key,
+    category_rules = [
+        ('Hematology', ('cbc', 'blood', 'hb', 'hemoglobin', 'esr', 'platelet', 'tc', 'dc')),
+        ('Biochemistry', ('glucose', 'sugar', 'creatinine', 'urea', 'lipid', 'cholesterol', 'bilirubin', 'sgpt', 'sgot', 'lft', 'rft', 'uric')),
+        ('Microbiology', ('culture', 'urine', 'stool', 'sputum', 'widal', 'gram')),
+        ('Serology', ('hbsag', 'vdrl', 'hiv', 'antigen', 'antibody', 'crp', 'aso', 'ra factor')),
+    ]
+    category_colors = {
+        'Hematology': '#2378ff',
+        'Biochemistry': '#24c486',
+        'Microbiology': '#f59e0b',
+        'Serology': '#7357f6',
+        'Others': '#8aa4ca',
+    }
+    category_counts = {name: 0 for name, _ in category_rules}
+    category_counts['Others'] = 0
+    for test_name, count in category_rows:
+        normalized_name = (test_name or '').lower()
+        matched_category = 'Others'
+        for category_name, keywords in category_rules:
+            if any(keyword in normalized_name for keyword in keywords):
+                matched_category = category_name
+                break
+        category_counts[matched_category] += int(count or 0)
+    category_total = sum(category_counts.values()) or 0
+    test_categories = [
+        {
+            'name': name,
             'count': count,
-            'percent': round((count / max_day_orders) * 100) if max_day_orders else 0
-        })
+            'percent': round((count / category_total) * 100) if category_total else 0,
+            'color': category_colors[name],
+        }
+        for name, count in category_counts.items()
+        if count > 0
+    ]
+
+    ready_to_deliver_count = db.execute(
+        '''
+        SELECT COUNT(DISTINCT tb.id)
+        FROM test_bills tb
+        JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
+        {date_where}
+        {where_joiner} tb.sample_status = 'Collected'
+          AND NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NOT NULL
+        '''.format(
+            date_where=date_where,
+            where_joiner='AND' if date_where else 'WHERE'
+        ),
+        query_params
+    ).fetchone()[0]
+    pending_summary = [
+        {'label': 'Sample Pending', 'value': int(totals[2] or 0), 'icon': 'fas fa-hourglass-half', 'tone': 'amber'},
+        {'label': 'Sample Collected', 'value': int(totals[3] or 0), 'icon': 'fas fa-vial-circle-check', 'tone': 'blue'},
+        {'label': 'Awaiting Result', 'value': open_result_items, 'icon': 'fas fa-file-circle-question', 'tone': 'purple'},
+        {'label': 'Ready to Deliver', 'value': int(ready_to_deliver_count or 0), 'icon': 'fas fa-file-circle-check', 'tone': 'green'},
+    ]
+
+    trend_rows = db.execute(
+        '''
+        SELECT date(created_at), COUNT(*), COALESCE(SUM(total_amount), 0)
+        FROM test_bills
+        GROUP BY date(created_at)
+        ORDER BY date(created_at) DESC
+        LIMIT 14
+        '''
+    ).fetchall()
+    trend_points = [
+        {
+            'date': row[0],
+            'label': format_date_display(row[0]),
+            'invoices': int(row[1] or 0),
+            'revenue': float(row[2] or 0),
+        }
+        for row in reversed(trend_rows)
+    ]
+
+    recent_reports = db.execute(
+        '''
+        SELECT tb.id, tb.invoice_no, p.name, tbi.test_name, tbi.result_updated_at, tb.sample_status, tbi.id
+        FROM test_bill_items tbi
+        JOIN test_bills tb ON tb.id = tbi.test_bill_id
+        JOIN patients p ON p.id = tb.patient_id
+        WHERE NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NOT NULL
+        {date_filter}
+        ORDER BY datetime(tbi.result_updated_at) DESC, tbi.id DESC
+        LIMIT 8
+        '''.format(date_filter=('AND date(tb.created_at) = ?' if selected_date else '')),
+        query_params
+    ).fetchall()
+    recent_reports = [
+        {
+            'bill_id': row[0],
+            'invoice_no': row[1],
+            'patient_name': row[2],
+            'test_name': row[3],
+            'updated_at': row[4],
+            'sample_status': row[5] or 'Pending',
+            'item_id': row[6],
+        }
+        for row in recent_reports
+    ]
+
+    pathology_orders = [
+        {
+            'item_id': row[0],
+            'bill_id': row[1],
+            'invoice_no': row[2],
+            'created_at': row[3],
+            'doctor_name': row[4],
+            'referred_by': row[5],
+            'sample_status': row[6] or 'Pending',
+            'delivery_time': row[7],
+            'total_amount': float(row[8] or 0),
+            'due_amount': float(row[9] or 0),
+            'patient_name': row[10],
+            'phone': row[11],
+            'age': row[12],
+            'age_unit': row[13],
+            'gender': row[14],
+            'patient_uhid': row[15],
+            'test_name': row[16],
+            'price': float(row[17] or 0),
+            'result_value': row[18] or '',
+            'result_note': row[19] or '',
+            'result_updated_at': row[20] or '',
+            'result_updated_by': row[21] or '',
+        }
+        for row in pathology_orders
+    ]
 
     return render_template(
         'pathology_dashboard.html',
         profile_name=profile_name,
         admin=isadmin(),
         selected_date=selected_date,
+        date_label=date_label,
+        selected_item=request.args.get('selected_item', '').strip(),
         available_tests=available_tests,
-        day_orders=day_orders,
-        day_patients=day_patients,
-        month_orders=month_orders,
-        month_revenue=month_revenue,
-        recent_orders=recent_orders,
-        popular_tests=popular_tests,
-        max_test_orders=max_test_orders,
-        day_activity=day_activity
+        total_bills=total_bills,
+        total_patients=total_patients,
+        total_test_items=total_test_items,
+        resulted_items=resulted_items,
+        open_result_items=open_result_items,
+        total_revenue=float(totals[0] or 0),
+        total_due=float(totals[1] or 0),
+        pending_count=int(totals[2] or 0),
+        collected_count=int(totals[3] or 0),
+        delivered_count=int(totals[4] or 0),
+        trend_points=trend_points,
+        pending_summary=pending_summary,
+        test_categories=test_categories,
+        recent_reports=recent_reports,
+        patient_cases=patient_cases,
+        pathology_orders=pathology_orders,
     )
+
+
+@app.route('/pathology_dashboard/status/<int:test_bill_id>', methods=['POST'])
+def update_pathology_status(test_bill_id):
+    """Update sample/report status for one test invoice from Pathology."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    selected_date = request.form.get('selected_date', '').strip()
+    sample_status = request.form.get('sample_status', '').strip()
+    redirect_args = {'date': selected_date} if selected_date else {}
+    if sample_status not in ('Pending', 'Collected', 'Delivered'):
+        return redirect(url_for('pathology_dashboard', **redirect_args))
+
+    db.execute(
+        'UPDATE test_bills SET sample_status = ? WHERE id = ?',
+        (sample_status, test_bill_id)
+    )
+    db.commit()
+    return redirect(url_for('pathology_dashboard', **redirect_args))
+
+
+@app.route('/pathology_dashboard/result/<int:test_item_id>', methods=['POST'])
+def save_pathology_result(test_item_id):
+    """Save the entered result value for one billed pathology test item."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    selected_date = request.form.get('selected_date', '').strip()
+    result_value = request.form.get('result_value', '').strip()
+    result_note = request.form.get('result_note', '').strip()
+    actor = get_current_actor()
+    actor_name = actor[2]
+    redirect_args = {'date': selected_date} if selected_date else {}
+
+    test_item = db.execute(
+        '''
+        SELECT tbi.id, tbi.test_name, tb.patient_id, tb.invoice_no
+        FROM test_bill_items tbi
+        JOIN test_bills tb ON tb.id = tbi.test_bill_id
+        WHERE tbi.id = ?
+        ''',
+        (test_item_id,)
+    ).fetchone()
+    if not test_item:
+        return redirect(url_for('pathology_dashboard', **redirect_args))
+
+    db.execute(
+        '''
+        UPDATE test_bill_items
+        SET result_value = ?,
+            result_note = ?,
+            result_updated_at = CASE
+                WHEN ? = '' THEN NULL
+                ELSE datetime('now', '+6 hours')
+            END,
+            result_updated_by = CASE
+                WHEN ? = '' THEN NULL
+                ELSE ?
+            END
+        WHERE id = ?
+        ''',
+        (result_value, result_note, result_value, result_value, actor_name, test_item_id)
+    )
+    if result_value:
+        add_system_log(f"Pathology result saved for {test_item[1]} on invoice {test_item[3]}", test_item[2], actor)
+    else:
+        add_system_log(f"Pathology result cleared for {test_item[1]} on invoice {test_item[3]}", test_item[2], actor)
+
+    db.commit()
+    redirect_args['selected_item'] = test_item_id
+    return redirect(url_for('pathology_dashboard', **redirect_args))
 
 
 @app.route('/medicine_stock_dashboard', methods=['GET', 'POST'])
@@ -1984,12 +2419,22 @@ def medicine_sales_list():
 
 @app.route('/medicine_monthly_report')
 def medicine_monthly_report():
-    """Admin-only monthly medicine sales report."""
-    if not isadmin():
+    """Monthly medicine sales report for admins and permitted users."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+    if isuser() and not user_has_any_page(ENDPOINT_PERMISSIONS['medicine_monthly_report']):
         return redirect(url_for('login'))
 
     admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    profile_name = root_admin_username if session.get('user_id') == 'root_admin' else admin_checker[1]
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin':
+        profile_name = root_admin_username
+    elif admin_checker and admin_checker[0] == session.get('user_id'):
+        profile_name = admin_checker[1]
+    elif user_checker and user_checker[0] == session.get('user_id'):
+        profile_name = user_checker[1]
+    else:
+        profile_name = 'User'
 
     selected_month = request.args.get('month', '').strip() or datetime.now().strftime('%Y-%m')
     try:
@@ -2069,6 +2514,27 @@ def medicine_monthly_report():
         (month_start_text, next_month_text)
     ).fetchall()
 
+    date_product_rows_raw = db.execute(
+        '''
+        SELECT
+            date(ms.sale_date) AS sale_day,
+            msi.medicine_name,
+            msi.batch_no,
+            msi.unit_type,
+            COUNT(DISTINCT ms.id) AS invoice_count,
+            SUM(msi.quantity) AS quantity,
+            SUM(msi.quantity * msi.unit_price) AS gross_amount,
+            SUM(msi.discount) AS discount_amount,
+            SUM(msi.line_total) AS net_amount
+        FROM medicine_sale_items msi
+        JOIN medicine_sales ms ON ms.id = msi.sale_id
+        WHERE date(ms.sale_date) >= ? AND date(ms.sale_date) < ?
+        GROUP BY date(ms.sale_date), msi.medicine_name, msi.batch_no, msi.unit_type
+        ORDER BY sale_day ASC, msi.medicine_name ASC, msi.batch_no ASC, msi.unit_type ASC
+        ''',
+        (month_start_text, next_month_text)
+    ).fetchall()
+
     report_summary = {
         'invoice_count': int(summary_row[0] or 0),
         'gross_sales': float(summary_row[1] or 0),
@@ -2108,6 +2574,21 @@ def medicine_monthly_report():
         for row in daily_rows_raw
     ]
 
+    date_product_rows = [
+        {
+            'sale_day': row[0],
+            'medicine_name': row[1],
+            'batch_no': row[2],
+            'unit_type': row[3],
+            'invoice_count': int(row[4] or 0),
+            'quantity': int(row[5] or 0),
+            'gross_amount': float(row[6] or 0),
+            'discount_amount': float(row[7] or 0),
+            'net_amount': float(row[8] or 0),
+        }
+        for row in date_product_rows_raw
+    ]
+
     return render_template(
         "medicine_monthly_report.html",
         profile_name=profile_name,
@@ -2117,8 +2598,118 @@ def medicine_monthly_report():
         report_summary=report_summary,
         product_rows=product_rows,
         daily_rows=daily_rows,
-        admin=True,
+        date_product_rows=date_product_rows,
+        admin=isadmin(),
     )
+
+
+def delete_medicine_sale_records(sale_ids):
+    """Delete medicine sale invoices and matching stock-out rows as one operation."""
+    cleaned_sale_ids = [int(sale_id) for sale_id in sale_ids if sale_id]
+    if not cleaned_sale_ids:
+        return 0
+
+    placeholders = ','.join('?' for _ in cleaned_sale_ids)
+    sale_rows = db.execute(
+        f'SELECT id, invoice_no FROM medicine_sales WHERE id IN ({placeholders})',
+        cleaned_sale_ids
+    ).fetchall()
+    if not sale_rows:
+        return 0
+
+    invoice_notes = [f'Sold on invoice {row[1]}' for row in sale_rows]
+    note_placeholders = ','.join('?' for _ in invoice_notes)
+    db.execute(
+        f"DELETE FROM medicine_transactions WHERE transaction_type = 'out' AND note IN ({note_placeholders})",
+        invoice_notes
+    )
+    db.execute(
+        f'DELETE FROM medicine_sale_items WHERE sale_id IN ({placeholders})',
+        cleaned_sale_ids
+    )
+    db.execute(
+        f'DELETE FROM medicine_sales WHERE id IN ({placeholders})',
+        cleaned_sale_ids
+    )
+    return len(sale_rows)
+
+
+@app.route('/medicine_monthly_report/delete_day', methods=['POST'])
+@app.route('/medicine_monthly_report/delete_day/', methods=['POST'])
+def delete_medicine_monthly_day_sales():
+    """Delete all medicine sale invoices for one report date."""
+    if not isadmin():
+        return redirect(url_for('medicine_monthly_report'))
+
+    sale_day = request.form.get('sale_day', '').strip()
+    selected_month = request.form.get('month', '').strip() or datetime.now().strftime('%Y-%m')
+    try:
+        datetime.strptime(sale_day, '%Y-%m-%d')
+    except ValueError:
+        return redirect(url_for('medicine_monthly_report', month=selected_month))
+
+    sale_rows = db.execute(
+        'SELECT id FROM medicine_sales WHERE date(sale_date) = ?',
+        (sale_day,)
+    ).fetchall()
+
+    try:
+        delete_medicine_sale_records([row[0] for row in sale_rows])
+        db.commit()
+    except sqlite3.Error:
+        db.rollback()
+
+    return redirect(url_for('medicine_monthly_report', month=selected_month))
+
+
+@app.route('/medicine_monthly_report/delete_product', methods=['POST'])
+@app.route('/medicine_monthly_report/delete_product/', methods=['POST'])
+def delete_medicine_monthly_product_sales():
+    """Delete all invoices in the selected month that contain a product batch/unit."""
+    if not isadmin():
+        return redirect(url_for('medicine_monthly_report'))
+
+    selected_month = request.form.get('month', '').strip() or datetime.now().strftime('%Y-%m')
+    medicine_name = request.form.get('medicine_name', '').strip()
+    batch_no = request.form.get('batch_no', '').strip() or 'General'
+    unit_type = request.form.get('unit_type', '').strip().lower()
+    try:
+        month_start = datetime.strptime(selected_month, '%Y-%m')
+    except ValueError:
+        month_start = datetime.now().replace(day=1)
+        selected_month = month_start.strftime('%Y-%m')
+
+    if not medicine_name or unit_type not in ('strip', 'box'):
+        return redirect(url_for('medicine_monthly_report', month=selected_month))
+
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    sale_rows = db.execute(
+        '''
+        SELECT DISTINCT ms.id
+        FROM medicine_sales ms
+        JOIN medicine_sale_items msi ON msi.sale_id = ms.id
+        WHERE date(ms.sale_date) >= ?
+          AND date(ms.sale_date) < ?
+          AND msi.medicine_name = ?
+          AND COALESCE(NULLIF(msi.batch_no, ''), 'General') = ?
+          AND msi.unit_type = ?
+        ''',
+        (
+            month_start.strftime('%Y-%m-%d'),
+            next_month.strftime('%Y-%m-%d'),
+            medicine_name,
+            batch_no,
+            unit_type,
+        )
+    ).fetchall()
+
+    try:
+        delete_medicine_sale_records([row[0] for row in sale_rows])
+        db.commit()
+    except sqlite3.Error:
+        db.rollback()
+
+    return redirect(url_for('medicine_monthly_report', month=selected_month))
 
 
 @app.route('/medicine_sales/delete/<int:sale_id>', methods=['POST'])
@@ -2135,16 +2726,10 @@ def delete_medicine_sale(sale_id):
     if not sale_row:
         return redirect(url_for('medicine_sales_list', date=selected_date or datetime.now().strftime('%Y-%m-%d')))
 
-    invoice_no = sale_row[0]
     sale_date = selected_date or sale_row[1] or datetime.now().strftime('%Y-%m-%d')
 
     try:
-        db.execute(
-            "DELETE FROM medicine_transactions WHERE transaction_type = 'out' AND note = ?",
-            (f'Sold on invoice {invoice_no}',)
-        )
-        db.execute('DELETE FROM medicine_sale_items WHERE sale_id = ?', (sale_id,))
-        db.execute('DELETE FROM medicine_sales WHERE id = ?', (sale_id,))
+        delete_medicine_sale_records([sale_id])
         db.commit()
     except sqlite3.Error:
         db.rollback()
@@ -2250,6 +2835,7 @@ def add_patient():
             doctor_designation = request.form.get('doctor_designation')
             referer_name = request.form.get('referer_name')
             doctor_fee = request.form.get('doctor_fee')
+            existing_patient_id = request.form.get('existing_patient_id', '').strip()
             save_action = request.form.get('save_action')
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
@@ -2274,6 +2860,28 @@ def add_patient():
                     return {"success": False, "error": "Please enter a valid doctor fee."}, 400
                 return patient_redirect(error="Please enter a valid doctor fee.")
 
+            source_patient_id = None
+            if existing_patient_id:
+                if not existing_patient_id.isdigit():
+                    if is_ajax:
+                        return {"success": False, "error": "Selected old patient is invalid."}, 400
+                    return patient_redirect(error="Selected old patient is invalid.")
+                existing_patient = db.execute(
+                    '''
+                    SELECT id
+                    FROM patients
+                    WHERE id = ?
+                      AND source_patient_id IS NULL
+                    ''',
+                    (existing_patient_id,)
+                ).fetchone()
+                if not existing_patient:
+                    if is_ajax:
+                        return {"success": False, "error": "Old patient was not found in All Patients List."}, 404
+                    return patient_redirect(error="Old patient was not found in All Patients List.")
+                source_patient_id = existing_patient[0]
+                patient_status = patient_status or 'OLD'
+
             daily_ticket_no = db.execute('''
                 SELECT COALESCE(MAX(daily_patient_id), 0) + 1
                 FROM patients
@@ -2284,18 +2892,21 @@ def add_patient():
                                       daily_patient_id, serial_no, name, age, age_unit, gender, phone, email,
                                       dob, blood_group, address, emergency_contact_name, emergency_contact_phone,
                                       medical_history, patient_status, doctor_name, doctor_designation,
-                                      referer_name, doctor_fee, created_at
+                                      referer_name, doctor_fee, source_patient_id, created_at
                                   ) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))''',
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))''',
                                 (
                                     daily_ticket_no, serial_no, name, age, age_unit, gender, phone, email,
                                     dob, blood_group, address, emergency_contact_name, emergency_contact_phone,
                                     medical_history, patient_status, doctor_name, doctor_designation,
-                                    referer_name, doctor_fee_value
+                                    referer_name, doctor_fee_value, source_patient_id
                                 ))
             db.commit()
             patient_id = cursor.lastrowid
-            add_system_log(f"Patient created: {name} ({phone}), ticket no {daily_ticket_no}", patient_id)
+            if source_patient_id:
+                add_system_log(f"Old patient daily bill created: {name} ({phone}), ticket no {daily_ticket_no}", patient_id)
+            else:
+                add_system_log(f"Patient created: {name} ({phone}), ticket no {daily_ticket_no}", patient_id)
 
             if is_ajax:
                 return {"success": True, "patient_id": patient_id, "ticket_no": daily_ticket_no, "print_url": url_for('ticket_print', patient_id=patient_id)}, 200
@@ -2303,7 +2914,7 @@ def add_patient():
             if save_action == 'save_print':
                 return redirect(url_for('ticket_print', patient_id=patient_id))
 
-            return patient_redirect(success="Patient added successfully.")
+            return patient_redirect(success="Patient bill created successfully." if source_patient_id else "Patient added successfully.")
         return patient_redirect()
     else:
         return redirect(url_for('login'))
@@ -2619,8 +3230,11 @@ def duty_management():
     ]
     total_records = len(duty_records)
     completed_records = sum(1 for row in duty_records if row['round_completed'])
+    doctor_records = sum(1 for row in duty_records if row['staff_role'] == 'doctor')
+    nurse_records = sum(1 for row in duty_records if row['staff_role'] == 'nurse')
     doctor_completed = sum(1 for row in duty_records if row['staff_role'] == 'doctor' and row['round_completed'])
     nurse_completed = sum(1 for row in duty_records if row['staff_role'] == 'nurse' and row['round_completed'])
+    completion_rate = round((completed_records / total_records) * 100) if total_records else 0
 
     return render_template(
         'duty_management.html',
@@ -2630,8 +3244,11 @@ def duty_management():
         total_records=total_records,
         completed_records=completed_records,
         pending_records=total_records - completed_records,
+        doctor_records=doctor_records,
+        nurse_records=nurse_records,
         doctor_completed=doctor_completed,
         nurse_completed=nurse_completed,
+        completion_rate=completion_rate,
         admin=isadmin(),
         message=request.args.get('message'),
         success=request.args.get('success')
@@ -2655,11 +3272,15 @@ def patients_registration():
             COALESCE(NULLIF(age_unit, ''), 'Y') AS age_unit,
             gender,
             phone,
-            address
+            address,
+            source_patient_id
         FROM patients
     '''
     if show_all_patients:
-        patient_query += ' ORDER BY datetime(created_at) DESC, id DESC'
+        patient_query += '''
+            WHERE source_patient_id IS NULL
+            ORDER BY datetime(created_at) DESC, id DESC
+        '''
         patient_list = db.execute(patient_query).fetchall()
     else:
         patient_query += '''
@@ -2687,6 +3308,85 @@ def patients_registration():
         doctor_options=doctor_options
     )
 
+
+@app.route('/patients-registration/search')
+def search_registered_patient():
+    """Find existing master patients so a new daily bill can be created without duplicating All Patients."""
+    if not isadmin() and not isuser():
+        return jsonify({'success': False, 'patients': []}), 401
+
+    keyword = request.args.get('keyword', '').strip()
+    if len(keyword) < 2:
+        return jsonify({'success': True, 'patients': []})
+
+    rows = db.execute(
+        '''
+        SELECT
+            id,
+            daily_patient_id,
+            name,
+            age,
+            COALESCE(NULLIF(age_unit, ''), 'Y') AS age_unit,
+            gender,
+            phone,
+            email,
+            dob,
+            blood_group,
+            address,
+            emergency_contact_name,
+            emergency_contact_phone,
+            medical_history,
+            patient_status,
+            doctor_name,
+            doctor_designation,
+            referer_name,
+            doctor_fee,
+            created_at
+        FROM patients
+        WHERE source_patient_id IS NULL
+          AND (
+              CAST(id AS TEXT) LIKE ?
+              OR CAST(COALESCE(daily_patient_id, '') AS TEXT) LIKE ?
+              OR name LIKE ?
+              OR phone LIKE ?
+          )
+        ORDER BY
+            CASE WHEN phone = ? THEN 0 ELSE 1 END,
+            datetime(created_at) DESC,
+            id DESC
+        LIMIT 12
+        ''',
+        (f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', keyword)
+    ).fetchall()
+
+    patients = [
+        {
+            'id': row[0],
+            'daily_patient_id': row[1],
+            'name': row[2],
+            'age': row[3],
+            'age_unit': row[4],
+            'gender': row[5],
+            'phone': row[6],
+            'email': row[7] or '',
+            'dob': row[8] or '',
+            'blood_group': row[9] or '',
+            'address': row[10] or '',
+            'emergency_contact_name': row[11] or '',
+            'emergency_contact_phone': row[12] or '',
+            'medical_history': row[13] or '',
+            'patient_status': row[14] or 'OLD',
+            'doctor_name': row[15] or '',
+            'doctor_designation': row[16] or '',
+            'referer_name': row[17] or '',
+            'doctor_fee': row[18] or '',
+            'created_at': format_date_display(row[19]),
+        }
+        for row in rows
+    ]
+    return jsonify({'success': True, 'patients': patients})
+
+
 @app.route('/ticket-print/<int:patient_id>')
 def ticket_print(patient_id):
     """Printable doctor ticket invoice for a registered patient."""
@@ -2711,7 +3411,8 @@ def ticket_print(patient_id):
             doctor_designation,
             referer_name,
             doctor_fee,
-            created_at
+            created_at,
+            source_patient_id
         FROM patients
         WHERE id = ?
     ''', (patient_id,)).fetchone()
@@ -2720,8 +3421,10 @@ def ticket_print(patient_id):
         return redirect(url_for('patients_registration', message="Patient ticket not found."))
 
     doctor_fee = ticket[15] or 0
+    source_patient_id = ticket[17]
     ticket_info = {
-        'uhid': ticket[0],
+        'uhid': source_patient_id or ticket[0],
+        'visit_id': ticket[0],
         'ticket_no': ticket[1],
         'serial_no': ticket[2],
         'name': ticket[3],
@@ -2956,6 +3659,458 @@ def delete_service(service_id):
         return redirect(url_for('services', message="Service deleted successfully."))
     except sqlite3.IntegrityError:
         return redirect(url_for('services', message="Cannot delete service because it is in use."))
+
+
+def _to_positive_float(value, default=0):
+    try:
+        amount = float(value or default)
+        return amount if amount > 0 else 0
+    except (TypeError, ValueError):
+        return default
+
+
+def generate_test_invoice_no():
+    today_prefix = f"TB-{datetime.now().strftime('%y%m%d')}"
+    invoice_count = db.execute(
+        "SELECT COUNT(*) FROM test_bills WHERE invoice_no LIKE ?",
+        (f"{today_prefix}-%",)
+    ).fetchone()[0]
+    return f"{today_prefix}-{invoice_count + 1:03d}"
+
+
+def get_recent_test_bills(bill_date, keyword=''):
+    recent_query = '''
+        SELECT tb.id, tb.invoice_no, p.name, p.phone, tb.total_amount, tb.due_amount, tb.created_at,
+               COALESCE(p.source_patient_id, p.id) AS patient_uhid, p.daily_patient_id
+        FROM test_bills tb
+        JOIN patients p ON p.id = tb.patient_id
+        WHERE date(tb.created_at) = ?
+    '''
+    recent_params = [bill_date]
+
+    if keyword:
+        recent_query += '''
+            AND (
+                tb.invoice_no LIKE ?
+                OR p.name LIKE ?
+                OR p.phone LIKE ?
+                OR tb.doctor_name LIKE ?
+                OR CAST(COALESCE(p.source_patient_id, p.id) AS TEXT) LIKE ?
+                OR CAST(COALESCE(p.daily_patient_id, '') AS TEXT) LIKE ?
+            )
+        '''
+        recent_params.extend([f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%'])
+
+    recent_query += '''
+        ORDER BY datetime(tb.created_at) DESC, tb.id DESC
+    '''
+
+    return db.execute(recent_query, recent_params).fetchall()
+
+
+@app.route('/test-billing', methods=['GET', 'POST'])
+def test_billing():
+    """Create hospital test bills for registered patients."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        patient_id = request.form.get('patient_id', '').strip()
+        if not patient_id.isdigit():
+            return redirect(url_for('test_billing', message='Please select a registered patient.'))
+
+        patient = db.execute(
+            'SELECT id, name FROM patients WHERE id = ?',
+            (patient_id,)
+        ).fetchone()
+        if not patient:
+            return redirect(url_for('test_billing', message='Selected patient was not found.'))
+
+        selected_test_ids = []
+        for test_id in request.form.getlist('test_ids'):
+            if str(test_id).isdigit() and int(test_id) not in selected_test_ids:
+                selected_test_ids.append(int(test_id))
+
+        bill_items = []
+        if selected_test_ids:
+            placeholders = ','.join('?' for _ in selected_test_ids)
+            service_rows = db.execute(
+                f"SELECT id, name, price FROM services WHERE type = 'test' AND id IN ({placeholders})",
+                selected_test_ids
+            ).fetchall()
+            service_by_id = {row[0]: row for row in service_rows}
+            for test_id in selected_test_ids:
+                service = service_by_id.get(test_id)
+                if service:
+                    bill_items.append({
+                        'service_id': service[0],
+                        'test_name': service[1],
+                        'price': float(service[2] or 0),
+                    })
+
+        custom_names = request.form.getlist('custom_test_name[]')
+        custom_prices = request.form.getlist('custom_test_price[]')
+        for name, price in zip(custom_names, custom_prices):
+            clean_name = (name or '').strip()
+            clean_price = _to_positive_float(price)
+            if clean_name and clean_price:
+                bill_items.append({
+                    'service_id': None,
+                    'test_name': clean_name,
+                    'price': clean_price,
+                })
+
+        if not bill_items:
+            return redirect(url_for('test_billing', message='Please select or add at least one test.'))
+
+        subtotal = sum(item['price'] for item in bill_items)
+        flat_discount_amount = _to_positive_float(request.form.get('flat_discount_amount'))
+        percentage_discount_amount = min(_to_positive_float(request.form.get('percentage_discount_amount')), 100)
+        percentage_discount_value = subtotal * (percentage_discount_amount / 100)
+        discount_amount = min(flat_discount_amount + percentage_discount_value, subtotal)
+        total_amount = max(subtotal - discount_amount, 0)
+        received_amount = _to_positive_float(request.form.get('received_amount'))
+        due_amount = max(total_amount - received_amount, 0)
+        change_amount = max(received_amount - total_amount, 0)
+
+        invoice_no = generate_test_invoice_no()
+        doctor_name = request.form.get('doctor_name', '').strip()
+        referred_by = request.form.get('referred_by', '').strip()
+        sample_status = request.form.get('sample_status', '').strip() or 'Pending'
+        delivery_time = request.form.get('delivery_time', '').strip()
+        payment_method = request.form.get('payment_method', '').strip() or 'Cash'
+        remarks = request.form.get('remarks', '').strip()
+
+        try:
+            bill_cursor = db.execute(
+                '''
+                INSERT INTO test_bills (
+                    invoice_no, patient_id, doctor_name, referred_by, sample_status, delivery_time,
+                    subtotal, discount_amount, total_amount, received_amount, due_amount, change_amount,
+                    payment_method, remarks, created_by, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+6 hours'))
+                ''',
+                (
+                    invoice_no, int(patient_id), doctor_name, referred_by, sample_status, delivery_time,
+                    subtotal, discount_amount, total_amount, received_amount, due_amount, change_amount,
+                    payment_method, remarks, str(session.get('user_id'))
+                )
+            )
+            test_bill_id = bill_cursor.lastrowid
+
+            for item in bill_items:
+                db.execute(
+                    '''
+                    INSERT INTO test_bill_items (test_bill_id, service_id, test_name, price)
+                    VALUES (?, ?, ?, ?)
+                    ''',
+                    (test_bill_id, item['service_id'], item['test_name'], item['price'])
+                )
+                if item['service_id']:
+                    db.execute(
+                        '''
+                        INSERT INTO test_orders (patient_id, service_id, test_date)
+                        VALUES (?, ?, datetime('now', '+6 hours'))
+                        ''',
+                        (int(patient_id), item['service_id'])
+                    )
+
+            db.commit()
+            add_log(int(patient_id), f"Test bill created: {invoice_no}")
+            return redirect(url_for('test_bill_print', test_bill_id=test_bill_id))
+        except sqlite3.Error:
+            db.rollback()
+            return redirect(url_for('test_billing', message='Test bill could not be saved. Please try again.'))
+
+    keyword = request.args.get('keyword', '').strip()
+    today_text = datetime.now().strftime('%Y-%m-%d')
+    bill_date = request.args.get('bill_date', '').strip() or today_text
+    try:
+        datetime.strptime(bill_date, '%Y-%m-%d')
+    except ValueError:
+        bill_date = today_text
+
+    recent_bills = get_recent_test_bills(bill_date, keyword)
+
+    if request.args.get('partial') == 'day_bills':
+        return render_template(
+            '_day_wise_pathology_bills.html',
+            recent_bills=recent_bills,
+            keyword=keyword,
+            bill_date=bill_date,
+            bill_date_label=format_date_display(bill_date),
+            today_bill_date=today_text
+        )
+
+    patient_rows = db.execute(
+        '''
+        SELECT id, daily_patient_id, name, age, COALESCE(NULLIF(age_unit, ''), 'Y'),
+               gender, phone, address, doctor_name, doctor_designation, referer_name, created_at
+        FROM patients
+        ORDER BY datetime(created_at) DESC, id DESC
+        LIMIT 250
+        '''
+    ).fetchall()
+    patients = [
+        {
+            'id': row[0],
+            'daily_patient_id': row[1],
+            'name': row[2],
+            'age': row[3],
+            'age_unit': row[4],
+            'gender': row[5],
+            'phone': row[6],
+            'address': row[7],
+            'doctor_name': row[8] or '',
+            'doctor_designation': row[9] or '',
+            'referer_name': row[10] or '',
+            'created_at': row[11],
+        }
+        for row in patient_rows
+    ]
+
+    test_rows = db.execute(
+        '''
+        SELECT id, name, price
+        FROM services
+        WHERE type = 'test'
+        ORDER BY name ASC
+        '''
+    ).fetchall()
+    tests = [{'id': row[0], 'name': row[1], 'price': float(row[2] or 0)} for row in test_rows]
+
+    return render_template(
+        'test_billing.html',
+        patients=patients,
+        tests=tests,
+        recent_bills=recent_bills,
+        keyword=keyword,
+        bill_date=bill_date,
+        bill_date_label=format_date_display(bill_date),
+        today_bill_date=today_text,
+        message=request.args.get('message')
+    )
+
+
+@app.route('/test-bill/<int:test_bill_id>')
+def test_bill_print(test_bill_id):
+    """Print one professional test bill invoice."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    bill = db.execute(
+        '''
+        SELECT tb.id, tb.invoice_no, tb.doctor_name, tb.referred_by, tb.sample_status,
+               tb.delivery_time, tb.subtotal, tb.discount_amount, tb.total_amount,
+               tb.received_amount, tb.due_amount, tb.change_amount, tb.payment_method,
+               tb.remarks, tb.created_at,
+               p.name, p.age, COALESCE(NULLIF(p.age_unit, ''), 'Y'), p.gender, p.phone,
+               p.address, p.daily_patient_id, COALESCE(p.source_patient_id, p.id) AS patient_uhid
+        FROM test_bills tb
+        JOIN patients p ON p.id = tb.patient_id
+        WHERE tb.id = ?
+        ''',
+        (test_bill_id,)
+    ).fetchone()
+    if not bill:
+        return redirect(url_for('test_billing', message='Test bill not found.'))
+
+    items = db.execute(
+        '''
+        SELECT test_name, price
+        FROM test_bill_items
+        WHERE test_bill_id = ?
+        ORDER BY id ASC
+        ''',
+        (test_bill_id,)
+    ).fetchall()
+
+    return render_template(
+        'test_bill_print.html',
+        bill=bill,
+        items=items,
+        patient_uhid=bill[22] or bill[0],
+        total_in_words=amount_to_words(bill[8])
+    )
+
+
+@app.route('/test-billing/collect-due/<int:test_bill_id>', methods=['POST'], endpoint='collect_test_due')
+def collect_test_due(test_bill_id):
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    bill = db.execute(
+        'SELECT id, patient_id, invoice_no, total_amount, received_amount, due_amount FROM test_bills WHERE id = ?',
+        (test_bill_id,)
+    ).fetchone()
+    if not bill:
+        return redirect(url_for('test_billing', message='Test bill not found.'))
+
+    due_amount = float(bill[5] or 0)
+    if due_amount <= 0:
+        return redirect(url_for('test_billing', message='No due amount is pending for this bill.'))
+
+    collection_amount = min(_to_positive_float(request.form.get('collection_amount')), due_amount)
+    if collection_amount <= 0:
+        return redirect(url_for('test_billing', message='Please enter a valid due collection amount.'))
+
+    payment_method = request.form.get('payment_method', '').strip()
+    new_received = float(bill[4] or 0) + collection_amount
+    total_amount = float(bill[3] or 0)
+    new_due = max(total_amount - new_received, 0)
+    new_change = max(new_received - total_amount, 0)
+
+    try:
+        if payment_method:
+            db.execute(
+                '''
+                UPDATE test_bills
+                SET received_amount = ?, due_amount = ?, change_amount = ?, payment_method = ?
+                WHERE id = ?
+                ''',
+                (new_received, new_due, new_change, payment_method, test_bill_id)
+            )
+        else:
+            db.execute(
+                '''
+                UPDATE test_bills
+                SET received_amount = ?, due_amount = ?, change_amount = ?
+                WHERE id = ?
+                ''',
+                (new_received, new_due, new_change, test_bill_id)
+            )
+        db.commit()
+        add_log(int(bill[1]), f"Test due collection recorded: {bill[2]} (+{collection_amount:.2f})")
+        return redirect(url_for('test_bill_print', test_bill_id=test_bill_id))
+    except sqlite3.Error:
+        db.rollback()
+        return redirect(url_for('test_billing', message='Due collection could not be saved. Please try again.'))
+
+
+@app.route('/due', endpoint='due')
+@app.route('/test-billing/due-collection', endpoint='test_due_collection')
+def test_due_collection():
+    """Focused pathology due collection desk."""
+    if not isadmin() and not isuser():
+        return redirect(url_for('login'))
+
+    keyword = request.args.get('keyword', '').strip()
+    sort = request.args.get('sort', 'newest')
+    sort_options = {
+        'newest': 'datetime(tb.created_at) DESC, tb.id DESC',
+        'oldest': 'datetime(tb.created_at) ASC, tb.id ASC',
+        'highest': 'tb.due_amount DESC, datetime(tb.created_at) DESC',
+        'patient': 'p.name COLLATE NOCASE ASC, datetime(tb.created_at) DESC',
+    }
+    order_clause = sort_options.get(sort, sort_options['newest'])
+
+    where_clauses = ['tb.due_amount > 0']
+    params = []
+    if keyword:
+        like_keyword = f'%{keyword}%'
+        where_clauses.append(
+            '''
+            (
+                tb.invoice_no LIKE ?
+                OR p.name LIKE ?
+                OR p.phone LIKE ?
+                OR tb.doctor_name LIKE ?
+                OR EXISTS (
+                    SELECT 1
+                    FROM test_bill_items tbi_search
+                    WHERE tbi_search.test_bill_id = tb.id
+                      AND tbi_search.test_name LIKE ?
+                )
+            )
+            '''
+        )
+        params.extend([like_keyword, like_keyword, like_keyword, like_keyword, like_keyword])
+
+    where_sql = ' AND '.join(where_clauses)
+    due_rows = db.execute(
+        f'''
+        SELECT
+            tb.id,
+            tb.invoice_no,
+            tb.total_amount,
+            tb.received_amount,
+            tb.due_amount,
+            tb.payment_method,
+            tb.created_at,
+            p.name,
+            p.phone,
+            COALESCE(p.source_patient_id, p.id) AS patient_uhid,
+            p.daily_patient_id,
+            tb.doctor_name,
+            GROUP_CONCAT(tbi.test_name, ', ') AS test_names
+        FROM test_bills tb
+        JOIN patients p ON p.id = tb.patient_id
+        LEFT JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
+        WHERE {where_sql}
+        GROUP BY tb.id
+        ORDER BY {order_clause}
+        LIMIT 120
+        ''',
+        params
+    ).fetchall()
+
+    due_bills = [
+        {
+            'id': row[0],
+            'invoice_no': row[1],
+            'total_amount': float(row[2] or 0),
+            'received_amount': float(row[3] or 0),
+            'due_amount': float(row[4] or 0),
+            'payment_method': row[5] or 'Cash',
+            'created_at': row[6],
+            'patient_name': row[7],
+            'phone': row[8],
+            'patient_uhid': row[9],
+            'daily_patient_id': row[10],
+            'doctor_name': row[11] or 'Not assigned',
+            'test_names': row[12] or 'No test items found',
+        }
+        for row in due_rows
+    ]
+
+    summary_row = db.execute(
+        '''
+        SELECT
+            COUNT(*),
+            COALESCE(SUM(due_amount), 0),
+            COALESCE(SUM(CASE WHEN received_amount > 0 THEN 1 ELSE 0 END), 0),
+            MIN(created_at)
+        FROM test_bills
+        WHERE due_amount > 0
+        '''
+    ).fetchone()
+    today_due = db.execute(
+        '''
+        SELECT COALESCE(SUM(due_amount), 0)
+        FROM test_bills
+        WHERE due_amount > 0
+          AND date(created_at) = date('now', '+6 hours')
+        '''
+    ).fetchone()[0]
+
+    summary = {
+        'pending_count': int(summary_row[0] or 0),
+        'total_due': float(summary_row[1] or 0),
+        'partial_count': int(summary_row[2] or 0),
+        'oldest_due_date': summary_row[3],
+        'today_due': float(today_due or 0),
+    }
+
+    return render_template(
+        'test_due_collection.html',
+        due_bills=due_bills,
+        summary=summary,
+        keyword=keyword,
+        sort=sort,
+        message=request.args.get('message')
+    )
+
 
 @app.route('/tests')
 def tests():
@@ -3194,10 +4349,8 @@ def appointment_patients(patient_id=None):
             
         return render_template('appointment_patients.html', patients=patients, view_type='list', search=search)
 
-#debug showing in web browser
-#if __name__ == '__main__':
- #   app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)
-
-#debug showing in web browser
 if __name__ == '__main__':
-    app.run(debug=True)    
+    app_host = os.environ.get('PULSE_HMS_HOST', '127.0.0.1')
+    app_port = int(os.environ.get('PULSE_HMS_PORT', '5000'))
+    app_debug = os.environ.get('PULSE_HMS_DEBUG', '1') == '1'
+    app.run(host=app_host, port=app_port, debug=app_debug, use_reloader=app_debug, threaded=True)

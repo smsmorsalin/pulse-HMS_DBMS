@@ -134,10 +134,142 @@ body {
     margin-bottom: 30px;
 }
 
+.patient-title-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .glass-form h2 {
     text-align: left;
     color: #fff;
     margin-bottom: 0;
+}
+
+.old-patient-search-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid rgba(56, 193, 114, 0.35);
+    border-radius: 12px;
+    background: rgba(56, 193, 114, 0.16);
+    color: #9af0bb;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.25s ease;
+    white-space: nowrap;
+}
+
+.old-patient-search-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.old-patient-search-panel {
+    display: none;
+    margin: -12px 0 24px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(10, 16, 40, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.old-patient-search-panel.show {
+    display: block;
+}
+
+.old-patient-search-bar {
+    display: grid;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.old-patient-search-bar i {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.old-patient-search-bar input {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 0 12px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.old-patient-search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.old-patient-search-bar button {
+    min-height: 42px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+#oldPatientClearBtn {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.old-patient-results {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.old-patient-results p {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+}
+
+.old-patient-result {
+    width: 100%;
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.old-patient-result:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.old-patient-result span,
+.old-patient-result small {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.old-patient-selected {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #9af0bb !important;
+    background: rgba(56, 193, 114, 0.16);
+    border: 1px solid rgba(56, 193, 114, 0.35);
 }
 
 .entry-timestamp {
@@ -319,6 +451,7 @@ body {
     color: #55b8f0;
     font-weight: 700;
     font-size: 16px;
+    text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
     transition: 0.25s ease;
@@ -329,9 +462,9 @@ body {
     color: #18a977;
 }
 
-.all-patients-btn {
-    border-color: #c4b5fd;
-    color: #7c3aed;
+.test-page-btn {
+    border-color: #96e4c8;
+    color: #18a977;
 }
 
 .submit-btn:hover {
@@ -387,6 +520,23 @@ body {
     .patient-form-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .patient-title-actions,
+    .old-patient-search-toggle {
+        width: 100%;
+    }
+
+    .old-patient-search-toggle {
+        justify-content: center;
+    }
+
+    .old-patient-search-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .old-patient-search-bar i {
+        display: none;
     }
 
     .entry-timestamp {

@@ -87,6 +87,15 @@
     </li>
     {% endif %}
 
+    {% if can_access_page('test_billing') %}
+    <li>
+      <a class="nav-link" href="/test-billing">
+        <i class="fas fa-file-medical-alt"></i>
+        <span>Test</span>
+      </a>
+    </li>
+    {% endif %}
+
     {% if can_access_page('tests') %}
     <li>
       <a class="nav-link" href="{{ url_for('tests') }}">
