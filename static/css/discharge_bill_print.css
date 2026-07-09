@@ -1,0 +1,366 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --ticket-width: 5.83in;
+    --ticket-height: 8.27in;
+    --ticket-padding-x: 0.16in;
+    --ticket-padding-y: 0.12in;
+    --print-safe-margin: 0.12in;
+    --print-safe-total: 0.24in;
+}
+
+body {
+    background: #f2f2f2;
+    color: #222;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11.4px;
+    padding: 16px;
+}
+
+.bill-page {
+    width: var(--ticket-width);
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.bill-sheet {
+    position: relative;
+    overflow: hidden;
+    width: var(--ticket-width);
+    min-height: var(--ticket-height);
+    padding: var(--ticket-padding-y) var(--ticket-padding-x);
+    border: 1px solid #ddd;
+    background: #fff;
+}
+
+.bill-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.action-btn {
+    border: none;
+    border-radius: 3px;
+    padding: 8px 15px;
+    color: #fff;
+    background: #222;
+    text-decoration: none;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.action-btn.secondary {
+    background: #666;
+}
+
+.bill-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.hospital-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    text-align: left;
+}
+
+.hospital-logo {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.hospital-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+    line-height: 1.18;
+}
+
+.hospital-info strong {
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.hospital-info span {
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.bill-title-row {
+    position: relative;
+    min-height: 16px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.bill-title {
+    font-size: 15.5px;
+    line-height: 1;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.customer-copy-row {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 42%;
+    text-align: left;
+}
+
+.customer-copy-title {
+    margin-bottom: 7px;
+    padding-right: 12px;
+    text-align: right;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+.bill-top {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 11.4px;
+    line-height: 1.22;
+}
+
+.bill-left p,
+.bill-right p {
+    display: grid;
+    grid-template-columns: 92px 6px 1fr;
+    margin-bottom: 1px;
+    overflow-wrap: anywhere;
+}
+
+.bill-right p {
+    grid-template-columns: 88px 6px 1fr;
+}
+
+.bill-left strong,
+.bill-right strong,
+.bill-highlight {
+    font-weight: 700;
+}
+
+.item-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.4px;
+    line-height: 1.18;
+}
+
+.item-table {
+    margin-top: 8px;
+}
+
+.item-table thead {
+    border-top: 1px solid #222;
+    border-bottom: 1px solid #222;
+}
+
+.item-table th {
+    padding: 3px;
+    text-align: left;
+    font-weight: 700;
+}
+
+.item-table th:nth-child(1),
+.item-table td:nth-child(1) {
+    width: 24px;
+    text-align: center;
+}
+
+.item-table th:nth-child(3),
+.item-table td:nth-child(3) {
+    width: 55px;
+    text-align: center;
+}
+
+.item-table th:nth-child(4),
+.item-table th:nth-child(5),
+.item-table td:nth-child(4),
+.item-table td:nth-child(5) {
+    width: 74px;
+    text-align: right;
+}
+
+.item-table td {
+    padding: 3px;
+    vertical-align: top;
+}
+
+.item-table tbody {
+    border-bottom: 1px solid #222;
+}
+
+.summary-section {
+    display: grid;
+    grid-template-columns: 1fr 172px;
+    gap: 8px;
+    min-height: 70px;
+    margin-top: 7px;
+}
+
+.payment-note {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    font-size: 11.4px;
+}
+
+.paid-box {
+    margin-bottom: 35px;
+    padding-left: 42px;
+    text-align: left;
+}
+
+.paid-box strong {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.paid-box span {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.amount-summary {
+    font-size: 11.4px;
+}
+
+.amount-summary p {
+    display: grid;
+    grid-template-columns: 106px 6px 1fr;
+    border-bottom: 1px dashed #222;
+    padding: 1.5px 0;
+}
+
+.amount-summary p:first-child,
+.amount-summary p:nth-child(3),
+.amount-summary p:nth-child(5) {
+    border-bottom: 1px solid #222;
+}
+
+.amount-summary strong {
+    font-weight: 700;
+}
+
+.amount-word {
+    margin-top: 6px;
+    font-size: 11.4px;
+    font-weight: 700;
+}
+
+.narration {
+    margin-top: 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #222;
+    font-size: 11.4px;
+}
+
+.signature-row {
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    gap: 12px;
+    margin-top: 9px;
+}
+
+.signature-row span {
+    display: block;
+    height: 8px;
+    border-top: 1px solid transparent;
+}
+
+.signature-row p {
+    border-top: 1px solid #222;
+    padding-top: 2px;
+    text-align: center;
+    font-size: 11.4px;
+    font-weight: 700;
+}
+
+.instruction-section {
+    position: absolute;
+    left: var(--ticket-padding-x);
+    right: var(--ticket-padding-x);
+    bottom: 36px;
+    text-align: center;
+    font-size: 8.6px;
+    line-height: 1.25;
+}
+
+.bill-footer {
+    position: absolute;
+    left: var(--ticket-padding-x);
+    right: var(--ticket-padding-x);
+    bottom: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 30px;
+    gap: 4px;
+    border-top: 1px solid #222;
+    padding-top: 2px;
+    font-size: 7.6px;
+}
+
+.bill-footer p:nth-child(2),
+.bill-footer p:nth-child(3) {
+    text-align: center;
+}
+
+.bill-footer p:last-child {
+    text-align: right;
+}
+
+@media print {
+    @page {
+        size: A5 portrait;
+        margin: 0.12in;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .bill-page {
+        width: calc(var(--ticket-width) - var(--print-safe-total));
+        max-width: none;
+        margin: 0;
+    }
+
+    .bill-sheet {
+        width: calc(var(--ticket-width) - var(--print-safe-total));
+        height: calc(var(--ticket-height) - var(--print-safe-total));
+        min-height: calc(var(--ticket-height) - var(--print-safe-total));
+        border: none;
+        padding: var(--ticket-padding-y) var(--ticket-padding-x);
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}

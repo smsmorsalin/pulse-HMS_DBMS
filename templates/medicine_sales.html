@@ -40,6 +40,9 @@
 				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
+				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				{% endif %}
 			</div>
 		</li>
 

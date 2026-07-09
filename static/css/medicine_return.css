@@ -1,0 +1,241 @@
+.return-toolbar,
+.return-panel,
+.recent-return-panel,
+.return-empty,
+.return-flash {
+	background: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.return-toolbar {
+	display: grid;
+	grid-template-columns: minmax(260px, 1fr) auto;
+	gap: 14px;
+	align-items: end;
+	padding: 18px;
+	border-radius: 20px;
+	margin-bottom: 22px;
+}
+
+.return-toolbar label,
+.reason-field {
+	display: grid;
+	gap: 8px;
+	color: rgba(255, 255, 255, 0.86);
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.return-toolbar input,
+.reason-field textarea,
+.return-qty {
+	width: 100%;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	background: rgba(10, 16, 40, 0.45);
+	color: #fff;
+	border-radius: 14px;
+	padding: 12px 14px;
+	outline: none;
+}
+
+.reason-field textarea {
+	min-height: 88px;
+	resize: vertical;
+}
+
+.return-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: 0;
+	border-radius: 14px;
+	padding: 13px 18px;
+	color: #fff;
+	font-weight: 800;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: 0.25s ease;
+}
+
+.return-btn.primary {
+	background: linear-gradient(135deg, #1e3cfa, #38c172);
+}
+
+.return-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25);
+}
+
+.return-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 330px;
+	gap: 22px;
+	align-items: start;
+}
+
+.return-panel,
+.recent-return-panel,
+.return-empty {
+	border-radius: 22px;
+	padding: 20px;
+}
+
+.return-panel-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.return-panel-head h3 {
+	font-size: 24px;
+	margin-bottom: 4px;
+}
+
+.return-panel-head span,
+.return-total span,
+.recent-return-row span,
+.recent-return-row small {
+	color: rgba(255, 255, 255, 0.68);
+}
+
+.return-total {
+	min-width: 150px;
+	padding: 12px;
+	border-radius: 16px;
+	border: 1px solid rgba(56, 193, 114, 0.32);
+	background: rgba(56, 193, 114, 0.13);
+	text-align: right;
+}
+
+.return-total strong {
+	display: block;
+	margin-top: 5px;
+	color: #9af0bb;
+}
+
+.return-table table {
+	min-width: 920px;
+}
+
+.return-table td strong,
+.return-table td span {
+	display: block;
+}
+
+.return-table td span {
+	margin-top: 3px;
+	color: rgba(255, 255, 255, 0.62);
+	font-size: 12px;
+}
+
+.return-qty {
+	max-width: 110px;
+	min-height: 42px;
+	padding: 8px 10px;
+}
+
+.reason-field {
+	margin-top: 16px;
+}
+
+.return-submit-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 16px;
+	padding: 16px;
+	border-radius: 18px;
+	background: rgba(10, 16, 40, 0.42);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.return-submit-row span {
+	display: block;
+	margin-bottom: 4px;
+	color: rgba(255, 255, 255, 0.68);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.return-submit-row strong {
+	font-size: 24px;
+}
+
+.recent-return-list {
+	display: grid;
+	gap: 10px;
+}
+
+.recent-return-row {
+	display: grid;
+	gap: 4px;
+	padding: 12px;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.return-empty {
+	display: grid;
+	place-items: center;
+	gap: 10px;
+	min-height: 220px;
+	color: rgba(255, 255, 255, 0.74);
+	text-align: center;
+}
+
+.return-empty i {
+	color: #9af0bb;
+	font-size: 42px;
+}
+
+.return-flash {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	border-radius: 14px;
+}
+
+.return-flash.success {
+	color: #bbf7d0;
+	border-color: rgba(34, 197, 94, 0.32);
+}
+
+.return-flash.error {
+	color: #fecaca;
+	border-color: rgba(248, 113, 113, 0.32);
+}
+
+@media (max-width: 1100px) {
+	.return-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 760px) {
+	.return-toolbar,
+	.return-panel-head,
+	.return-submit-row {
+		grid-template-columns: 1fr;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.return-btn {
+		width: 100%;
+	}
+
+	.return-total {
+		text-align: left;
+	}
+}

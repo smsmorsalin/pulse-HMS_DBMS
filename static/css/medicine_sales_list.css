@@ -374,7 +374,7 @@ input {
 
 .summary-grid {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 14px;
 	margin-bottom: 22px;
 }
@@ -409,6 +409,11 @@ input {
 	border-radius: 14px;
 	background: rgba(56, 193, 114, 0.18);
 	color: #9af0bb;
+}
+
+.return-card i {
+	background: rgba(248, 113, 113, 0.16);
+	color: #fecaca;
 }
 
 .sales-stack {

@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admission.css') }}">
 </head>
 <body>
+    <div class="background-blobs"></div>
+
     <main class="admission-page">
         <section class="admission-panel">
             <div class="admission-header">
@@ -19,13 +21,25 @@
 
                 <div class="title-block">
                     <h1><i class="fas fa-bed-pulse"></i> Patient Admission</h1>
-                    <p>Select a registered patient and admit them to a ward or cabin.</p>
+                    <p>Select a registered patient and complete the admission details.</p>
                 </div>
 
-                <a class="new-patient-btn" href="{{ url_for('patients_registration') }}">
-                    <i class="fas fa-user-plus"></i>
-                    New Patient
-                </a>
+                <div class="header-actions">
+                    <a class="discharge-patients-list-btn" href="{{ url_for('discharge_patients_list') }}">
+                        <i class="fas fa-clipboard-list"></i>
+                        Discharge Patients List
+                    </a>
+
+                    <a class="discharge-bill-btn" href="{{ url_for('discharge_bill') }}">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Discharge Bill
+                    </a>
+
+                    <a class="new-patient-btn" href="{{ url_for('patients_registration') }}">
+                        <i class="fas fa-user-plus"></i>
+                        New Patient
+                    </a>
+                </div>
             </div>
 
             {% if success %}
@@ -44,7 +58,7 @@
 
                     <div class="search-input-wrapper">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="patientSearchInput" placeholder="Search by ID, name, or phone">
+                        <input type="text" id="patientSearchInput" placeholder="Search by UHID, name, or phone">
                         <button type="button" id="patientSearchClearBtn" aria-label="Clear patient search">
                             <i class="fas fa-xmark"></i>
                         </button>
@@ -57,14 +71,15 @@
                                     type="button"
                                     class="patient-row"
                                     data-id="{{ patient[0] }}"
+                                    data-uhid="{{ patient[7] }}"
                                     data-name="{{ patient[1] }}"
                                     data-phone="{{ patient[5] }}"
-                                    data-search="{{ patient[0] }} {{ patient[1] }} {{ patient[5] }}"
+                                    data-search="{{ patient[7] }} {{ patient[0] }} {{ patient[1] }} {{ patient[5] }}"
                                 >
                                     <span class="patient-avatar">{{ patient[1][0]|upper }}</span>
                                     <span class="patient-info">
                                         <strong>{{ patient[1] }}</strong>
-                                        <small>ID {{ patient[0] }} | {{ patient[4] }} | {{ patient[2] }} {{ patient[3] or 'Y' }}</small>
+                                        <small>UHID {{ patient[7] }} | {{ patient[4] }} | {{ patient[2] }} {{ patient[3] or 'Y' }}</small>
                                     </span>
                                     <span class="patient-phone">{{ patient[5] }}</span>
                                 </button>
@@ -76,6 +91,28 @@
                 </section>
 
                 <section class="admit-form-panel" aria-label="Admission form">
+                    <div class="old-admission-panel" aria-label="Old admitted patients">
+                        <div class="section-heading old-admission-heading">
+                            <h2><i class="fas fa-clock-rotate-left"></i> Old Admitted Patients</h2>
+                            <button type="button" class="old-admission-search-toggle" id="oldAdmissionSearchToggle">
+                                <i class="fas fa-search"></i>
+                                <span>Search Old Admitted Patient</span>
+                            </button>
+                        </div>
+
+                        <div class="old-admission-search-panel" id="oldAdmissionSearchPanel">
+                            <div class="old-admission-search-bar">
+                                <i class="fas fa-magnifying-glass"></i>
+                                <input type="text" id="oldAdmissionSearchInput" placeholder="Search by UHID, Admission ID, Name, Phone, or Bed">
+                                <button type="button" id="oldAdmissionSearchBtn">Search</button>
+                                <button type="button" id="oldAdmissionSearchClearBtn">Clear</button>
+                            </div>
+                            <div class="old-admission-list" id="oldAdmissionList">
+                                <p class="empty-state">Search discharged patients, then select one to admit again.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="selected-patient-card" id="selectedPatientCard">
                         <div>
                             <span>Selected Patient</span>
@@ -105,35 +142,63 @@
                                 <label for="doctorId">Doctor</label>
                             </div>
 
+                         <div class="input-group">
+                                <i class="fas fa-user-shield"></i>
+                                <input type="text" id="guardianName" name="guardian_name" required>
+                                <label for="guardianName">Guardian Name</label>
+                            </div>
+
                             <div class="input-group">
-                                <i class="fas fa-hospital"></i>
-                                <select id="ward" name="ward" required>
+                                <i class="fas fa-people-arrows"></i>
+                                <select id="guardianRelation" name="guardian_relation" required>
                                     <option value="" disabled selected></option>
-                                    <option>General Ward</option>
-                                    <option>Emergency</option>
-                                    <option>Maternity</option>
-                                    <option>NICU</option>
-                                    <option>ICU</option>
-                                    <option>Cabin</option>
+                                    <option>Father</option>
+                                    <option>Mother</option>
+                                    <option>Husband</option>
+                                    <option>Wife</option>
+                                    <option>Son</option>
+                                    <option>Daughter</option>
+                                    <option>Brother</option>
+                                    <option>Sister</option>
+                                    <option>Uncle</option>
+                                    <option>Aunt</option>
+                                    <option>Other</option>
                                 </select>
-                                <label for="ward">Ward / Unit</label>
+                                <label for="guardianRelation">Relation with Guardian</label>
                             </div>
-
-                            <div class="input-group">
+                                                        <div class="input-group">
                                 <i class="fas fa-door-open"></i>
-                                <input type="text" id="roomNumber" name="room_number">
-                                <label for="roomNumber">Room / Cabin No.</label>
+                                <select id="roomNumber" name="room_number" required>
+                                    <option value="" disabled selected></option>
+                                    {% for bed in bed_options %}
+                                        {% set occupied_patient_id = occupied_beds.get(bed) %}
+                                        <option
+                                            value="{{ bed }}"
+                                            data-occupied-patient-id="{{ occupied_patient_id or '' }}"
+                                            {% if occupied_patient_id and (not active_admission or occupied_patient_id != active_admission.patient_id) %}hidden disabled{% endif %}
+                                        >
+                                            {{ bed }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="roomNumber">Bed No</label>
                             </div>
 
-                            <div class="input-group">
-                                <i class="fas fa-bed"></i>
-                                <input type="text" id="bedNumber" name="bed_number" required>
-                                <label for="bedNumber">Bed No.</label>
-                            </div>
-
-                            <div class="input-group">
+                            <div class="input-group full-width">
                                 <i class="fas fa-notes-medical"></i>
-                                <input type="text" id="reason" name="reason" required>
+                                <select id="reason" name="reason" required>
+                                    <option value="" disabled selected></option>
+                                    <option>OBS</option>
+                                    <option>Doctor Advice</option> 
+                                    <option>Emergency Admission</option>
+                                    <option>Surgery</option>
+                                    <option>Delivery / Maternity</option>
+                                    <option>Observation</option>
+                                    <option>Accident / Trauma</option>
+                                    <option>Fever / Infection</option>
+                                    <option>General Treatment</option>
+                                    <option>Other</option>
+                                </select>
                                 <label for="reason">Admission Reason</label>
                             </div>
 
@@ -144,10 +209,32 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="submit-btn" id="admitSubmitBtn">
-                            <i class="fas fa-file-medical"></i>
-                            <span>Admit Patient</span>
-                        </button>
+                        <div class="form-actions">
+                            {% if active_admission %}
+                                <a
+                                    class="concern-print-btn"
+                                    id="concernPaperPrintBtn"
+                                    href="{{ url_for('concern_paper', admission_id=active_admission.id) }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    data-active-patient-id="{{ active_admission.patient_id }}"
+                                    data-print-url="{{ url_for('concern_paper', admission_id=active_admission.id) }}"
+                                >
+                                    <i class="fas fa-print"></i>
+                                    <span>Concern Paper Print</span>
+                                </a>
+                            {% else %}
+                                <button type="button" class="concern-print-btn disabled" id="concernPaperPrintBtn" disabled>
+                                    <i class="fas fa-print"></i>
+                                    <span>Concern Paper Print</span>
+                                </button>
+                            {% endif %}
+
+                            <button type="submit" class="submit-btn" id="admitSubmitBtn">
+                                <i class="fas fa-file-medical"></i>
+                                <span>Admit Patient</span>
+                            </button>
+                        </div>
                     </form>
                 </section>
             </div>
@@ -190,8 +277,8 @@
                             <th>Admission ID</th>
                             <th>Patient</th>
                             <th>Phone</th>
-                            <th>Ward</th>
-                            <th>Room / Bed</th>
+                            <th>Bed No</th>
+                            <th>Guardian</th>
                             <th>Doctor</th>
                             <th>Reason</th>
                             <th>Status</th>
@@ -205,23 +292,26 @@
                                     <td>#{{ admission[0] }}</td>
                                     <td>{{ admission[2] }}</td>
                                     <td>{{ admission[3] }}</td>
-                                    <td>{{ admission[8] }}</td>
-                                    <td>{{ admission[9] or '-' }} / {{ admission[10] }}</td>
-                                    <td>{{ admission[11] }}</td>
-                                    <td>{{ admission[12] }}</td>
+                                    <td>{{ admission[9] or '-' }}</td>
+                                    <td>{{ admission[11] or '-' }}{% if admission[12] %} ({{ admission[12] }}){% endif %}</td>
+                                    <td>{{ admission[13] }}</td>
+                                    <td>{{ admission[14] }}</td>
                                     <td>
-                                        <span class="status-pill {{ 'discharged' if admission[13] == 'Discharged' else 'active' }}">
-                                            {{ admission[13] }}
+                                        <span class="status-pill {{ 'discharged' if admission[15] == 'Discharged' else 'active' }}">
+                                            {{ admission[15] }}
                                         </span>
                                     </td>
                                     <td>
-                                        {% if admission[13] == 'Admitted' %}
-                                            <a class="table-action" href="{{ url_for('discharge_admission', admission_id=admission[0]) }}" onclick="return confirm('Mark this patient as discharged?');">
-                                                <i class="fas fa-right-from-bracket"></i>
-                                                Discharge
+                                        {% if admission[15] == 'Admitted' %}
+                                            <a class="table-action print" href="{{ url_for('concern_paper', admission_id=admission[0]) }}" target="_blank" rel="noopener">
+                                                <i class="fas fa-print"></i>
+                                                Print
                                             </a>
                                         {% else %}
-                                            <span class="muted-action">Done</span>
+                                            <a class="table-action print" href="{{ url_for('concern_paper', admission_id=admission[0]) }}" target="_blank" rel="noopener">
+                                                <i class="fas fa-print"></i>
+                                                Print
+                                            </a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -244,33 +334,292 @@
         <span id="dashboardFooterYear"></span>
     </footer>
 
+    <script type="application/json" id="activeAdmissionData">
+        {% if active_admission %}
+            {{ active_admission|tojson }}
+        {% else %}
+            null
+        {% endif %}
+    </script>
+
     <script>
         const patientRows = document.querySelectorAll(".patient-row");
         const patientSearchInput = document.getElementById("patientSearchInput");
         const patientSearchClearBtn = document.getElementById("patientSearchClearBtn");
+        const oldAdmissionSearchToggle = document.getElementById("oldAdmissionSearchToggle");
+        const oldAdmissionSearchPanel = document.getElementById("oldAdmissionSearchPanel");
+        const oldAdmissionSearchInput = document.getElementById("oldAdmissionSearchInput");
+        const oldAdmissionSearchBtn = document.getElementById("oldAdmissionSearchBtn");
+        const oldAdmissionSearchClearBtn = document.getElementById("oldAdmissionSearchClearBtn");
+        const oldAdmissionList = document.getElementById("oldAdmissionList");
         const selectedPatientId = document.getElementById("selectedPatientId");
         const selectedPatientName = document.getElementById("selectedPatientName");
         const selectedPatientCard = document.getElementById("selectedPatientCard");
         const admissionDate = document.getElementById("admissionDate");
+        const doctorId = document.getElementById("doctorId");
+        const guardianName = document.getElementById("guardianName");
+        const guardianRelation = document.getElementById("guardianRelation");
+        const roomNumber = document.getElementById("roomNumber");
+        const reason = document.getElementById("reason");
+        const notes = document.getElementById("notes");
         const admitForm = document.querySelector(".admit-form");
         const admitSubmitBtn = document.getElementById("admitSubmitBtn");
+        const concernPaperPrintBtn = document.getElementById("concernPaperPrintBtn");
         const recordSearchInput = document.getElementById("recordSearchInput");
         const recordSearchClearBtn = document.getElementById("recordSearchClearBtn");
         const recordsTableBody = document.getElementById("recordsTableBody");
+        const activeAdmissionData = document.getElementById("activeAdmissionData");
+        const activeAdmission = activeAdmissionData ? JSON.parse(activeAdmissionData.textContent) : null;
+        let oldAdmissionSearchTimer;
+        let oldAdmissionSearchRequestId = 0;
 
-        admissionDate.value = new Date().toISOString().slice(0, 10);
+        function todayIsoDate() {
+            return new Date().toISOString().slice(0, 10);
+        }
 
-        function selectPatient(row) {
+        function setFieldValue(field, value) {
+            if (field) {
+                field.value = value || "";
+            }
+        }
+
+        function setSelectValue(field, value) {
+            if (!field) {
+                return;
+            }
+
+            const normalizedValue = value || "";
+            if (!normalizedValue) {
+                field.value = "";
+                return;
+            }
+
+            const hasOption = Array.from(field.options).some(option => option.value === normalizedValue || option.textContent.trim() === normalizedValue);
+            if (!hasOption) {
+                const option = document.createElement("option");
+                option.value = normalizedValue;
+                option.textContent = normalizedValue;
+                field.appendChild(option);
+            }
+            field.value = normalizedValue;
+        }
+
+        function clearAdmissionFields() {
+            setFieldValue(doctorId, "");
+            setFieldValue(guardianName, "");
+            setSelectValue(guardianRelation, "");
+            setSelectValue(roomNumber, "");
+            setSelectValue(reason, "");
+            setFieldValue(notes, "");
+            setFieldValue(admissionDate, todayIsoDate());
+        }
+
+        function updateBedOptions(patientId) {
+            if (!roomNumber) {
+                return;
+            }
+
+            const selectedPatient = String(patientId || "");
+            Array.from(roomNumber.options).forEach(option => {
+                if (!option.value) {
+                    return;
+                }
+
+                const occupiedPatientId = option.dataset.occupiedPatientId || "";
+                const unavailable = Boolean(occupiedPatientId && occupiedPatientId !== selectedPatient);
+                option.hidden = unavailable;
+                option.disabled = unavailable;
+            });
+
+            if (roomNumber.selectedOptions.length && roomNumber.selectedOptions[0].disabled) {
+                setFieldValue(roomNumber, "");
+            }
+        }
+
+        function disableConcernPrint() {
+            if (!concernPaperPrintBtn) {
+                return;
+            }
+
+            concernPaperPrintBtn.classList.add("disabled");
+            concernPaperPrintBtn.setAttribute("aria-disabled", "true");
+            if (concernPaperPrintBtn.tagName === "A") {
+                concernPaperPrintBtn.removeAttribute("href");
+            } else {
+                concernPaperPrintBtn.disabled = true;
+            }
+        }
+
+        function enableConcernPrint() {
+            if (!concernPaperPrintBtn || !concernPaperPrintBtn.dataset.printUrl) {
+                return;
+            }
+
+            concernPaperPrintBtn.classList.remove("disabled");
+            concernPaperPrintBtn.removeAttribute("aria-disabled");
+            if (concernPaperPrintBtn.tagName === "A") {
+                concernPaperPrintBtn.href = concernPaperPrintBtn.dataset.printUrl;
+            } else {
+                concernPaperPrintBtn.disabled = false;
+            }
+        }
+
+        function clearOldAdmissionSelection() {
+            document.querySelectorAll(".old-admission-row").forEach(item => item.classList.remove("selected"));
+        }
+
+        function selectPatient(row, clearSavedAdmission = false, keepOldSelection = false) {
             patientRows.forEach(item => item.classList.remove("selected"));
+            if (!keepOldSelection) {
+                clearOldAdmissionSelection();
+            }
             row.classList.add("selected");
             selectedPatientId.value = row.dataset.id;
-            selectedPatientName.textContent = `${row.dataset.name} (ID ${row.dataset.id})`;
+            selectedPatientName.textContent = `${row.dataset.name} (UHID ${row.dataset.uhid || row.dataset.id})`;
             selectedPatientCard.classList.add("has-selection");
+            selectedPatientCard.classList.remove("needs-selection");
+            updateBedOptions(row.dataset.id);
+
+            if (clearSavedAdmission) {
+                clearAdmissionFields();
+                disableConcernPrint();
+            } else {
+                enableConcernPrint();
+            }
+        }
+
+        function loadActiveAdmission(admission) {
+            if (!admission) {
+                setFieldValue(admissionDate, todayIsoDate());
+                updateBedOptions("");
+                return;
+            }
+
+            const selectedRow = Array.from(patientRows).find(row => row.dataset.id === String(admission.patient_id));
+            if (selectedRow) {
+                selectPatient(selectedRow, false);
+            }
+
+            setFieldValue(admissionDate, admission.admission_date || todayIsoDate());
+            setFieldValue(doctorId, admission.doctor_id);
+            setFieldValue(guardianName, admission.guardian_name);
+            setSelectValue(guardianRelation, admission.guardian_relation);
+            setSelectValue(roomNumber, admission.room_number);
+            setSelectValue(reason, admission.reason);
+            setFieldValue(notes, admission.notes);
+        }
+
+        function selectOldAdmission(row) {
+            const patientRow = Array.from(patientRows).find(item => item.dataset.id === row.dataset.patientId);
+            if (!patientRow) {
+                return;
+            }
+
+            clearOldAdmissionSelection();
+            row.classList.add("selected");
+            selectPatient(patientRow, true, true);
+            selectedPatientName.textContent = `${row.dataset.name} (UHID ${row.dataset.uhid}) - ready to admit again`;
+            setFieldValue(admissionDate, todayIsoDate());
+            setFieldValue(guardianName, row.dataset.guardianName);
+            setSelectValue(guardianRelation, row.dataset.guardianRelation);
+            setFieldValue(doctorId, row.dataset.doctorId);
+            setSelectValue(reason, row.dataset.reason);
+            setFieldValue(notes, row.dataset.notes);
+            roomNumber.focus();
+        }
+
+        function escapeHtml(value) {
+            return String(value || "").replace(/[&<>"']/g, function (character) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                }[character];
+            });
+        }
+
+        function renderOldAdmissionResults(patients) {
+            if (!patients.length) {
+                oldAdmissionList.innerHTML = '<p class="empty-state">No discharged old admitted patient found.</p>';
+                return;
+            }
+
+            oldAdmissionList.innerHTML = patients.map(function (patient) {
+                return '<button type="button" class="old-admission-row" ' +
+                    'data-patient-id="' + escapeHtml(patient.patient_id) + '" ' +
+                    'data-uhid="' + escapeHtml(patient.patient_uhid) + '" ' +
+                    'data-name="' + escapeHtml(patient.name) + '" ' +
+                    'data-phone="' + escapeHtml(patient.phone) + '" ' +
+                    'data-guardian-name="' + escapeHtml(patient.guardian_name) + '" ' +
+                    'data-guardian-relation="' + escapeHtml(patient.guardian_relation) + '" ' +
+                    'data-doctor-id="' + escapeHtml(patient.doctor_id) + '" ' +
+                    'data-reason="' + escapeHtml(patient.reason) + '" ' +
+                    'data-notes="' + escapeHtml(patient.notes) + '">' +
+                        '<span class="old-admission-icon"><i class="fas fa-user-clock"></i></span>' +
+                        '<span class="old-admission-info">' +
+                            '<strong>' + escapeHtml(patient.name) + '</strong>' +
+                            '<small>UHID ' + escapeHtml(patient.patient_uhid) + ' | Last bed ' + escapeHtml(patient.room_number || '-') + ' | ' + escapeHtml(patient.phone || '-') + '</small>' +
+                            '<small>Last admission: ' + escapeHtml(patient.admission_date || '-') + ' | Discharged: ' + escapeHtml(patient.discharged_at || '-') + '</small>' +
+                        '</span>' +
+                        '<span class="old-admission-badge">Admit Again</span>' +
+                    '</button>';
+            }).join("");
+
+            oldAdmissionList.querySelectorAll(".old-admission-row").forEach(row => {
+                row.addEventListener("click", () => selectOldAdmission(row));
+            });
+        }
+
+        function searchOldAdmissions() {
+            const keyword = oldAdmissionSearchInput.value.trim();
+            if (keyword.length < 2) {
+                oldAdmissionList.innerHTML = '<p class="empty-state">Please type at least 2 characters.</p>';
+                return;
+            }
+
+            const requestId = ++oldAdmissionSearchRequestId;
+            oldAdmissionList.innerHTML = '<p class="empty-state"><i class="fas fa-spinner fa-spin"></i> Searching old admitted patients...</p>';
+            fetch("/admissions/search-old?keyword=" + encodeURIComponent(keyword), {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (requestId !== oldAdmissionSearchRequestId || oldAdmissionSearchInput.value.trim() !== keyword) {
+                        return;
+                    }
+                    renderOldAdmissionResults(data.patients || []);
+                })
+                .catch(function () {
+                    if (requestId !== oldAdmissionSearchRequestId) {
+                        return;
+                    }
+                    oldAdmissionList.innerHTML = '<p class="empty-state">Search failed. Please try again.</p>';
+                });
+        }
+
+        function scheduleOldAdmissionSearch() {
+            clearTimeout(oldAdmissionSearchTimer);
+            const keyword = oldAdmissionSearchInput.value.trim();
+            if (keyword.length < 2) {
+                oldAdmissionSearchRequestId += 1;
+                oldAdmissionList.innerHTML = '<p class="empty-state">Type at least 2 characters to search automatically.</p>';
+                return;
+            }
+
+            oldAdmissionList.innerHTML = '<p class="empty-state"><i class="fas fa-spinner fa-spin"></i> Searching old admitted patients...</p>';
+            oldAdmissionSearchTimer = setTimeout(searchOldAdmissions, 350);
         }
 
         patientRows.forEach(row => {
-            row.addEventListener("click", () => selectPatient(row));
+            row.addEventListener("click", () => {
+                const isSameAdmittedPatient = activeAdmission && row.dataset.id === String(activeAdmission.patient_id);
+                selectPatient(row, !isSameAdmittedPatient);
+            });
         });
+
+        loadActiveAdmission(activeAdmission);
 
         patientSearchInput.addEventListener("input", function () {
             const searchTerm = this.value.trim().toLowerCase();
@@ -282,6 +631,31 @@
         patientSearchClearBtn.addEventListener("click", function () {
             patientSearchInput.value = "";
             patientRows.forEach(row => row.style.display = "");
+        });
+
+        oldAdmissionSearchToggle.addEventListener("click", function () {
+            oldAdmissionSearchPanel.classList.toggle("show");
+            if (oldAdmissionSearchPanel.classList.contains("show")) {
+                oldAdmissionSearchInput.focus();
+            }
+        });
+
+        oldAdmissionSearchBtn.addEventListener("click", searchOldAdmissions);
+        oldAdmissionSearchInput.addEventListener("input", scheduleOldAdmissionSearch);
+        oldAdmissionSearchInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                clearTimeout(oldAdmissionSearchTimer);
+                searchOldAdmissions();
+            }
+        });
+
+        oldAdmissionSearchClearBtn.addEventListener("click", function () {
+            oldAdmissionSearchRequestId += 1;
+            clearTimeout(oldAdmissionSearchTimer);
+            oldAdmissionSearchInput.value = "";
+            clearOldAdmissionSelection();
+            oldAdmissionList.innerHTML = '<p class="empty-state">Search discharged patients, then select one to admit again.</p>';
         });
 
         admitForm.addEventListener("submit", function (event) {

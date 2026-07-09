@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discharge Patients List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_patients_list.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="discharge-list-page">
+        <section class="list-panel">
+            <header class="list-header">
+                <a class="back-btn" href="{{ url_for('admissions') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    Admission
+                </a>
+
+                <div class="title-block">
+                    <h1><i class="fas fa-clipboard-list"></i> Discharge Patients List</h1>
+                    <p>Review discharged patient details and saved discharge bill information.</p>
+                </div>
+
+                <a class="bill-btn" href="{{ url_for('discharge_bill') }}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Discharge Bill
+                </a>
+            </header>
+
+            <section class="summary-grid">
+                <div>
+                    <span>Discharged Patients</span>
+                    <strong>{{ summary.patient_count }}</strong>
+                </div>
+                <div>
+                    <span>Saved Bills</span>
+                    <strong>{{ summary.bill_count }}</strong>
+                </div>
+                <div>
+                    <span>Gross Total</span>
+                    <strong>{{ "%.2f"|format(summary.gross_total or 0) }}</strong>
+                </div>
+                <div>
+                    <span>Paid</span>
+                    <strong>{{ "%.2f"|format(summary.paid_total or 0) }}</strong>
+                </div>
+                <div>
+                    <span>Due</span>
+                    <strong>{{ "%.2f"|format(summary.due_total or 0) }}</strong>
+                </div>
+            </section>
+
+            <div class="tools-row">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="dischargeSearch" placeholder="Search UHID, patient, phone, bed, bill no">
+                </div>
+            </div>
+
+            <section class="records-list" id="recordsList">
+                {% if records %}
+                    {% for record in records %}
+                        <article
+                            class="record-card"
+                            data-search="{{ (record.patient_uhid ~ ' ' ~ record.name ~ ' ' ~ record.phone ~ ' ' ~ record.bed_no ~ ' ' ~ record.bill_no ~ ' ' ~ record.doctor_name ~ ' ' ~ record.guardian_name)|lower }}"
+                        >
+                            <div class="record-main">
+                                <div>
+                                    <span class="eyebrow">UHID {{ record.patient_uhid or '-' }} | Admission #{{ record.admission_id }}</span>
+                                    <h2>{{ record.name }}</h2>
+                                    <p>{{ record.phone or '-' }} | {{ record.age or '-' }} {{ record.age_unit or '' }} | {{ record.gender or '-' }}</p>
+                                </div>
+
+                                <div class="record-actions">
+                                    <span class="status-pill">Discharged</span>
+                                    {% if record.print_url %}
+                                        <a class="print-link" href="{{ record.print_url }}" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i>
+                                            Print Bill
+                                        </a>
+                                    {% else %}
+                                        <span class="missing-bill">No bill saved</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="detail-grid">
+                                <div><span>Admission Date</span><strong>{{ format_date_display(record.admission_date) }}</strong></div>
+                                <div><span>Discharged At</span><strong>{{ format_date_display(record.discharged_at) }}</strong></div>
+                                <div><span>Bed No</span><strong>{{ record.bed_no or '-' }}</strong></div>
+                                <div><span>Doctor</span><strong>{{ record.doctor_name or '-' }}</strong></div>
+                                <div><span>Guardian</span><strong>{{ record.guardian_name or '-' }}{% if record.guardian_relation %} ({{ record.guardian_relation }}){% endif %}</strong></div>
+                                <div><span>Reason</span><strong>{{ record.reason or '-' }}</strong></div>
+                                <div class="wide"><span>Address</span><strong>{{ record.address or '-' }}</strong></div>
+                                <div class="wide"><span>Notes</span><strong>{{ record.notes or '-' }}</strong></div>
+                            </div>
+
+                            <section class="bill-card">
+                                <div class="bill-title">
+                                    <div>
+                                        <span>Bill Information</span>
+                                        <strong>{{ record.bill_no or 'Not saved yet' }}</strong>
+                                    </div>
+                                    <small>Last saved: {{ format_date_display(record.bill_updated_at) if record.bill_updated_at else '-' }}</small>
+                                </div>
+
+                                <div class="charges-grid">
+                                    <div><span>Stay Days</span><strong>{{ record.stay_days or '-' }}</strong></div>
+                                    <div><span>Bed</span><strong>{{ "%.2f"|format(record.bed_charge or 0) }}</strong></div>
+                                    <div><span>Doctor</span><strong>{{ "%.2f"|format(record.doctor_fee or 0) }}</strong></div>
+                                    <div><span>Medicine</span><strong>{{ "%.2f"|format(record.medicine_charge or 0) }}</strong></div>
+                                    <div><span>Pathology</span><strong>{{ "%.2f"|format(record.pathology_charge or 0) }}</strong></div>
+                                    <div><span>Service</span><strong>{{ "%.2f"|format(record.service_charge or 0) }}</strong></div>
+                                    <div><span>Other</span><strong>{{ "%.2f"|format(record.other_charge or 0) }}</strong></div>
+                                    <div><span>Total</span><strong>{{ "%.2f"|format(record.total_amount or 0) }}</strong></div>
+                                    <div><span>Discount</span><strong>{{ "%.2f"|format(record.discount or 0) }}</strong></div>
+                                    <div><span>Gross</span><strong>{{ "%.2f"|format(record.gross_amount or 0) }}</strong></div>
+                                    <div><span>Paid</span><strong>{{ "%.2f"|format(record.paid_amount or 0) }}</strong></div>
+                                    <div><span>Due</span><strong>{{ "%.2f"|format(record.due_amount or 0) }}</strong></div>
+                                </div>
+
+                                <p class="remarks"><strong>Remarks:</strong> {{ record.remarks or '-' }}</p>
+                            </section>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-state">No discharged patients found.</p>
+                {% endif %}
+            </section>
+        </section>
+    </main>
+
+    <script>
+        const dischargeSearch = document.getElementById("dischargeSearch");
+        const recordCards = document.querySelectorAll(".record-card");
+
+        if (dischargeSearch) {
+            dischargeSearch.addEventListener("input", function () {
+                const term = this.value.trim().toLowerCase();
+                recordCards.forEach(card => {
+                    card.style.display = card.dataset.search.includes(term) ? "" : "none";
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients Info | AL-JUMIRA HOSPITAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patients_info.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="patients-info-page">
+        <section class="patients-info-shell">
+            <header class="top-bar">
+                <a class="icon-link" href="{{ url_for('patients_registration', view='all') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>All Patients</span>
+                </a>
+
+                <div class="page-title">
+                    <span>Patient Lookup</span>
+                    <h1>Patients Info</h1>
+                </div>
+
+                <a class="icon-link muted-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-house-medical"></i>
+                    <span>Dashboard</span>
+                </a>
+            </header>
+
+            <section class="finder-panel">
+                <form class="finder-form" method="GET" action="{{ url_for('patients_info') }}">
+                    <div class="finder-input">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="patientInfoSearchInput" name="keyword" value="{{ keyword or '' }}" placeholder="Search by UHID, name, phone, ticket, address, service">
+                    </div>
+                    <button type="submit" class="primary-btn">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                    <a class="quiet-btn" href="{{ url_for('patients_info') }}">
+                        <i class="fas fa-rotate-left"></i>
+                        <span>Reset</span>
+                    </a>
+                </form>
+
+                <div class="quick-filters" aria-label="Quick filters">
+                    <button type="button" class="filter-chip active" data-filter="all">All</button>
+                    <button type="button" class="filter-chip" data-filter="due">Due</button>
+                    <button type="button" class="filter-chip" data-filter="billed">Has Bills</button>
+                    <button type="button" class="filter-chip" data-filter="no-service">No Service</button>
+                </div>
+            </section>
+
+            {% if message %}
+            <div class="page-message">
+                <i class="fas fa-circle-info"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-strip">
+                <div>
+                    <span>Patients</span>
+                    <strong>{{ summary.patient_count }}</strong>
+                </div>
+                <div>
+                    <span>Visits</span>
+                    <strong>{{ summary.visit_count }}</strong>
+                </div>
+                <div>
+                    <span>Total Bill</span>
+                    <strong>Tk {{ '%.2f'|format(summary.bill_total) }}</strong>
+                </div>
+                <div>
+                    <span>Showing</span>
+                    <strong id="visiblePatientCount">{{ summary.patient_count }}</strong>
+                </div>
+            </div>
+
+            <div class="result-head">
+                <h2>Patient Results</h2>
+                <span>Most recent first</span>
+            </div>
+
+            <div class="patient-results" id="patientInfoRecords">
+                {% if patient_records %}
+                    {% for record in patient_records %}
+                        {% set patient = record.patient %}
+                        <article
+                            class="patient-card"
+                            data-has-due="{{ 'true' if record.due_total > 0 else 'false' }}"
+                            data-has-bill="{{ 'true' if record.bill_count > 0 else 'false' }}"
+                            data-has-service="{{ 'true' if record.service_names else 'false' }}"
+                            data-search="{{ (patient.id ~ ' ' ~ patient.daily_patient_id ~ ' ' ~ patient.name ~ ' ' ~ patient.phone ~ ' ' ~ patient.address ~ ' ' ~ patient.blood_group ~ ' ' ~ patient.gender ~ ' ' ~ record.service_names|join(' ') ~ ' ' ~ record.last_service_name)|lower }}"
+                        >
+                            <div class="patient-main">
+                                <div class="patient-identity">
+                                    <span class="uhid">UHID {{ patient.id }}</span>
+                                    <h3>{{ patient.name }}</h3>
+                                    <p>{{ patient.age }} {{ patient.age_unit }} | {{ patient.gender }} | {{ patient.phone }}</p>
+                                </div>
+
+                                <div class="patient-stats">
+                                    <div>
+                                        <span>Last Visit</span>
+                                        <strong>{{ format_date_display(record.last_visit_at) }}</strong>
+                                    </div>
+                                    <div>
+                                        <span>Service</span>
+                                        <strong>{{ record.last_service_name }}</strong>
+                                    </div>
+                                    <div>
+                                        <span>Total</span>
+                                        <strong>Tk {{ '%.2f'|format(record.patient_total) }}</strong>
+                                    </div>
+                                    <div class="{{ 'due-box' if record.due_total > 0 else '' }}">
+                                        <span>Due</span>
+                                        <strong>Tk {{ '%.2f'|format(record.due_total) }}</strong>
+                                    </div>
+                                </div>
+
+                                <div class="patient-actions">
+                                    <a class="action-btn test-action" href="{{ url_for('test_billing', patient_id=patient.id) }}">
+                                        <i class="fas fa-vial"></i>
+                                        <span>Test Bill</span>
+                                    </a>
+                                    <button type="button" class="details-toggle" aria-expanded="false">
+                                        <i class="fas fa-chevron-down"></i>
+                                        <span>View Details</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="patient-details">
+                                <div class="details-summary">
+                                    <section class="detail-panel profile-panel">
+                                        <div class="detail-panel-head">
+                                            <i class="fas fa-user-injured"></i>
+                                            <h4>Patient Profile</h4>
+                                        </div>
+                                        <div class="profile-groups">
+                                            <div class="info-group">
+                                                <h5>Identity</h5>
+                                                <div class="info-grid">
+                                                    <div><span>UHID</span><strong>{{ patient.id }}</strong></div>
+                                                    <div><span>Ticket No</span><strong>{{ patient.daily_patient_id or '-' }}</strong></div>
+                                                    <div><span>Status</span><strong>{{ patient.patient_status or '-' }}</strong></div>
+                                                    <div><span>Registered</span><strong>{{ format_date_display(patient.created_at) }}</strong></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="info-group">
+                                                <h5>Medical</h5>
+                                                <div class="info-grid medical-grid">
+                                                    <div><span>Age</span><strong>{{ patient.age }} {{ patient.age_unit }}</strong></div>
+                                                    <div><span>Gender</span><strong>{{ patient.gender or '-' }}</strong></div>
+                                                    <div><span>Blood Group</span><strong>{{ patient.blood_group or '-' }}</strong></div>
+                                                    <div class="edit-profile-action">
+                                                        <a
+                                                            class="edit-profile-btn"
+                                                            href="{{ url_for('edit_patient_profile', patient_id=patient.id, keyword=keyword or '') }}"
+                                                        >
+                                                            <i class="fas fa-pen-to-square"></i>
+                                                            <span>Edit PT Profile</span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="info-group">
+                                                <h5>Contact</h5>
+                                                <div class="info-grid contact-grid">
+                                                    <div><span>Phone</span><strong>{{ patient.phone or '-' }}</strong></div>
+                                                    <div><span>Emergency</span><strong>{{ patient.emergency_contact_phone or '-' }}</strong></div>
+                                                    <div><span>Email</span><strong>{{ patient.email or '-' }}</strong></div>
+                                                    <div class="wide-info"><span>Address</span><strong>{{ patient.address or '-' }}</strong></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section class="detail-panel billing-panel">
+                                        <div class="detail-panel-head">
+                                            <i class="fas fa-file-invoice-dollar"></i>
+                                            <h4>Billing Summary</h4>
+                                        </div>
+                                        <div class="billing-summary-grid">
+                                            <div>
+                                                <span>Consultation</span>
+                                                <strong>Tk {{ '%.2f'|format(record.consultation_total) }}</strong>
+                                            </div>
+                                            <div>
+                                                <span>Total Bills</span>
+                                                <strong>Tk {{ '%.2f'|format(record.patient_total) }}</strong>
+                                            </div>
+                                            <div class="{{ 'due-summary' if record.due_total > 0 else '' }}">
+                                                <span>Due</span>
+                                                <strong>Tk {{ '%.2f'|format(record.due_total) }}</strong>
+                                            </div>
+                                            <div>
+                                                <span>Bill Count</span>
+                                                <strong>{{ record.bill_count }}</strong>
+                                            </div>
+                                        </div>
+                                        <a class="details-bill-btn" href="{{ url_for('patient_details_bill', patient_id=patient.id) }}">
+                                            <i class="fas fa-print"></i>
+                                            <span>Print Details Bill</span>
+                                        </a>
+                                    </section>
+                                </div>
+
+                                <div class="history-columns">
+                                    <section class="history-box visits-history">
+                                        <div class="detail-panel-head">
+                                            <i class="fas fa-ticket"></i>
+                                            <div class="history-head-content">
+                                                <div>
+                                                    <h4>Visits</h4>
+                                                    <span>{{ record.visits|length }} visit{{ '' if record.visits|length == 1 else 's' }}</span>
+                                                </div>
+                                                {% if record.visits %}
+                                                <a class="section-print-btn" href="{{ url_for('patient_visits_print', patient_id=patient.id) }}">
+                                                    <i class="fas fa-print"></i>
+                                                    <span>Print All</span>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="history-list">
+                                            {% if record.visits %}
+                                                {% for visit in record.visits %}
+                                                    <div class="history-row">
+                                                        <div class="history-field date-field">
+                                                            <span>Date</span>
+                                                            <strong>{{ format_date_display(visit.created_at) }}</strong>
+                                                        </div>
+                                                        <div class="history-field">
+                                                            <span>Ticket</span>
+                                                            <strong>{{ visit.daily_patient_id or '-' }}</strong>
+                                                        </div>
+                                                        <div class="history-field grow-field">
+                                                            <span>Doctor</span>
+                                                            <strong>{{ visit.doctor_name or '-' }}</strong>
+                                                        </div>
+                                                        <div class="history-field amount-field">
+                                                            <span>Fee</span>
+                                                            <strong>Tk {{ '%.2f'|format(visit.doctor_fee) }}</strong>
+                                                        </div>
+                                                        <a class="print-link row-action" href="{{ url_for('ticket_print', patient_id=visit.id) }}">
+                                                            <i class="fas fa-print"></i>
+                                                            <span>Print</span>
+                                                        </a>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="no-history">No visit found.</div>
+                                            {% endif %}
+                                        </div>
+                                    </section>
+
+                                    <section class="history-box pathology-history">
+                                        <div class="detail-panel-head">
+                                            <i class="fas fa-receipt"></i>
+                                            <div class="history-head-content">
+                                                <div>
+                                                    <h4>Pathology Bills</h4>
+                                                    <span>{{ record.test_bills|length }} bill{{ '' if record.test_bills|length == 1 else 's' }}</span>
+                                                </div>
+                                                {% if record.test_bills %}
+                                                <a class="section-print-btn" href="{{ url_for('patient_pathology_print', patient_id=patient.id) }}">
+                                                    <i class="fas fa-print"></i>
+                                                    <span>Print All</span>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="history-list">
+                                            {% if record.test_bills %}
+                                                {% for bill in record.test_bills %}
+                                                    <div class="history-row bill-row">
+                                                        <div class="history-field date-field">
+                                                            <span>Date</span>
+                                                            <strong>{{ format_date_display(bill.created_at) }}</strong>
+                                                        </div>
+                                                        <div class="history-field">
+                                                            <span>Invoice</span>
+                                                            <strong>{{ bill.invoice_no }}</strong>
+                                                        </div>
+                                                        <div class="history-field grow-field">
+                                                            <span>Tests</span>
+                                                            <strong>{{ bill.tests }}</strong>
+                                                        </div>
+                                                        <div class="history-field amount-field">
+                                                            <span>Total</span>
+                                                            <strong>Tk {{ '%.2f'|format(bill.total) }}</strong>
+                                                        </div>
+                                                        <div class="history-field amount-field {{ 'due-amount' if bill.due > 0 else '' }}">
+                                                            <span>Due</span>
+                                                            <strong>Tk {{ '%.2f'|format(bill.due) }}</strong>
+                                                        </div>
+                                                        <a class="print-link row-action" href="{{ url_for('test_bill_print', test_bill_id=bill.id) }}">
+                                                            <i class="fas fa-print"></i>
+                                                            <span>Print</span>
+                                                        </a>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="no-history">No pathology bill found.</div>
+                                            {% endif %}
+                                        </div>
+                                    </section>
+
+                                    <section class="history-box service-history">
+                                        <div class="detail-panel-head">
+                                            <i class="fas fa-receipt"></i>
+                                            <div>
+                                                <h4>Service Bills</h4>
+                                                <span>{{ record.service_bills|length }} bill{{ '' if record.service_bills|length == 1 else 's' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="history-list">
+                                            {% if record.service_bills %}
+                                                {% for bill in record.service_bills %}
+                                                    <div class="history-row bill-row">
+                                                        <div class="history-field date-field">
+                                                            <span>Date</span>
+                                                            <strong>{{ format_date_display(bill.created_at) }}</strong>
+                                                        </div>
+                                                        <div class="history-field">
+                                                            <span>Bill</span>
+                                                            <strong>#{{ bill.id }}</strong>
+                                                        </div>
+                                                        <div class="history-field grow-field">
+                                                            <span>Services</span>
+                                                            <strong>{{ bill.services }}</strong>
+                                                        </div>
+                                                        <div class="history-field amount-field">
+                                                            <span>Total</span>
+                                                            <strong>Tk {{ '%.2f'|format(bill.total) }}</strong>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="no-history">No service bill found.</div>
+                                            {% endif %}
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-injured"></i>
+                        <strong>No patients found.</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const patientInfoSearchInput = document.getElementById("patientInfoSearchInput");
+        const patientInfoRecords = document.getElementById("patientInfoRecords");
+        const visiblePatientCount = document.getElementById("visiblePatientCount");
+        const filterButtons = document.querySelectorAll(".filter-chip");
+        let activeFilter = "all";
+
+        function patientMatchesFilter(card) {
+            if (activeFilter === "due") return card.dataset.hasDue === "true";
+            if (activeFilter === "billed") return card.dataset.hasBill === "true";
+            if (activeFilter === "no-service") return card.dataset.hasService !== "true";
+            return true;
+        }
+
+        function filterPatientInfoRecords() {
+            const query = (patientInfoSearchInput.value || "").trim().toLowerCase();
+            let visible = 0;
+
+            patientInfoRecords.querySelectorAll(".patient-card").forEach(function (card) {
+                const text = card.dataset.search || "";
+                const shouldShow = patientMatchesFilter(card) && (query === "" || text.includes(query));
+                card.hidden = !shouldShow;
+                if (shouldShow) visible += 1;
+            });
+
+            if (visiblePatientCount) {
+                visiblePatientCount.textContent = visible;
+            }
+        }
+
+        filterButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                filterButtons.forEach(function (item) { item.classList.remove("active"); });
+                button.classList.add("active");
+                activeFilter = button.dataset.filter || "all";
+                filterPatientInfoRecords();
+            });
+        });
+
+        patientInfoRecords.querySelectorAll(".details-toggle").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const card = button.closest(".patient-card");
+                const isOpen = card.classList.toggle("details-open");
+                button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                button.querySelector("span").textContent = isOpen ? "Hide Details" : "View Details";
+            });
+        });
+
+        if (patientInfoSearchInput) {
+            patientInfoSearchInput.addEventListener("input", filterPatientInfoRecords);
+            patientInfoSearchInput.focus();
+        }
+
+        filterPatientInfoRecords();
+    </script>
+</body>
+</html>

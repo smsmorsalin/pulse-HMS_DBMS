@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Return | AL-JUMIRA HOSPITAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_billing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_return.css') }}">
+</head>
+<body>
+<div class="background-blobs"></div>
+
+<main class="test-return-page">
+    <header class="test-return-header">
+        <a class="return-nav-btn" href="{{ url_for('test_billing') }}">
+            <i class="fas fa-arrow-left"></i>
+            <span>Pathology Billing</span>
+        </a>
+        <div>
+            <p><i class="fas fa-rotate-left"></i> Pathology</p>
+            <h1>Test Return</h1>
+        </div>
+        <a class="return-nav-btn muted" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+    </header>
+
+    {% if success %}
+    <div class="return-message success"><i class="fas fa-circle-check"></i>{{ success }}</div>
+    {% endif %}
+    {% if message %}
+    <div class="return-message error"><i class="fas fa-circle-exclamation"></i>{{ message }}</div>
+    {% endif %}
+
+    <form class="test-return-search" method="GET" action="{{ url_for('test_return') }}">
+        <label for="testReturnSearch">Find Bill</label>
+        <div class="test-search-row">
+            <input id="testReturnSearch" name="q" type="search" value="{{ query or '' }}" placeholder="Invoice, UHID, Ticket No, Phone, or Name">
+            <button type="submit"><i class="fas fa-search"></i> Search</button>
+        </div>
+    </form>
+
+    <section class="test-return-layout">
+        <div class="test-return-card">
+            {% if selected_bill %}
+            {% set display_total = selected_bill[19] if selected_bill[15] else selected_bill[5] %}
+            {% set display_due = selected_bill[20] if selected_bill[15] else selected_bill[7] %}
+            {% set display_received = selected_bill[21] if selected_bill[15] else selected_bill[6] %}
+            {% set paid_amount = [selected_bill[6] or 0, selected_bill[5] or 0]|min %}
+            <div class="bill-card-head">
+                <div>
+                    <span>{{ selected_bill[1] }}</span>
+                    <h2>{{ selected_bill[10] }}</h2>
+                    <p>UHID {{ selected_bill[13] }} | Ticket {{ selected_bill[14] or '-' }} | {{ selected_bill[11] or '-' }}</p>
+                </div>
+                <strong class="{{ 'is-returned' if selected_bill[15] else '' }}">{{ selected_bill[15] or selected_bill[8] or 'Active' }}</strong>
+            </div>
+
+            <div class="bill-info-grid">
+                <div><span>Bill Date</span><strong>{{ format_date_display(selected_bill[9]) }}</strong></div>
+                <div><span>Total</span><strong>Tk {{ '%.2f'|format(display_total or 0) }}</strong></div>
+                <div><span>Received</span><strong>Tk {{ '%.2f'|format(display_received or 0) }}</strong></div>
+                <div><span>Due</span><strong>Tk {{ '%.2f'|format(display_due or 0) }}</strong></div>
+                <div><span>Discount</span><strong>Tk {{ '%.2f'|format(selected_bill[4] or 0) }}</strong></div>
+                <div><span>Address</span><strong>{{ selected_bill[12] or '-' }}</strong></div>
+            </div>
+
+            <div class="test-items-box">
+                <h3>Tests</h3>
+                {% for item in selected_items %}
+                <div class="test-item-row">
+                    <span>{{ item[0] }}</span>
+                    <strong>Tk {{ '%.2f'|format(item[1] or 0) }}</strong>
+                </div>
+                {% else %}
+                <p>No test items found.</p>
+                {% endfor %}
+            </div>
+
+            {% if selected_bill[15] %}
+            <div class="already-returned">
+                <i class="fas fa-circle-check"></i>
+                <div>
+                    <strong>{{ selected_bill[15] }}</strong>
+                    <span>Refund Tk {{ '%.2f'|format(selected_bill[16] or 0) }} | {{ format_date_display(selected_bill[18]) }}</span>
+                    {% if selected_bill[17] %}<p>{{ selected_bill[17] }}</p>{% endif %}
+                </div>
+            </div>
+            {% else %}
+            <form class="test-return-form" method="POST" action="{{ url_for('test_return') }}">
+                <input type="hidden" name="test_bill_id" value="{{ selected_bill[0] }}">
+                <label>
+                    Refund Amount
+                    <input name="refund_amount" type="number" min="0" max="{{ '%.2f'|format(paid_amount or 0) }}" step="0.01" value="{{ '%.2f'|format(paid_amount or 0) }}" required>
+                </label>
+                <label>
+                    Reason
+                    <textarea name="reason" rows="4" placeholder="Reason for pathology bill return"></textarea>
+                </label>
+                <button type="submit"><i class="fas fa-rotate-left"></i> Save Test Return</button>
+            </form>
+            {% endif %}
+            {% else %}
+            <div class="empty-return-state">
+                <i class="fas fa-vial"></i>
+                <strong>Select a pathology bill.</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <aside class="recent-test-returns">
+            <div class="recent-head">
+                <span>Recent</span>
+                <h3>Test Returns</h3>
+            </div>
+            <div class="recent-list">
+                {% for item in recent_returns %}
+                <div class="recent-row">
+                    <strong>{{ item[0] }}</strong>
+                    <span>{{ item[1] }} | {{ item[2] }}</span>
+                    <small>Tk {{ '%.2f'|format(item[3] or 0) }}</small>
+                    <em>{{ format_date_display(item[4]) }}</em>
+                </div>
+                {% else %}
+                <p>No test returns yet.</p>
+                {% endfor %}
+            </div>
+        </aside>
+    </section>
+</main>
+</body>
+</html>

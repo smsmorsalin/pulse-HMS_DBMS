@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visit Return | AL-JUMIRA HOSPITAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patients_registration.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/visit_return.css') }}">
+</head>
+<body>
+<div class="background-blobs"></div>
+
+<main class="visit-return-page">
+    <header class="visit-return-header">
+        <a class="return-nav-btn" href="{{ url_for('patients_registration', view='list') }}">
+            <i class="fas fa-arrow-left"></i>
+            <span>Daily Patients</span>
+        </a>
+        <div>
+            <p><i class="fas fa-rotate-left"></i> Doctor Visit</p>
+            <h1>Visit Return</h1>
+        </div>
+        <a class="return-nav-btn muted" href="{{ url_for('dashboard') }}">
+            <i class="fas fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+    </header>
+
+    {% if success %}
+    <div class="return-message success"><i class="fas fa-circle-check"></i>{{ success }}</div>
+    {% endif %}
+    {% if message %}
+    <div class="return-message error"><i class="fas fa-circle-exclamation"></i>{{ message }}</div>
+    {% endif %}
+
+    <form class="visit-search-panel" method="GET" action="{{ url_for('visit_return') }}">
+        <label for="visitSearch">Find Visit</label>
+        <div class="visit-search-row">
+            <input id="visitSearch" name="q" type="search" value="{{ query or '' }}" placeholder="UHID, Ticket No, Phone, or Name">
+            <button type="submit"><i class="fas fa-search"></i> Search</button>
+        </div>
+    </form>
+
+    <section class="visit-return-layout">
+        <div class="visit-return-card">
+            {% if selected_visit %}
+            <div class="visit-card-head">
+                <div>
+                    <span>Ticket {{ selected_visit[2] or '-' }}</span>
+                    <h2>{{ selected_visit[3] }}</h2>
+                    <p>UHID {{ selected_visit[1] }} | {{ selected_visit[7] or '-' }}</p>
+                </div>
+                <strong class="{{ 'is-returned' if selected_visit[15] else '' }}">
+                    {{ selected_visit[15] or selected_visit[13] or 'Active' }}
+                </strong>
+            </div>
+
+            <div class="visit-info-grid">
+                <div><span>Age</span><strong>{{ selected_visit[4] }} {{ selected_visit[5] }}</strong></div>
+                <div><span>Gender</span><strong>{{ selected_visit[6] or '-' }}</strong></div>
+                <div><span>Doctor</span><strong>{{ selected_visit[9] or '-' }}</strong></div>
+                <div><span>Designation</span><strong>{{ selected_visit[10] or '-' }}</strong></div>
+                <div><span>Referer</span><strong>{{ selected_visit[11] or '-' }}</strong></div>
+                <div><span>Visit Date</span><strong>{{ format_date_display(selected_visit[14]) }}</strong></div>
+                <div><span>Doctor Fee</span><strong>Tk {{ '%.2f'|format(selected_visit[12] or 0) }}</strong></div>
+                <div><span>Address</span><strong>{{ selected_visit[8] or '-' }}</strong></div>
+            </div>
+
+            {% if selected_visit[15] %}
+            <div class="already-returned">
+                <i class="fas fa-circle-check"></i>
+                <div>
+                    <strong>{{ selected_visit[15] }}</strong>
+                    <span>Refund Tk {{ '%.2f'|format(selected_visit[16] or 0) }} | {{ format_date_display(selected_visit[18]) }}</span>
+                    {% if selected_visit[17] %}<p>{{ selected_visit[17] }}</p>{% endif %}
+                </div>
+            </div>
+            {% else %}
+            <form class="visit-return-form" method="POST" action="{{ url_for('visit_return') }}">
+                <input type="hidden" name="patient_id" value="{{ selected_visit[0] }}">
+                <label>
+                    Refund Amount
+                    <input name="refund_amount" type="number" min="0" step="0.01" value="{{ '%.2f'|format(selected_visit[12] or 0) }}" required>
+                </label>
+                <label>
+                    Reason
+                    <textarea name="reason" rows="4" placeholder="Reason for visit return"></textarea>
+                </label>
+                <button type="submit"><i class="fas fa-rotate-left"></i> Save Visit Return</button>
+            </form>
+            {% endif %}
+            {% else %}
+            <div class="empty-return-state">
+                <i class="fas fa-ticket"></i>
+                <strong>Select a visit ticket.</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <aside class="recent-visit-returns">
+            <div class="recent-head">
+                <span>Recent</span>
+                <h3>Visit Returns</h3>
+            </div>
+            <div class="recent-list">
+                {% for item in recent_returns %}
+                <div class="recent-row">
+                    <strong>{{ item[0] }}</strong>
+                    <span>UHID {{ item[1] }} | Ticket {{ item[2] or '-' }}</span>
+                    <small>{{ item[3] }} | Tk {{ '%.2f'|format(item[4] or 0) }}</small>
+                    <em>{{ format_date_display(item[5]) }}</em>
+                </div>
+                {% else %}
+                <p>No visit returns yet.</p>
+                {% endfor %}
+            </div>
+        </aside>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concern Paper Print</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/concern_paper.css') }}">
+</head>
+<body>
+    <div class="print-toolbar">
+        <button type="button" onclick="window.print()">Print</button>
+        <button type="button" onclick="window.close()">Close</button>
+    </div>
+
+    <main class="a4-page" id="a4Page">
+        <div class="paper-content" id="paperContent">
+            <h1>ভর্তি রোগীর চিকিৎসা / অপারেশন করার সম্মতিপত্র</h1>
+
+            <p class="consent-text">
+                আমি আমার রোগের / আমার রোগীর চিকিৎসা / অপারেশনের এবং সম্ভাব্য সকল প্রকার ঝুঁকি সম্পর্কে
+                ডাক্তার কর্তৃক অবহিত হলাম। অতঃপর আমাকে / আমার রোগীকে আর্থিক / সম্পূর্ণ জ্ঞান করে
+                অপারেশন করতে / করাতে সুস্থ মস্তিষ্কে, সজ্ঞানে, স্বেচ্ছায় সম্মতি প্রদান করলাম।
+                অপারেশন / চিকিৎসা সময় কোন নতুন / জটিল পরিস্থিতির সৃষ্টি হলে রোগীর স্বার্থে যে কোন
+                রকম ব্যবস্থা গ্রহণ করার জন্য কর্তব্যরত ডাক্তার / সার্জন / এনেস্থেসিস্টকে সম্মতি দিলাম।
+                চিকিৎসা / অপারেশন বা অজ্ঞান করার সময় কোন রকম দুর্ঘটনা ঘটলে ক্লিনিক কর্তৃপক্ষ বা
+                ডাক্তারগণ কোন প্রকার দায়ী থাকবেন না।
+            </p>
+
+            <section class="patient-lines">
+                <div class="line-row split">
+                    <div><span class="serial">১।</span> রোগীর নাম: <strong>{{ record.patient_name or '-' }}</strong></div>
+                    <div>বয়স: <strong>{{ record.age or '-' }}</strong></div>
+                </div>
+
+                <div class="line-row">
+                    <span class="serial">২।</span> পিতা/স্বামী: <strong>{{ record.guardian_name or '-' }}</strong>
+                </div>
+
+                <div class="line-row">
+                    <span class="serial">৩।</span> ঠিকানা: <strong>{{ record.address or '-' }}</strong>
+                </div>
+
+                <div class="line-row split">
+                    <div><span class="serial">৪।</span> রেজিস্ট্রেশন: <strong>{{ record.registration_no or '-' }}</strong></div>
+                    <div>তারিখ: <strong>{{ print_date }}</strong></div>
+                </div>
+
+                <div class="line-row">
+                    <span class="serial">৫।</span> অভিভাবকের নাম: <strong>{{ record.guardian_name or '-' }}</strong>
+                </div>
+
+                <div class="line-row">
+                    <span class="serial">৬।</span> রোগীর সাথে সম্পর্ক: <strong>{{ record.guardian_relation or '-' }}</strong>
+                </div>
+            </section>
+
+            <section class="signature-area">
+                <div class="signature-box">
+                    <span>........................</span>
+                    <strong>অভিভাবকের স্বাক্ষর</strong>
+                </div>
+
+                <div class="signature-box">
+                    <span>................</span>
+                    <strong>রোগীর স্বাক্ষর</strong>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        function scaleConcernPaper() {
+            const page = document.getElementById("a4Page");
+            const content = document.getElementById("paperContent");
+
+            if (!page || !content) {
+                return;
+            }
+
+            page.style.setProperty("--paper-scale", "1");
+            content.style.width = "100%";
+
+            const availableHeight = page.clientHeight;
+            const availableWidth = page.clientWidth;
+            const heightScale = availableHeight / content.scrollHeight;
+            const widthScale = availableWidth / content.scrollWidth;
+            const scale = Math.min(1, heightScale, widthScale);
+            const finalScale = Math.max(scale, 0.82);
+
+            page.style.setProperty("--paper-scale", finalScale.toFixed(3));
+            content.style.width = `${100 / finalScale}%`;
+        }
+
+        window.addEventListener("load", function () {
+            scaleConcernPaper();
+            setTimeout(function () {
+                scaleConcernPaper();
+                window.print();
+            }, 300);
+        });
+        window.addEventListener("resize", scaleConcernPaper);
+        window.addEventListener("beforeprint", scaleConcernPaper);
+    </script>
+</body>
+</html>

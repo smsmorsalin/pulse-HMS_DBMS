@@ -74,6 +74,7 @@ textarea {
 .soft-link,
 .save-btn,
 .print-link,
+.test-return-link,
 .recent-search button,
 .today-bills-link,
 #addManualTestBtn,
@@ -109,6 +110,7 @@ textarea {
 .soft-link:hover,
 .save-btn:hover,
 .print-link:hover,
+.test-return-link:hover,
 .recent-search button:hover,
 .today-bills-link:hover,
 #addManualTestBtn:hover,
@@ -317,6 +319,47 @@ textarea {
     min-width: 0;
 }
 
+.patient-lookup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    border: 1px solid rgba(154, 240, 187, 0.36);
+    background: rgba(56, 193, 114, 0.12);
+    border-radius: 14px;
+    padding: 0 12px;
+    transition: 0.25s ease;
+}
+
+.patient-lookup:focus-within {
+    border-color: rgba(154, 240, 187, 0.78);
+    box-shadow: 0 0 0 3px rgba(56, 193, 114, 0.15);
+}
+
+.patient-lookup i {
+    color: #9af0bb;
+}
+
+.patient-lookup input {
+    width: 100%;
+    min-height: 42px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+}
+
+.patient-lookup input::placeholder {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.patient-match-count {
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 12px;
+}
+
 .soft-link {
     min-height: 38px;
     padding: 0 12px;
@@ -378,6 +421,16 @@ textarea {
 .field select option,
 .summary-fields select option {
     color: #0b1a3a;
+}
+
+.field .patient-lookup input,
+.field .patient-lookup input:focus {
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    transform: none;
 }
 
 .patient-card {
@@ -907,6 +960,21 @@ td {
     border: 1px solid #76c9ff;
     font-size: 13px;
     font-weight: 800;
+}
+
+.test-return-link {
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(135deg, #8a5cf6, #0aa7a3);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.test-return-link.returned {
+    background: rgba(24, 169, 119, 0.92);
 }
 
 .empty-cell {

@@ -39,6 +39,9 @@
 				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
+				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				{% endif %}
 			</div>
 		</li>
 	</ul>
@@ -78,10 +81,17 @@
 	<section class="summary-grid">
 		<div class="summary-card">
 			<div>
-				<span>Total Sales</span>
+				<span>Net Sales</span>
 				<strong>Tk {{ '%.2f'|format(total_sales) }}</strong>
 			</div>
 			<i class="fas fa-sack-dollar"></i>
+		</div>
+		<div class="summary-card return-card">
+			<div>
+				<span>Returned</span>
+				<strong>Tk {{ '%.2f'|format(total_returns) }}</strong>
+			</div>
+			<i class="fas fa-rotate-left"></i>
 		</div>
 		<div class="summary-card">
 			<div>
@@ -93,6 +103,52 @@
 	</section>
 
 	<section class="sales-stack">
+		{% if returns %}
+			<article class="sale-card return-list-card">
+				<div class="sale-head">
+					<div class="invoice">
+						<strong>Medicine Returns</strong>
+						<span>Returned stock and deducted report totals for {{ format_date_display(selected_date) }}</span>
+					</div>
+					<div class="metric">
+						<span>Return Count</span>
+						<strong>{{ returns|length }}</strong>
+					</div>
+					<div class="metric">
+						<span>Total Return</span>
+						<strong>Tk {{ '%.2f'|format(total_returns) }}</strong>
+					</div>
+					<div class="sale-actions">
+						<a class="print-invoice-btn" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Return</a>
+					</div>
+				</div>
+				<div class="table-wrap">
+					<table class="items-table">
+						<thead>
+							<tr>
+								<th>Return No</th>
+								<th>Invoice</th>
+								<th>Customer</th>
+								<th>Reason</th>
+								<th>Amount</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for item in returns %}
+							<tr>
+								<td>{{ item.return_no }}</td>
+								<td>{{ item.invoice_no }}</td>
+								<td>{{ item.customer_name }}{% if item.customer_phone %} | {{ item.customer_phone }}{% endif %}</td>
+								<td>{{ item.reason or '-' }}</td>
+								<td>Tk {{ '%.2f'|format(item.refund_amount) }}</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</article>
+		{% endif %}
+
 		{% if sales %}
 			{% for sale in sales %}
 			<article class="sale-card">

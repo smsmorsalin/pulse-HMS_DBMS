@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discharge Bill {{ bill_no }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_bill_print.css') }}">
+</head>
+
+<body data-return-url="{{ url_for('discharge_bill', admission_id=admission[0]) }}">
+    <main class="bill-page">
+        <section class="bill-sheet" id="printArea">
+
+            <div class="bill-actions no-print">
+                <a href="{{ url_for('discharge_bill', admission_id=admission[0]) }}" class="action-btn secondary">Back</a>
+                <button type="button" class="action-btn" onclick="printBill()">Print</button>
+            </div>
+
+            <header class="bill-header">
+                <div class="hospital-brand">
+                    <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital Logo" class="hospital-logo">
+                    <div class="hospital-info">
+                        <strong>AL-JUMIRA HOSPITAL</strong>
+                        <span>Milk Vita Road, Dewla, Near ASA Office, Tangail</span>
+                        <span>Phone: 017767617979 | Email: aljumirahospital@gmail.com</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="bill-title-row">
+                <h2 class="bill-title">DISCHARGE BILL</h2>
+                <div class="customer-copy-row">
+                    <h3 class="customer-copy-title">Customer Copy</h3>
+                </div>
+            </section>
+
+            <section class="bill-top">
+                <div class="bill-left">
+                    <p><strong>Bill No</strong><span>:</span> {{ bill_no }}</p>
+                    <p><strong>Admission ID</strong><span>:</span> #{{ admission[0] }}</p>
+                    <p><strong>Patient UHID</strong><span>:</span> {{ admission[2] or '-' }}</p>
+                    <p class="bill-highlight"><strong>Patient</strong><span>:</span> {{ admission[3] or '-' }}</p>
+                    <p><strong>Contact No</strong><span>:</span> {{ admission[4] or '-' }}</p>
+                    <p><strong>Address</strong><span>:</span> {{ admission[8] or '-' }}</p>
+                    <p class="bill-highlight"><strong>Age/Gender</strong><span>:</span> {{ admission[5] or '-' }} {{ admission[6] or '' }} / {{ admission[7] or '-' }}</p>
+                    <p><strong>Guardian</strong><span>:</span> {{ admission[11] or '-' }}{% if admission[12] %} ({{ admission[12] }}){% endif %}</p>
+                </div>
+
+                <div class="bill-right">
+                    <p><strong>Bill Date</strong><span>:</span> {{ format_date_display(discharge_date) }}</p>
+                    <p><strong>Admission Date</strong><span>:</span> {{ format_date_display(admission[9]) }}</p>
+                    <p class="bill-highlight"><strong>Bed No</strong><span>:</span> {{ admission[10] or '-' }}</p>
+                    <p><strong>Doctor</strong><span>:</span> {{ admission[13] or '-' }}</p>
+                    <p><strong>Reason</strong><span>:</span> {{ admission[14] or '-' }}</p>
+                    <p><strong>Payer</strong><span>:</span> Cash</p>
+                    <p><strong>Remarks</strong><span>:</span> {{ remarks or '-' }}</p>
+                </div>
+            </section>
+
+            <section class="item-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sno</th>
+                            <th>Particulars</th>
+                            <th>Qty/Days</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.qty }}</td>
+                                <td>{{ "%.2f"|format(item.rate or 0) }}</td>
+                                <td>{{ "%.2f"|format(item.amount or 0) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="summary-section">
+                <div class="payment-note">
+                    <div class="paid-box">
+                        <strong>{{ 'PAID' if due_amount <= 0 else 'DUE' }}</strong>
+                        <span>{{ 'Thank You' if due_amount <= 0 else 'Please Pay' }}</span>
+                    </div>
+                    <p>Cash: {{ "%.2f"|format(paid_amount or 0) }}</p>
+                </div>
+
+                <div class="amount-summary">
+                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(total_amount or 0) }}</p>
+                    <p><strong>Discount</strong><span>:</span> {{ "%.2f"|format(discount or 0) }}</p>
+                    <p><strong>Gross Amount</strong><span>:</span> {{ "%.2f"|format(gross_amount or 0) }}</p>
+                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(paid_amount or 0) }}</p>
+                    <p><strong>Due Amount</strong><span>:</span> {{ "%.2f"|format(due_amount or 0) }}</p>
+                    <p><strong>Change</strong><span>:</span> {{ "%.2f"|format(change_amount or 0) }}</p>
+                </div>
+            </section>
+
+            <section class="amount-word">
+                <p>
+                    <strong>Amount in Words</strong>
+                    "{{ amount_in_words or 'ZERO' }}" Taka Only
+                </p>
+            </section>
+
+            <section class="narration">
+                <p><strong>Narration :</strong> Final discharge bill for admitted patient.</p>
+            </section>
+
+            <section class="signature-row">
+                <div>
+                    <span></span>
+                    <p>Patient / Guardian</p>
+                </div>
+                <div>
+                    <span></span>
+                    <p>Authorised Signatory</p>
+                </div>
+            </section>
+
+            <section class="instruction-section">
+                <p><strong>Note:</strong></p>
+                <p>* Please verify all admission, discharge, charge and payment details before leaving the counter.</p>
+                <p>* This bill must be preserved for discharge clearance and future hospital reference.</p>
+                <p>* This is a computer-generated discharge bill.</p>
+            </section>
+
+            <footer class="bill-footer">
+                <p><strong>Prepared By:</strong> {{ prepared_by or 'Admin' }}</p>
+                <p><strong>Printed By:</strong> {{ printed_by or 'Admin' }}</p>
+                <p><strong>Printed At:</strong> <span id="printedTimestamp">--</span></p>
+                <p>1 of 1</p>
+            </footer>
+
+        </section>
+    </main>
+
+    <script>
+        const returnUrl = document.body.dataset.returnUrl || "{{ url_for('discharge_bill', admission_id=admission[0]) }}";
+        let hasReturnedToDischargeBill = false;
+
+        function updatePrintedTimestamp() {
+            const timestampElement = document.getElementById("printedTimestamp");
+            if (!timestampElement) return;
+
+            const now = new Date();
+            const pad = function (value) {
+                return String(value).padStart(2, "0");
+            };
+
+            timestampElement.textContent = [
+                pad(now.getDate()),
+                pad(now.getMonth() + 1),
+                now.getFullYear()
+            ].join("-") + " " + [
+                pad(now.getHours()),
+                pad(now.getMinutes()),
+                pad(now.getSeconds())
+            ].join(":");
+        }
+
+        function returnToDischargeBill() {
+            if (hasReturnedToDischargeBill) return;
+            hasReturnedToDischargeBill = true;
+            window.location.replace(returnUrl);
+        }
+
+        function printBill() {
+            updatePrintedTimestamp();
+            window.print();
+        }
+
+        updatePrintedTimestamp();
+
+        window.addEventListener("beforeprint", updatePrintedTimestamp);
+        window.addEventListener("afterprint", function () {
+            window.setTimeout(returnToDischargeBill, 300);
+        });
+
+        window.setTimeout(function () {
+            printBill();
+        }, 700);
+    </script>
+</body>
+</html>

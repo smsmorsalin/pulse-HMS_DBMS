@@ -45,11 +45,17 @@
                     <div class="patient-form-grid">
                         <label class="field patient-select-field">
                             <span>Patient Name / ID</span>
+                            <div class="patient-lookup">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="patientLookupInput" placeholder="Search UHID, name, phone, ticket">
+                            </div>
                             <select id="patientSelect" name="patient_id" required>
                                 <option value="" selected>Select registered patient</option>
                                 {% for patient in patients %}
                                     <option
                                         value="{{ patient.id }}"
+                                        data-uhid="{{ patient.patient_uhid }}"
+                                        data-ticket="{{ patient.daily_patient_id or '' }}"
                                         data-name="{{ patient.name }}"
                                         data-phone="{{ patient.phone }}"
                                         data-age="{{ patient.age }} {{ patient.age_unit }}"
@@ -57,11 +63,13 @@
                                         data-address="{{ patient.address }}"
                                         data-doctor="{{ patient.doctor_name }}"
                                         data-referer="{{ patient.referer_name }}"
+                                        {% if selected_patient_id|string == patient.id|string %}selected{% endif %}
                                     >
-                                        {{ patient.name }}{% if patient.daily_patient_id %} | ID {{ patient.daily_patient_id }}{% endif %} | {{ patient.phone }}
+                                        UHID {{ patient.patient_uhid }} | {{ patient.name }}{% if patient.daily_patient_id %} | Ticket {{ patient.daily_patient_id }}{% endif %} | {{ patient.phone }}
                                     </option>
                                 {% endfor %}
                             </select>
+                            <small class="patient-match-count" id="patientMatchCount">{{ patients|length }} patients available</small>
                         </label>
                         <label class="field">
                             <span>Referring Doctor</span>
@@ -235,6 +243,8 @@
 
     <script>
         const patientSelect = document.getElementById("patientSelect");
+        const patientLookupInput = document.getElementById("patientLookupInput");
+        const patientMatchCount = document.getElementById("patientMatchCount");
         const patientPreview = document.getElementById("patientPreview");
         const doctorName = document.getElementById("doctorName");
         const referredBy = document.getElementById("referredBy");
@@ -344,6 +354,48 @@
             return Number(value || 0) > 0 ? money(value) : "";
         }
 
+        function getPatientOptions() {
+            return Array.from(patientSelect.options).filter(option => option.value);
+        }
+
+        function getPatientSearchText(option) {
+            return [
+                option.dataset.uhid || "",
+                option.dataset.ticket || "",
+                option.dataset.name || "",
+                option.dataset.phone || "",
+                option.textContent || ""
+            ].join(" ").toLowerCase();
+        }
+
+        function filterPatientOptions() {
+            const query = patientLookupInput.value.trim().toLowerCase();
+            let visibleCount = 0;
+            let firstVisibleOption = null;
+            const selectedOption = patientSelect.selectedOptions[0];
+
+            getPatientOptions().forEach(option => {
+                const isVisible = query === "" || getPatientSearchText(option).includes(query);
+                option.hidden = !isVisible;
+                option.disabled = !isVisible;
+                if (isVisible) {
+                    visibleCount += 1;
+                    if (!firstVisibleOption) {
+                        firstVisibleOption = option;
+                    }
+                }
+            });
+
+            if (selectedOption && selectedOption.value && selectedOption.disabled) {
+                patientSelect.value = firstVisibleOption ? firstVisibleOption.value : "";
+                syncPatientPreview();
+            }
+
+            if (patientMatchCount) {
+                patientMatchCount.textContent = visibleCount + (visibleCount === 1 ? " patient found" : " patients found");
+            }
+        }
+
         function syncPatientPreview() {
             const option = patientSelect.selectedOptions[0];
             if (!option || !option.value) {
@@ -357,7 +409,7 @@
                 <i class="fas fa-user-injured"></i>
                 <div>
                     <strong>${option.dataset.name || ""}</strong>
-                    <span>${option.dataset.age || "-"} | ${option.dataset.gender || "-"} | ${option.dataset.phone || "-"}</span>
+                    <span>UHID ${option.dataset.uhid || "-"} | ${option.dataset.age || "-"} | ${option.dataset.gender || "-"} | ${option.dataset.phone || "-"}</span>
                     <small>${option.dataset.address || ""}</small>
                 </div>
             `;
@@ -446,6 +498,17 @@
         }
 
         patientSelect.addEventListener("change", syncPatientPreview);
+        patientLookupInput.addEventListener("input", filterPatientOptions);
+        patientLookupInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const firstVisibleOption = getPatientOptions().find(option => !option.hidden && !option.disabled);
+                if (firstVisibleOption) {
+                    patientSelect.value = firstVisibleOption.value;
+                    syncPatientPreview();
+                }
+            }
+        });
         document.querySelectorAll('input[name="test_ids"]').forEach(input => input.addEventListener("change", calculateSummary));
         [flatDiscountAmount, percentageDiscountAmount, receivedAmount].forEach(input => input.addEventListener("input", calculateSummary));
         manualTestList.querySelectorAll(".manual-row").forEach(bindManualRow);
@@ -469,6 +532,7 @@
         clearVisibleTestsBtn.addEventListener("click", () => toggleVisibleTests(false));
 
         syncPatientPreview();
+        filterPatientOptions();
         updateVisibleTestCount();
         calculateSummary();
     </script>

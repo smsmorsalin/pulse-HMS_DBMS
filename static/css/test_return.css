@@ -1,0 +1,286 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    color: #fff;
+    background: linear-gradient(135deg, #09111f, #16213e 48%, #123b45);
+}
+
+.test-return-page {
+    width: min(1180px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 24px 0 36px;
+}
+
+.test-return-header,
+.test-return-search,
+.test-return-card,
+.recent-test-returns,
+.return-message {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 20px 46px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(18px);
+}
+
+.test-return-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+}
+
+.test-return-header p,
+.recent-head span {
+    margin: 0 0 4px;
+    color: #9af0bb;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.test-return-header h1,
+.recent-head h3,
+.bill-card-head h2 {
+    margin: 0;
+}
+
+.return-nav-btn,
+.test-search-row button,
+.test-return-form button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 12px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.return-nav-btn {
+    min-height: 42px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, #0aa7a3, #18a977);
+}
+
+.return-nav-btn.muted {
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.return-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    font-weight: 800;
+}
+
+.return-message.success {
+    border-color: rgba(24, 169, 119, 0.42);
+    background: rgba(24, 169, 119, 0.18);
+}
+
+.return-message.error {
+    border-color: rgba(255, 84, 112, 0.46);
+    background: rgba(255, 84, 112, 0.15);
+}
+
+.test-return-search {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 18px;
+    margin-bottom: 18px;
+}
+
+.test-return-search label,
+.test-return-form label {
+    color: rgba(255, 255, 255, 0.84);
+    font-weight: 800;
+}
+
+.test-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.test-search-row input,
+.test-return-form input,
+.test-return-form textarea {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(3, 10, 24, 0.45);
+    color: #fff;
+    outline: none;
+    padding: 12px 14px;
+    font: inherit;
+}
+
+.test-search-row button,
+.test-return-form button {
+    min-height: 46px;
+    padding: 0 18px;
+    background: linear-gradient(135deg, #1e3cfa, #7d4dff);
+}
+
+.test-return-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 18px;
+    align-items: start;
+}
+
+.test-return-card,
+.recent-test-returns {
+    border-radius: 20px;
+    padding: 18px;
+}
+
+.bill-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.bill-card-head span,
+.bill-card-head p {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.bill-card-head p {
+    margin: 4px 0 0;
+}
+
+.bill-card-head > strong {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.bill-card-head > strong.is-returned {
+    background: rgba(24, 169, 119, 0.24);
+    color: #9af0bb;
+}
+
+.bill-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.bill-info-grid div,
+.test-items-box,
+.recent-row {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.bill-info-grid span,
+.recent-row span,
+.recent-row small,
+.recent-row em {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+}
+
+.bill-info-grid strong {
+    display: block;
+    overflow-wrap: anywhere;
+    margin-top: 3px;
+}
+
+.test-items-box {
+    margin-bottom: 16px;
+}
+
+.test-items-box h3 {
+    margin: 0 0 10px;
+}
+
+.test-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.test-return-form {
+    display: grid;
+    gap: 12px;
+}
+
+.test-return-form textarea {
+    resize: vertical;
+}
+
+.already-returned,
+.empty-return-state {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(24, 169, 119, 0.16);
+}
+
+.already-returned i,
+.empty-return-state i {
+    font-size: 28px;
+    color: #9af0bb;
+}
+
+.already-returned p {
+    margin: 4px 0 0;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.recent-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+    .test-return-layout,
+    .test-search-row {
+        grid-template-columns: 1fr;
+    }
+
+    .bill-info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .test-return-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 560px) {
+    .bill-info-grid {
+        grid-template-columns: 1fr;
+    }
+}

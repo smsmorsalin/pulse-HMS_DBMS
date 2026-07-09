@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Return</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_return.css') }}?v=1">
+</head>
+<body>
+<aside class="sidebar">
+	<div class="brand">
+		<a href="{{ url_for('dashboard') }}" class="brand-link">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+			<span class="brand-text">AJH</span>
+		</a>
+	</div>
+
+	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
+		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
+		<li class="medicine-menu open" id="medicineMenu">
+			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
+				<i class="fas fa-pills"></i>
+				<span>Medicine</span>
+				<i class="fas fa-chevron-down dropdown-icon"></i>
+			</button>
+			<div class="sub-nav">
+				{% if admin %}
+				<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
+				{% endif %}
+				{% if can_access_page('medicine_sales') %}
+				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				{% endif %}
+				{% if can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				{% endif %}
+				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
+				{% endif %}
+				<a class="sub-link active" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+			</div>
+		</li>
+	</ul>
+</aside>
+
+<main class="content">
+	<header class="top-header">
+		<div class="title-group">
+			<p class="eyebrow"><i class="fas fa-rotate-left"></i> Pharmacy Return</p>
+			<h1>Medicine Return</h1>
+			<h2>Search an invoice, return selected medicines, restore stock, and update reports.</h2>
+		</div>
+		<div class="profile">
+			<button class="admin-btn" id="adminBtn" type="button">
+				<i class="fas fa-user-circle"></i>
+				{{ profile_name }}
+				<i class="fas fa-chevron-down chevron"></i>
+			</button>
+			<div class="admin-dropdown" id="adminDropdown">
+				<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
+				<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+			</div>
+		</div>
+	</header>
+
+	{% if success %}
+		<p class="return-flash success"><i class="fas fa-circle-check"></i> {{ success }}</p>
+	{% endif %}
+	{% if message %}
+		<p class="return-flash error"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+	{% endif %}
+
+	<form class="return-toolbar" method="GET" action="{{ url_for('medicine_return') }}">
+		<label for="invoiceSearch">
+			Invoice No
+			<input id="invoiceSearch" name="invoice" type="search" value="{{ invoice_query }}" placeholder="MS-260709-001 or sale ID" required>
+		</label>
+		<button class="return-btn primary" type="submit"><i class="fas fa-search"></i> Find Invoice</button>
+	</form>
+
+	{% if selected_sale %}
+	<section class="return-layout">
+		<form class="return-panel" method="POST" action="{{ url_for('medicine_return') }}">
+			<input type="hidden" name="sale_id" value="{{ selected_sale[0] }}">
+			<div class="return-panel-head">
+				<div>
+					<p class="panel-kicker">Selected Invoice</p>
+					<h3>{{ selected_sale[1] }}</h3>
+					<span>{{ selected_sale[2] }}{% if selected_sale[3] %} | {{ selected_sale[3] }}{% endif %}</span>
+				</div>
+				<div class="return-total">
+					<span>Invoice Total</span>
+					<strong>Tk {{ '%.2f'|format(selected_sale[5] or 0) }}</strong>
+				</div>
+			</div>
+
+			<div class="table-wrap return-table">
+				<table>
+					<thead>
+						<tr>
+							<th>Medicine</th>
+							<th>Batch / Unit</th>
+							<th>Sold</th>
+							<th>Returned</th>
+							<th>Can Return</th>
+							<th>Return Qty</th>
+							<th>Refund / Unit</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for item in selected_items %}
+						<tr>
+							<td>
+								<strong>{{ item.medicine_name }}</strong>
+								<span>Price Tk {{ '%.2f'|format(item.unit_price) }}</span>
+							</td>
+							<td>{{ item.batch_no }} / {{ item.unit_type|title }}</td>
+							<td>{{ item.sold_quantity }}</td>
+							<td>{{ item.returned_quantity }}</td>
+							<td>{{ item.remaining_quantity }}</td>
+							<td>
+								<input type="hidden" name="sale_item_id" value="{{ item.id }}">
+								<input class="return-qty" name="return_qty_{{ item.id }}" type="number" min="0" max="{{ item.remaining_quantity }}" value="0" data-refund="{{ '%.2f'|format(item.unit_refund) }}" {% if item.remaining_quantity <= 0 %}disabled{% endif %}>
+							</td>
+							<td>Tk {{ '%.2f'|format(item.unit_refund) }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+			<label class="reason-field" for="returnReason">
+				Reason
+				<textarea id="returnReason" name="reason" placeholder="Return reason"></textarea>
+			</label>
+
+			<div class="return-submit-row">
+				<div>
+					<span>Estimated Refund</span>
+					<strong id="returnEstimate">Tk 0.00</strong>
+				</div>
+				<button class="return-btn primary" type="submit"><i class="fas fa-rotate-left"></i> Save Return</button>
+			</div>
+		</form>
+
+		<aside class="recent-return-panel">
+			<div class="return-panel-head compact">
+				<div>
+					<p class="panel-kicker">Recent</p>
+					<h3>Returns</h3>
+				</div>
+			</div>
+			<div class="recent-return-list">
+				{% for item in recent_returns %}
+				<div class="recent-return-row">
+					<strong>{{ item[0] }}</strong>
+					<span>{{ item[1] }} | {{ item[2] }}</span>
+					<small>Tk {{ '%.2f'|format(item[3] or 0) }} | {{ format_date_display(item[4]) }}</small>
+				</div>
+				{% else %}
+				<p class="empty-state">No returns recorded yet.</p>
+				{% endfor %}
+			</div>
+		</aside>
+	</section>
+	{% else %}
+	<section class="return-empty">
+		<i class="fas fa-receipt"></i>
+		<strong>Search a sale invoice to start a return.</strong>
+	</section>
+	{% endif %}
+</main>
+
+<script>
+const medicineToggle = document.getElementById('medicineToggle');
+const medicineMenu = document.getElementById('medicineMenu');
+const adminBtn = document.getElementById('adminBtn');
+const adminDropdown = document.getElementById('adminDropdown');
+const chevron = document.querySelector('.chevron');
+
+if (medicineToggle && medicineMenu) {
+	medicineToggle.addEventListener('click', function () {
+		medicineMenu.classList.toggle('open');
+		medicineToggle.setAttribute('aria-expanded', medicineMenu.classList.contains('open'));
+	});
+}
+
+if (adminBtn && adminDropdown && chevron) {
+	adminBtn.addEventListener('click', function () {
+		adminDropdown.classList.toggle('show');
+		chevron.classList.toggle('rotate');
+	});
+
+	window.addEventListener('click', function (event) {
+		if (!document.querySelector('.profile').contains(event.target)) {
+			adminDropdown.classList.remove('show');
+			chevron.classList.remove('rotate');
+		}
+	});
+}
+
+const returnEstimate = document.getElementById('returnEstimate');
+const returnQtyInputs = document.querySelectorAll('.return-qty');
+
+function updateReturnEstimate() {
+	let total = 0;
+	returnQtyInputs.forEach(function (input) {
+		total += (Number(input.value || 0) * Number(input.dataset.refund || 0));
+	});
+	if (returnEstimate) {
+		returnEstimate.textContent = 'Tk ' + total.toFixed(2);
+	}
+}
+
+returnQtyInputs.forEach(function (input) {
+	input.addEventListener('input', updateReturnEstimate);
+});
+updateReturnEstimate();
+</script>
+</body>
+</html>

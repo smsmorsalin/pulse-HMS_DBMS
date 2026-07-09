@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Patient Profile | AL-JUMIRA HOSPITAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_profile_edit.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="edit-profile-page">
+        <section class="edit-shell">
+            <header class="edit-header">
+                <a class="nav-btn" href="{{ url_for('patients_info', keyword=keyword or '') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Patients Info</span>
+                </a>
+
+                <div class="title-block">
+                    <span>UHID {{ patient.id }}</span>
+                    <h1>Edit Patient Profile</h1>
+                </div>
+
+                <a class="nav-btn muted" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-house-medical"></i>
+                    <span>Dashboard</span>
+                </a>
+            </header>
+
+            {% if message %}
+            <div class="page-message">
+                <i class="fas fa-circle-info"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endif %}
+
+            <form class="profile-form" method="POST" action="{{ url_for('edit_patient_profile', patient_id=patient.id, keyword=keyword or '') }}">
+                <section class="form-section identity-section">
+                    <h2>Identity</h2>
+
+                    <div class="form-grid">
+                        <label class="wide-field">
+                            <span>Patient Name</span>
+                            <input type="text" name="name" value="{{ patient.name }}" required>
+                        </label>
+
+                        <label>
+                            <span>Age</span>
+                            <input type="number" name="age" value="{{ patient.age }}" min="0" required>
+                        </label>
+
+                        <label>
+                            <span>Age Unit</span>
+                            <select name="age_unit" required>
+                                <option value="Y" {% if patient.age_unit == 'Y' %}selected{% endif %}>Years</option>
+                                <option value="M" {% if patient.age_unit == 'M' %}selected{% endif %}>Months</option>
+                                <option value="D" {% if patient.age_unit == 'D' %}selected{% endif %}>Days</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Gender</span>
+                            <select name="gender" required>
+                                <option value="" {% if not patient.gender %}selected{% endif %}>Select gender</option>
+                                <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
+                                <option value="Male" {% if patient.gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Other" {% if patient.gender == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Patient Status</span>
+                            <select name="patient_status" required>
+                                <option value="" {% if not patient.patient_status %}selected{% endif %}>Select status</option>
+                                <option value="OLD" {% if patient.patient_status == 'OLD' %}selected{% endif %}>OLD</option>
+                                <option value="NEW" {% if patient.patient_status == 'NEW' %}selected{% endif %}>NEW</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Date of Birth</span>
+                            <input type="date" name="dob" value="{{ patient.dob }}">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="form-section medical-section">
+                    <h2>Medical</h2>
+
+                    <div class="form-grid">
+                        <label>
+                            <span>Blood Group</span>
+                            <select name="blood_group" required>
+                                <option value="" {% if not patient.blood_group %}selected{% endif %}>Select blood group</option>
+                                <option value="B+" {% if patient.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                                <option value="B-" {% if patient.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                                <option value="A-" {% if patient.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                                <option value="A+" {% if patient.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                                <option value="AB+" {% if patient.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                                <option value="AB-" {% if patient.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                                <option value="O+" {% if patient.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                                <option value="O-" {% if patient.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                            </select>
+                        </label>
+
+                        <label class="full-field">
+                            <span>Medical History</span>
+                            <textarea name="medical_history">{{ patient.medical_history }}</textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="form-section contact-section">
+                    <h2>Contact</h2>
+
+                    <div class="form-grid">
+                        <label>
+                            <span>Phone</span>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value="{{ patient.phone }}"
+                                maxlength="11"
+                                pattern="[0-9]{7,11}"
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)"
+                                required>
+                        </label>
+
+                        <label>
+                            <span>Email</span>
+                            <input type="email" name="email" value="{{ patient.email }}">
+                        </label>
+
+                        <label>
+                            <span>Emergency Name</span>
+                            <input type="text" name="emergency_contact_name" value="{{ patient.emergency_contact_name }}">
+                        </label>
+
+                        <label>
+                            <span>Emergency Phone</span>
+                            <input
+                                type="tel"
+                                name="emergency_contact_phone"
+                                value="{{ patient.emergency_contact_phone }}"
+                                maxlength="11"
+                                pattern="[0-9]{7,11}"
+                                oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)">
+                        </label>
+
+                        <label class="full-field">
+                            <span>Address</span>
+                            <textarea name="address" required>{{ patient.address }}</textarea>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <a class="cancel-btn" href="{{ url_for('patients_info', keyword=keyword or '') }}">
+                        <i class="fas fa-xmark"></i>
+                        <span>Cancel</span>
+                    </a>
+                    <button type="submit" class="save-btn">
+                        <i class="fas fa-floppy-disk"></i>
+                        <span>Save Profile</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

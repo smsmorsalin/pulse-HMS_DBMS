@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discharge Bill</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_bill.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="discharge-page">
+        <section class="page-header no-print">
+            <a class="back-link" href="{{ url_for('admissions') }}">
+                <i class="fas fa-arrow-left"></i>
+                Admission
+            </a>
+            <div>
+                <h1><i class="fas fa-file-invoice-dollar"></i> Discharge Bill</h1>
+                <p>Prepare final inpatient billing from active admission records.</p>
+            </div>
+            <button
+                type="button"
+                class="print-btn"
+                onclick="printDischargeBill()"
+                {% if selected_admission %}data-print-url="{{ url_for('discharge_bill_print', admission_id=selected_admission[0]) }}"{% endif %}
+                {% if not selected_admission %}disabled{% endif %}
+            >
+                <i class="fas fa-print"></i>
+                Print Bill
+            </button>
+        </section>
+
+        <section class="discharge-workspace no-print">
+            <aside class="admission-list-panel">
+                <div class="panel-heading">
+                    <h2>Active Admissions</h2>
+                    <span>{{ admissions|length }} active</span>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="admissionSearch" placeholder="Search patient or bed">
+                </div>
+
+                <div class="admission-list" id="admissionList">
+                    {% if admissions %}
+                        {% for admission in admissions %}
+                            <a
+                                class="admission-card {{ 'selected' if selected_admission and admission[0] == selected_admission[0] else '' }}"
+                                href="{{ url_for('discharge_bill', admission_id=admission[0]) }}"
+                                data-search="{{ admission[14] }} {{ admission[1] }} {{ admission[2] }} {{ admission[8] }} {{ admission[0] }}"
+                            >
+                                <strong>{{ admission[1] }}</strong>
+                                <span>UHID {{ admission[14] or '-' }} | Admission #{{ admission[0] }} | Bed {{ admission[8] or '-' }}</span>
+                                <small>{{ admission[2] or '-' }} | {{ admission[11] or 'Not assigned' }}</small>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-state">No active admissions available for discharge billing.</p>
+                    {% endif %}
+                </div>
+            </aside>
+
+            <section class="bill-panel">
+                {% if selected_admission %}
+                    <div class="patient-summary">
+                        <div>
+                            <span>Selected Patient</span>
+                            <h2>{{ selected_admission[3] }}</h2>
+                            <p>UHID {{ selected_admission[14] or '-' }} | Admission #{{ selected_admission[0] }}</p>
+                        </div>
+                        <div class="summary-badge">
+                            <span>Bed</span>
+                            <strong>{{ selected_admission[10] or '-' }}</strong>
+                        </div>
+                    </div>
+
+                    <form class="bill-form" id="billForm" data-admission-date="{{ selected_admission[9] }}">
+                        <div class="form-grid">
+                            <label>
+                                <span>Discharge Date</span>
+                                <input type="date" id="dischargeDate" value="{{ today_date }}" required>
+                            </label>
+                            <label>
+                                <span>Stay Days</span>
+                                <input type="number" id="stayDays" value="1" min="1" readonly>
+                            </label>
+                            <label>
+                                <span>Bed Charge / Day</span>
+                                <input type="number" class="money-input" id="bedCharge" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Doctor Fee</span>
+                                <input type="number" class="money-input" id="doctorFee" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Medicine Charge</span>
+                                <input type="number" class="money-input" id="medicineCharge" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Pathology Charge</span>
+                                <input type="number" class="money-input" id="pathologyCharge" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Service Charge</span>
+                                <input type="number" class="money-input" id="serviceCharge" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Other Charge</span>
+                                <input type="number" class="money-input" id="otherCharge" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Discount</span>
+                                <input type="number" class="money-input" id="discountAmount" value="0" min="0" step="0.01">
+                            </label>
+                            <label>
+                                <span>Paid Amount</span>
+                                <input type="number" class="money-input" id="paidAmount" value="0" min="0" step="0.01">
+                            </label>
+                            <label class="full-width">
+                                <span>Remarks</span>
+                                <textarea id="billRemarks" placeholder="Clinical or payment note"></textarea>
+                            </label>
+                        </div>
+                    </form>
+
+                    <div class="total-strip">
+                        <div><span>Gross</span><strong id="grossTotal">0.00</strong></div>
+                        <div><span>Net</span><strong id="netTotal">0.00</strong></div>
+                        <div><span>Due</span><strong id="dueTotal">0.00</strong></div>
+                    </div>
+
+                    <div class="bill-action-row">
+                        <button
+                            type="button"
+                            class="print-btn bill-panel-print-btn"
+                            onclick="printDischargeBill()"
+                            data-print-url="{{ url_for('discharge_bill_print', admission_id=selected_admission[0]) }}"
+                        >
+                            <i class="fas fa-print"></i>
+                            Print Bill
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="empty-bill-state">
+                        <i class="fas fa-bed-pulse"></i>
+                        <h2>No Active Admission Selected</h2>
+                        <p>Admit a patient first, then return here to prepare the discharge bill.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </section>
+
+        {% if selected_admission %}
+            <section class="bill-preview" id="printArea">
+                <header class="bill-preview-header">
+                    <div>
+                        <h2>AL-JUMIRA HOSPITAL</h2>
+                        <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                        <p>Phone: 017767617979 | Email: aljumirahospital@gmail.com</p>
+                    </div>
+                    <strong>DISCHARGE BILL</strong>
+                </header>
+
+                <section class="bill-meta">
+                    <div>
+                        <p><span>Bill No</span><strong>DB-{{ selected_admission[0] }}</strong></p>
+                        <p><span>Admission ID</span><strong>#{{ selected_admission[0] }}</strong></p>
+                        <p><span>Patient UHID</span><strong>{{ selected_admission[2] }}</strong></p>
+                        <p><span>Patient Name</span><strong>{{ selected_admission[3] }}</strong></p>
+                        <p><span>Age/Gender</span><strong>{{ selected_admission[5] }} {{ selected_admission[6] }} / {{ selected_admission[7] }}</strong></p>
+                        <p><span>Contact</span><strong>{{ selected_admission[4] or '-' }}</strong></p>
+                    </div>
+                    <div>
+                        <p><span>Doctor</span><strong>{{ selected_admission[13] }}</strong></p>
+                        <p><span>Bed No</span><strong>{{ selected_admission[10] or '-' }}</strong></p>
+                        <p><span>Admission Date</span><strong>{{ format_date_display(selected_admission[9]) }}</strong></p>
+                        <p><span>Discharge Date</span><strong id="printDischargeDate">-</strong></p>
+                        <p><span>Guardian</span><strong>{{ selected_admission[11] or '-' }}{% if selected_admission[12] %} ({{ selected_admission[12] }}){% endif %}</strong></p>
+                        <p><span>Address</span><strong>{{ selected_admission[8] or '-' }}</strong></p>
+                    </div>
+                </section>
+
+                <table class="bill-table">
+                    <thead>
+                        <tr>
+                            <th>SL</th>
+                            <th>Description</th>
+                            <th>Qty/Days</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Bed Charge</td>
+                            <td id="printStayDays">1</td>
+                            <td id="printBedRate">0.00</td>
+                            <td id="printBedTotal">0.00</td>
+                        </tr>
+                        <tr><td>2</td><td>Doctor Fee</td><td>1</td><td id="printDoctorFee">0.00</td><td id="printDoctorTotal">0.00</td></tr>
+                        <tr><td>3</td><td>Medicine Charge</td><td>1</td><td id="printMedicineCharge">0.00</td><td id="printMedicineTotal">0.00</td></tr>
+                        <tr><td>4</td><td>Pathology Charge</td><td>1</td><td id="printPathologyCharge">0.00</td><td id="printPathologyTotal">0.00</td></tr>
+                        <tr><td>5</td><td>Service Charge</td><td>1</td><td id="printServiceCharge">0.00</td><td id="printServiceTotal">0.00</td></tr>
+                        <tr><td>6</td><td>Other Charge</td><td>1</td><td id="printOtherCharge">0.00</td><td id="printOtherTotal">0.00</td></tr>
+                    </tbody>
+                </table>
+
+                <section class="bill-bottom">
+                    <div>
+                        <p><strong>Reason:</strong> {{ selected_admission[14] or '-' }}</p>
+                        <p><strong>Remarks:</strong> <span id="printRemarks">-</span></p>
+                    </div>
+                    <div class="amount-box">
+                        <p><span>Gross Amount</span><strong id="printGross">0.00</strong></p>
+                        <p><span>Discount</span><strong id="printDiscount">0.00</strong></p>
+                        <p><span>Net Amount</span><strong id="printNet">0.00</strong></p>
+                        <p><span>Paid Amount</span><strong id="printPaid">0.00</strong></p>
+                        <p class="due-line"><span>Due Amount</span><strong id="printDue">0.00</strong></p>
+                    </div>
+                </section>
+
+                <footer class="preview-footer">
+                    <div>
+                        <span></span>
+                        <p>Prepared By: {{ printed_by }}</p>
+                    </div>
+                    <div>
+                        <span></span>
+                        <p>Patient / Guardian Signature</p>
+                    </div>
+                </footer>
+            </section>
+        {% endif %}
+    </main>
+
+    <script>
+        const admissionCards = document.querySelectorAll(".admission-card");
+        const admissionSearch = document.getElementById("admissionSearch");
+        const billForm = document.getElementById("billForm");
+        const printButton = document.querySelector(".print-btn");
+
+        function money(value) {
+            return Number(value || 0).toFixed(2);
+        }
+
+        function readNumber(id) {
+            const field = document.getElementById(id);
+            return field ? Number(field.value || 0) : 0;
+        }
+
+        function setText(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        function updateBill() {
+            if (!billForm) return;
+
+            const admissionDate = new Date(billForm.dataset.admissionDate);
+            const dischargeField = document.getElementById("dischargeDate");
+            const dischargeDate = new Date(dischargeField.value);
+            const dayMs = 24 * 60 * 60 * 1000;
+            const stayDays = Math.max(1, Math.ceil((dischargeDate - admissionDate) / dayMs) + 1 || 1);
+            const bedRate = readNumber("bedCharge");
+            const bedTotal = bedRate * stayDays;
+            const doctorFee = readNumber("doctorFee");
+            const medicineCharge = readNumber("medicineCharge");
+            const pathologyCharge = readNumber("pathologyCharge");
+            const serviceCharge = readNumber("serviceCharge");
+            const otherCharge = readNumber("otherCharge");
+            const discount = readNumber("discountAmount");
+            const paid = readNumber("paidAmount");
+            const gross = bedTotal + doctorFee + medicineCharge + pathologyCharge + serviceCharge + otherCharge;
+            const net = Math.max(0, gross - discount);
+            const due = Math.max(0, net - paid);
+            const remarks = document.getElementById("billRemarks").value.trim() || "-";
+
+            document.getElementById("stayDays").value = stayDays;
+            setText("grossTotal", money(gross));
+            setText("netTotal", money(net));
+            setText("dueTotal", money(due));
+            setText("printDischargeDate", dischargeField.value || "-");
+            setText("printStayDays", stayDays);
+            setText("printBedRate", money(bedRate));
+            setText("printBedTotal", money(bedTotal));
+            setText("printDoctorFee", money(doctorFee));
+            setText("printDoctorTotal", money(doctorFee));
+            setText("printMedicineCharge", money(medicineCharge));
+            setText("printMedicineTotal", money(medicineCharge));
+            setText("printPathologyCharge", money(pathologyCharge));
+            setText("printPathologyTotal", money(pathologyCharge));
+            setText("printServiceCharge", money(serviceCharge));
+            setText("printServiceTotal", money(serviceCharge));
+            setText("printOtherCharge", money(otherCharge));
+            setText("printOtherTotal", money(otherCharge));
+            setText("printGross", money(gross));
+            setText("printDiscount", money(discount));
+            setText("printNet", money(net));
+            setText("printPaid", money(paid));
+            setText("printDue", money(due));
+            setText("printRemarks", remarks);
+        }
+
+        function printDischargeBill() {
+            updateBill();
+            if (!printButton || !printButton.dataset.printUrl) return;
+
+            const params = new URLSearchParams({
+                discharge_date: document.getElementById("dischargeDate").value || "",
+                stay_days: document.getElementById("stayDays").value || "1",
+                bed_charge: document.getElementById("bedCharge").value || "0",
+                doctor_fee: document.getElementById("doctorFee").value || "0",
+                medicine_charge: document.getElementById("medicineCharge").value || "0",
+                pathology_charge: document.getElementById("pathologyCharge").value || "0",
+                service_charge: document.getElementById("serviceCharge").value || "0",
+                other_charge: document.getElementById("otherCharge").value || "0",
+                discount: document.getElementById("discountAmount").value || "0",
+                paid: document.getElementById("paidAmount").value || "0",
+                remarks: document.getElementById("billRemarks").value || ""
+            });
+
+            window.open(`${printButton.dataset.printUrl}?${params.toString()}`, "_blank", "noopener");
+        }
+
+        if (admissionSearch) {
+            admissionSearch.addEventListener("input", function () {
+                const term = this.value.trim().toLowerCase();
+                admissionCards.forEach(card => {
+                    card.style.display = card.dataset.search.toLowerCase().includes(term) ? "" : "none";
+                });
+            });
+        }
+
+        if (billForm) {
+            billForm.addEventListener("input", updateBill);
+            billForm.addEventListener("change", updateBill);
+            updateBill();
+        }
+    </script>
+</body>
+</html>

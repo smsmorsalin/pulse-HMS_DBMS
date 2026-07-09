@@ -974,6 +974,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     gap:20px;
 }
 
+.patient-list-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.daily-total-pt {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: rgba(56, 193, 114, 0.16);
+    border: 1px solid rgba(56, 193, 114, 0.35);
+    color: #fff;
+}
+
+.daily-total-pt span {
+    color: #9af0bb;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.daily-total-pt strong {
+    font-size: 20px;
+    line-height: 1;
+}
+
 .header-actions{
     display:flex;
     align-items:center;
@@ -1122,6 +1153,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-top: 20px;
 }
 
+.patients-info-action-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.patients-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0aa7a3, #18a977);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.patients-info-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
 .patient-table table {
     width: 100%;
     border-collapse: collapse;
@@ -1196,9 +1254,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-wrap: wrap;
 }
 
+.inline-delete-form {
+    margin: 0;
+}
+
 /* Row Action Buttons */
 .delete-btn,
-.print-ticket-btn {
+.print-ticket-btn,
+.visit-return-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -1219,14 +1282,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: linear-gradient(135deg, #0aa7a3, #18a977);
 }
 
+.visit-return-btn {
+    background: linear-gradient(135deg, #8a5cf6, #0aa7a3);
+}
+
+.visit-return-btn.returned {
+    background: rgba(24, 169, 119, 0.92);
+}
+
 .delete-btn:hover,
-.print-ticket-btn:hover {
+.print-ticket-btn:hover,
+.visit-return-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(30, 60, 250, 0.4);
 }
 
 .delete-btn:active,
-.print-ticket-btn:active {
+.print-ticket-btn:active,
+.visit-return-btn:active {
     transform: translateY(0);
 }
 

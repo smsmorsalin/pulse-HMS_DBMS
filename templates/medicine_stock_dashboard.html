@@ -38,6 +38,9 @@
 				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
+				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				{% endif %}
 			</div>
 		</li>
 
@@ -75,6 +78,11 @@
 			<i class="fas fa-truck-ramp-box"></i>
 			<h3>{{ total_stock_in }}</h3>
 			<p>Total Stock In</p>
+		</div>
+		<div class="card return-stock-card">
+			<i class="fas fa-rotate-left"></i>
+			<h3>{{ total_return_in }}</h3>
+			<p>Returned Stock</p>
 		</div>
 		<div class="card">
 			<i class="fas fa-truck-arrow-right"></i>
@@ -184,6 +192,7 @@
 							<th>Batch</th>
 							<th>Unit</th>
 							<th>Stock In</th>
+							<th>Return In</th>
 							<th>Sold / Issued</th>
 							<th>Balance</th>
 							<th>Latest Price</th>
@@ -199,6 +208,7 @@
 								<td>{{ item.batch_no }}</td>
 								<td>{{ item.unit_type|title }}</td>
 								<td>{{ item.stock_in }}</td>
+								<td>{{ item.return_in }}</td>
 								<td>{{ item.stock_out }}</td>
 								<td>
 									<span class="balance-pill {% if item.balance > 0 %}positive{% elif item.balance < 0 %}negative{% else %}neutral{% endif %}">
@@ -219,7 +229,7 @@
 							{% endfor %}
 						{% else %}
 							<tr>
-								<td colspan="9" class="empty-state">No medicine transactions yet. Add incoming stock to populate this table.</td>
+								<td colspan="10" class="empty-state">No medicine transactions yet. Add incoming stock to populate this table.</td>
 							</tr>
 						{% endif %}
 					</tbody>
@@ -290,6 +300,46 @@
 							<div class="empty-card">
 								<p>No stock-in records.</p>
 								<span>Incoming purchases will appear here.</span>
+							</div>
+						{% endif %}
+					</div>
+				</div>
+
+				<div class="movement-column">
+					<div class="movement-column-head">
+						<span><i class="fas fa-rotate-left"></i> Return In</span>
+						<strong>{{ recent_return_in|length }}</strong>
+					</div>
+					<div class="activity-list">
+						{% if recent_return_in %}
+							{% for item in recent_return_in %}
+							<article class="activity-item in return-in">
+								<div class="movement-icon">
+									<i class="fas fa-rotate-left"></i>
+								</div>
+								<div class="activity-main">
+									<div class="movement-title">
+										<h4>{{ item.medicine_name }}</h4>
+										<span class="movement-type in">Return In</span>
+									</div>
+									<div class="movement-tags">
+										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
+										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
+										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
+									</div>
+									<p>{{ item.note }}</p>
+								</div>
+								<div class="activity-meta">
+									<strong>+{{ item.quantity }}</strong>
+									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
+									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
+								</div>
+							</article>
+							{% endfor %}
+						{% else %}
+							<div class="empty-card">
+								<p>No return-in records.</p>
+								<span>Medicine returns will appear here.</span>
 							</div>
 						{% endif %}
 					</div>

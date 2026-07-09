@@ -40,6 +40,9 @@
 				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link active" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
+				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				{% endif %}
 			</div>
 		</li>
 	</ul>
@@ -109,7 +112,7 @@
 			<div class="summary-tile">
 				<span>Products Sold</span>
 				<strong>{{ report_summary.product_count }}</strong>
-				<small>{{ report_summary.total_units }} total units</small>
+				<small>{{ report_summary.total_units }} net units after returns</small>
 			</div>
 		</section>
 
@@ -129,6 +132,10 @@
 			<div class="breakdown-item">
 				<span>Delivery</span>
 				<strong>Tk {{ '%.2f'|format(report_summary.delivery_cost) }}</strong>
+			</div>
+			<div class="breakdown-item return-breakdown">
+				<span>Returns</span>
+				<strong>Tk {{ '%.2f'|format(report_summary.return_amount) }}</strong>
 			</div>
 		</section>
 
