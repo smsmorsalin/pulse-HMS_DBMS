@@ -374,7 +374,7 @@ input {
 
 .summary-grid {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 14px;
 	margin-bottom: 22px;
 }
@@ -624,7 +624,8 @@ input {
 
 	.sidebar,
 	.profile,
-	.filter-form {
+	.filter-form,
+	.sale-actions {
 		display: none;
 	}
 
@@ -659,9 +660,5 @@ input {
 	.items-table th,
 	.items-table td {
 		color: #000;
-	}
-
-	.sale-actions {
-		display: none;
 	}
 }

@@ -122,6 +122,7 @@ ENDPOINT_PERMISSIONS = {
     'delete_daily_expense': ('daily_expenses',),
     'medicine_sales_print': ('medicine_sales_print', 'medicine_sales', 'medicine_sales_list'),
     'medicine_sales_list': ('medicine_sales_list',),
+    'medicine_sales_list_print': ('medicine_sales_list',),
     'medicine_monthly_report': ('medicine_monthly_report', 'medicine_sales', 'medicine_sales_list'),
     'medicine_return': ('medicine_return', 'medicine_sales', 'medicine_sales_list'),
     'delete_medicine_monthly_day_sales': ('medicine_monthly_report',),
@@ -2753,6 +2754,7 @@ def medicine_return():
     success = None
     selected_sale = None
     selected_items = []
+    sale_search_results = []
     invoice_query = request.args.get('invoice', '').strip()
 
     if request.method == 'POST':
@@ -2907,6 +2909,21 @@ def medicine_return():
             ''',
             (invoice_query, invoice_query)
         ).fetchone()
+        if not selected_sale:
+            search_term = f'%{invoice_query}%'
+            sale_search_results = db.execute(
+                '''
+                SELECT id, invoice_no, customer_name, customer_phone, customer_address,
+                       grand_total, sale_date, created_at
+                FROM medicine_sales
+                WHERE customer_name LIKE ? OR customer_phone LIKE ?
+                ORDER BY datetime(created_at) DESC, id DESC
+                LIMIT 12
+                ''',
+                (search_term, search_term)
+            ).fetchall()
+            if len(sale_search_results) == 1:
+                selected_sale = sale_search_results[0]
         if selected_sale:
             item_rows = db.execute(
                 '''
@@ -2950,7 +2967,10 @@ def medicine_return():
                     'unit_refund': unit_refund,
                 })
         else:
-            message = 'No medicine sale invoice found.'
+            if sale_search_results:
+                message = 'Select a matching invoice to continue the return.'
+            else:
+                message = 'No medicine sale invoice, customer name, or phone number found.'
 
     recent_returns = db.execute(
         '''
@@ -2967,6 +2987,7 @@ def medicine_return():
         invoice_query=invoice_query,
         selected_sale=selected_sale,
         selected_items=selected_items,
+        sale_search_results=sale_search_results,
         recent_returns=recent_returns,
         message=message or request.args.get('message'),
         success=success or request.args.get('success'),
@@ -2974,23 +2995,8 @@ def medicine_return():
     )
 
 
-@app.route('/medicine_sales_list')
-def medicine_sales_list():
-    """Date-wise medicine sales list."""
-    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
-    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
-
-    if not (isadmin() or isuser()):
-        return redirect(url_for('login'))
-
-    if session.get('user_id') == 'root_admin':
-        profile_name = root_admin_username
-    elif admin_checker and admin_checker[0] == session.get('user_id'):
-        profile_name = admin_checker[1]
-    else:
-        profile_name = user_checker[1]
-
-    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+def build_medicine_sales_list_report(selected_date):
+    """Return daily sales, return, and medicine summary data for list and print views."""
     sales_rows = db.execute(
         '''
         SELECT id, invoice_no, customer_name, customer_phone, customer_address, subtotal, discount_amount,
@@ -3004,6 +3010,10 @@ def medicine_sales_list():
     ).fetchall()
 
     sales = []
+    medicine_summary_map = {}
+    total_medicine_quantity = 0
+    total_line_items = 0
+
     for row in sales_rows:
         item_rows = db.execute(
             '''
@@ -3014,35 +3024,65 @@ def medicine_sales_list():
             ''',
             (row[0],)
         ).fetchall()
+        sale_items = []
+        for item in item_rows:
+            quantity = int(item[3] or 0)
+            unit_price = float(item[4] or 0)
+            discount = float(item[5] or 0)
+            line_total = float(item[6] or 0)
+            sale_item = {
+                'medicine_name': item[0],
+                'batch_no': item[1],
+                'unit_type': item[2],
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'discount': discount,
+                'line_total': line_total,
+            }
+            sale_items.append(sale_item)
+            total_medicine_quantity += quantity
+            total_line_items += 1
+
+            summary_key = (
+                sale_item['medicine_name'] or 'Unknown Medicine',
+                sale_item['batch_no'] or '-',
+                sale_item['unit_type'] or '-',
+            )
+            if summary_key not in medicine_summary_map:
+                medicine_summary_map[summary_key] = {
+                    'medicine_name': summary_key[0],
+                    'batch_no': summary_key[1],
+                    'unit_type': summary_key[2],
+                    'quantity': 0,
+                    'gross_amount': 0.0,
+                    'discount_amount': 0.0,
+                    'net_amount': 0.0,
+                    'invoice_count': set(),
+                }
+            medicine_summary_map[summary_key]['quantity'] += quantity
+            medicine_summary_map[summary_key]['gross_amount'] += quantity * unit_price
+            medicine_summary_map[summary_key]['discount_amount'] += discount
+            medicine_summary_map[summary_key]['net_amount'] += line_total
+            medicine_summary_map[summary_key]['invoice_count'].add(row[1])
+
         sales.append({
             'id': row[0],
             'invoice_no': row[1],
             'customer_name': row[2],
             'customer_phone': row[3],
             'customer_address': row[4],
-            'subtotal': row[5],
-            'discount_amount': row[6],
-            'tax_amount': row[7],
-            'delivery_cost': row[8],
-            'grand_total': row[9],
-            'received_amount': row[10],
-            'due_amount': row[11],
-            'change_amount': row[12],
+            'subtotal': float(row[5] or 0),
+            'discount_amount': float(row[6] or 0),
+            'tax_amount': float(row[7] or 0),
+            'delivery_cost': float(row[8] or 0),
+            'grand_total': float(row[9] or 0),
+            'received_amount': float(row[10] or 0),
+            'due_amount': float(row[11] or 0),
+            'change_amount': float(row[12] or 0),
             'payment_type': row[13],
             'sale_date': row[14],
             'created_at': row[15],
-            'items': [
-                {
-                    'medicine_name': item[0],
-                    'batch_no': item[1],
-                    'unit_type': item[2],
-                    'quantity': item[3],
-                    'unit_price': item[4],
-                    'discount': item[5],
-                    'line_total': item[6],
-                }
-                for item in item_rows
-            ],
+            'items': sale_items,
         })
 
     return_rows = db.execute(
@@ -3071,21 +3111,76 @@ def medicine_sales_list():
         for row in return_rows
     ]
     total_returns = sum(item['refund_amount'] for item in returns)
+    medicine_summary = []
+    for item in medicine_summary_map.values():
+        item['invoice_count'] = len(item['invoice_count'])
+        medicine_summary.append(item)
+    medicine_summary.sort(key=lambda item: item['medicine_name'].lower())
+
+    return {
+        'sales': sales,
+        'returns': returns,
+        'medicine_summary': medicine_summary,
+        'total_sales': sum(sale['grand_total'] for sale in sales) - total_returns,
+        'gross_sales': sum(sale['subtotal'] for sale in sales),
+        'total_discount': sum(sale['discount_amount'] for sale in sales),
+        'total_returns': total_returns,
+        'total_due': sum(sale['due_amount'] for sale in sales),
+        'sales_count': len(sales),
+        'return_count': len(returns),
+        'total_line_items': total_line_items,
+        'total_medicine_quantity': total_medicine_quantity,
+    }
+
+
+@app.route('/medicine_sales_list')
+def medicine_sales_list():
+    """Date-wise medicine sales list."""
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    if session.get('user_id') == 'root_admin':
+        profile_name = root_admin_username
+    elif admin_checker and admin_checker[0] == session.get('user_id'):
+        profile_name = admin_checker[1]
+    else:
+        profile_name = user_checker[1]
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    report_data = build_medicine_sales_list_report(selected_date)
 
     return render_template(
         "medicine_sales_list.html",
         profile_name=profile_name,
         selected_date=selected_date,
-        sales=sales,
-        returns=returns,
-        total_sales=sum(sale['grand_total'] for sale in sales) - total_returns,
-        total_returns=total_returns,
-        total_due=sum(sale['due_amount'] for sale in sales),
         admin=isadmin(),
+        **report_data,
     )
 
 
-@app.route('/medicine_monthly_report')
+@app.route('/medicine_sales_list/print')
+def medicine_sales_list_print():
+    """Printable daily medicine sales list."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    selected_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+    _, _, profile_name = get_current_actor()
+    report_data = build_medicine_sales_list_report(selected_date)
+
+    return render_template(
+        "medicine_sales_list_print.html",
+        profile_name=profile_name,
+        selected_date=selected_date,
+        return_url=url_for('medicine_sales_list', date=selected_date),
+        **report_data,
+    )
+
+
+@app.route('/medicine_monthly_report') 
 def medicine_monthly_report():
     """Monthly medicine sales report for admins and permitted users."""
     if not (isadmin() or isuser()):

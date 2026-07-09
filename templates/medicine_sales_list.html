@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Sales List</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales_list.css') }}?v=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales_list.css') }}?v=3">
 </head>
 <body>
 <aside class="sidebar">
@@ -74,11 +74,18 @@
 		</label>
 		<div class="filter-actions">
 			<button class="filter-btn" type="submit"><i class="fas fa-filter"></i> View Sales</button>
-			<button class="print-btn" type="button" onclick="window.print()"><i class="fas fa-print"></i> Print List</button>
+			<a class="print-btn" href="{{ url_for('medicine_sales_list_print', date=selected_date) }}" target="_blank" rel="opener" onclick="return openSalesListPrint(event, this.href)"><i class="fas fa-print"></i> Print List</a>
 		</div>
 	</form>
 
 	<section class="summary-grid">
+		<div class="summary-card">
+			<div>
+				<span>Medicine Sales</span>
+				<strong>{{ sales_count }}</strong>
+			</div>
+			<i class="fas fa-receipt"></i>
+		</div>
 		<div class="summary-card">
 			<div>
 				<span>Net Sales</span>
@@ -155,6 +162,7 @@
 				<div class="sale-head">
 					<div class="invoice">
 						<strong>{{ sale.invoice_no }}</strong>
+						<span>Sale ID: {{ sale.id }}</span>
 						<span>{{ sale.customer_name }}{% if sale.customer_phone %} | {{ sale.customer_phone }}{% endif %}</span>
 						{% if sale.customer_address %}
 						<span>{{ sale.customer_address }}</span>
@@ -252,6 +260,21 @@ if (adminBtn && adminDropdown && chevron) {
 			chevron.classList.remove('rotate');
 		}
 	});
+}
+
+function openSalesListPrint(event, printUrl) {
+	if (event) {
+		event.preventDefault();
+	}
+
+	const printWindow = window.open(printUrl, 'medicineSalesListPrint');
+	if (printWindow) {
+		printWindow.focus();
+	} else {
+		window.location.href = printUrl;
+	}
+
+	return false;
 }
 </script>
 </body>

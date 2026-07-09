@@ -6,7 +6,7 @@
 <title>Medicine Return</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_return.css') }}?v=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_return.css') }}?v=2">
 </head>
 <body>
 <aside class="sidebar">
@@ -75,11 +75,54 @@
 
 	<form class="return-toolbar" method="GET" action="{{ url_for('medicine_return') }}">
 		<label for="invoiceSearch">
-			Invoice No
-			<input id="invoiceSearch" name="invoice" type="search" value="{{ invoice_query }}" placeholder="MS-260709-001 or sale ID" required>
+			Invoice, Sale ID, Name or Phone
+			<input id="invoiceSearch" name="invoice" type="search" value="{{ invoice_query }}" placeholder="MS-260709-001, sale ID, name or phone" required>
 		</label>
 		<button class="return-btn primary" type="submit"><i class="fas fa-search"></i> Find Invoice</button>
 	</form>
+
+	{% if sale_search_results and not selected_sale %}
+	<section class="return-search-panel">
+		<div class="return-panel-head compact">
+			<div>
+				<p class="panel-kicker">Matches</p>
+				<h3>Sales Found</h3>
+			</div>
+		</div>
+		<div class="table-wrap return-match-table">
+			<table>
+				<thead>
+					<tr>
+						<th>Sale ID</th>
+						<th>Invoice</th>
+						<th>Customer</th>
+						<th>Phone</th>
+						<th>Date</th>
+						<th>Total</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for sale in sale_search_results %}
+					<tr>
+						<td>{{ sale[0] }}</td>
+						<td>{{ sale[1] }}</td>
+						<td>{{ sale[2] or 'Walk-in Customer' }}</td>
+						<td>{{ sale[3] or '-' }}</td>
+						<td>{{ format_date_display(sale[6]) }}</td>
+						<td>Tk {{ '%.2f'|format(sale[5] or 0) }}</td>
+						<td>
+							<a class="return-select-link" href="{{ url_for('medicine_return', invoice=sale[1]) }}">
+								<i class="fas fa-check"></i> Select
+							</a>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</section>
+	{% endif %}
 
 	{% if selected_sale %}
 	<section class="return-layout">
@@ -89,6 +132,7 @@
 				<div>
 					<p class="panel-kicker">Selected Invoice</p>
 					<h3>{{ selected_sale[1] }}</h3>
+					<span>Sale ID: {{ selected_sale[0] }}</span>
 					<span>{{ selected_sale[2] }}{% if selected_sale[3] %} | {{ selected_sale[3] }}{% endif %}</span>
 				</div>
 				<div class="return-total">
@@ -166,7 +210,7 @@
 			</div>
 		</aside>
 	</section>
-	{% else %}
+	{% elif not sale_search_results %}
 	<section class="return-empty">
 		<i class="fas fa-receipt"></i>
 		<strong>Search a sale invoice to start a return.</strong>

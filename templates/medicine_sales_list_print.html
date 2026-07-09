@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Sales List Print</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales_list_print.css') }}?v=1">
+</head>
+<body>
+<main class="report-page">
+	<section class="report-sheet">
+		<div class="action-bar">
+			<a class="action-btn secondary" href="{{ return_url }}" onclick="return returnToSalesList(event)">Back</a>
+			<button class="action-btn" type="button" onclick="printReport()">Print</button>
+		</div>
+
+		<header class="report-head">
+			<div class="brand-block">
+				<h1>AJH Pharmacy Management</h1>
+				<strong>Daily Medicine Sales Record</strong>
+				<p>Professional pharmacy sales register with invoice and medicine-wise details.</p>
+			</div>
+			<div class="meta-grid">
+				<p><strong>Report Date:</strong> {{ format_date_display(selected_date) }}</p>
+				<p><strong>Prepared By:</strong> {{ profile_name or 'Admin' }}</p>
+				<p><strong>Printed At:</strong> <span id="printedTimestamp">--</span></p>
+			</div>
+		</header>
+
+		<section class="summary-band" aria-label="Daily sales summary">
+			<div class="summary-box sales-count">
+				<span>Medicine Sales</span>
+				<strong>{{ sales_count }}</strong>
+				<small>Total invoices</small>
+			</div>
+			<div class="summary-box">
+				<span>Medicine Qty</span>
+				<strong>{{ total_medicine_quantity }}</strong>
+				<small>{{ total_line_items }} line items</small>
+			</div>
+			<div class="summary-box">
+				<span>Gross Sales</span>
+				<strong>Tk {{ '%.2f'|format(gross_sales) }}</strong>
+			</div>
+			<div class="summary-box">
+				<span>Discount</span>
+				<strong>Tk {{ '%.2f'|format(total_discount) }}</strong>
+			</div>
+			<div class="summary-box">
+				<span>Returns</span>
+				<strong>Tk {{ '%.2f'|format(total_returns) }}</strong>
+				<small>{{ return_count }} return entries</small>
+			</div>
+			<div class="summary-box">
+				<span>Net Sales</span>
+				<strong>Tk {{ '%.2f'|format(total_sales) }}</strong>
+				<small>Due Tk {{ '%.2f'|format(total_due) }}</small>
+			</div>
+		</section>
+
+		<section>
+			<div class="section-title">
+				<h2>Medicine-Wise Sales Summary</h2>
+				<span>Which medicine sold and how many</span>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th class="w-med">Medicine Name</th>
+						<th class="w-batch">Batch</th>
+						<th class="w-unit">Unit</th>
+						<th class="w-small text-center">Qty Sold</th>
+						<th class="w-small text-center">Invoices</th>
+						<th class="w-amount text-right">Gross</th>
+						<th class="w-amount text-right">Discount</th>
+						<th class="w-amount text-right">Net Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in medicine_summary %}
+					<tr>
+						<td><strong>{{ item.medicine_name }}</strong></td>
+						<td>{{ item.batch_no }}</td>
+						<td>{{ item.unit_type|title }}</td>
+						<td class="text-center">{{ item.quantity }}</td>
+						<td class="text-center">{{ item.invoice_count }}</td>
+						<td class="text-right">{{ '%.2f'|format(item.gross_amount) }}</td>
+						<td class="text-right">{{ '%.2f'|format(item.discount_amount) }}</td>
+						<td class="text-right">{{ '%.2f'|format(item.net_amount) }}</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td class="empty-row" colspan="8">No medicine sales found for this date.</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+
+		<section>
+			<div class="section-title">
+				<h2>Invoice Sales Detail</h2>
+				<span>Sale ID, invoice, customer and medicine names</span>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th class="w-sno text-center">Sno</th>
+						<th class="w-sale-id">Sale ID</th>
+						<th class="w-invoice">Invoice</th>
+						<th class="w-date">Date / Time</th>
+						<th class="w-customer">Customer</th>
+						<th class="w-medicine-detail">Medicine Details</th>
+						<th class="w-total text-right">Invoice Total</th>
+						<th class="w-due text-right">Due</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for sale in sales %}
+					<tr>
+						<td class="text-center">{{ loop.index }}</td>
+						<td>{{ sale.id }}</td>
+						<td><strong>{{ sale.invoice_no }}</strong><br><span class="muted">{{ sale.payment_type or 'Cash' }}</span></td>
+						<td>{{ format_date_display(sale.created_at) }}</td>
+						<td>
+							<strong>{{ sale.customer_name or 'Walk-in Customer' }}</strong><br>
+							<span class="muted">{{ sale.customer_phone or '-' }}</span>
+						</td>
+						<td>
+							<div class="medicine-lines">
+								{% for item in sale['items'] %}
+								<div class="medicine-line">
+									<span><strong>{{ item.medicine_name }}</strong><br><span class="muted">Batch: {{ item.batch_no or '-' }}</span></span>
+									<span>{{ item.unit_type|title }}</span>
+									<span>Qty {{ item.quantity }}</span>
+									<span class="text-right">{{ '%.2f'|format(item.line_total) }}</span>
+								</div>
+								{% else %}
+								<span class="muted">No medicine items found.</span>
+								{% endfor %}
+							</div>
+						</td>
+						<td class="text-right">{{ '%.2f'|format(sale.grand_total or 0) }}</td>
+						<td class="text-right">{{ '%.2f'|format(sale.due_amount or 0) }}</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td class="empty-row" colspan="8">No medicine sales found for this date.</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+
+		{% if returns %}
+		<section>
+			<div class="section-title">
+				<h2>Medicine Returns</h2>
+				<span>Returned amounts deducted from net sales</span>
+			</div>
+			<table class="returns-table">
+				<thead>
+					<tr>
+						<th class="w-sno text-center">Sno</th>
+						<th class="w-return">Return No</th>
+						<th class="w-invoice">Invoice</th>
+						<th class="w-customer">Customer</th>
+						<th class="w-reason">Reason</th>
+						<th class="w-date">Return Date</th>
+						<th class="w-total text-right">Refund</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in returns %}
+					<tr>
+						<td class="text-center">{{ loop.index }}</td>
+						<td>{{ item.return_no }}</td>
+						<td>{{ item.invoice_no }}</td>
+						<td>{{ item.customer_name or '-' }}<br><span class="muted">{{ item.customer_phone or '-' }}</span></td>
+						<td>{{ item.reason or '-' }}</td>
+						<td>{{ format_date_display(item.return_date) }}</td>
+						<td class="text-right">{{ '%.2f'|format(item.refund_amount) }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</section>
+		{% endif %}
+
+		<section class="signature-row">
+			<div>Prepared By</div>
+			<div>Checked By</div>
+			<div>Authorized Signature</div>
+		</section>
+
+		<footer class="report-foot">
+			<span>Generated from Medicine Sales List</span>
+			<span>AJH Pharmacy Management</span>
+		</footer>
+	</section>
+</main>
+
+<script>
+function updatePrintedTimestamp() {
+	const timestampElement = document.getElementById('printedTimestamp');
+	if (!timestampElement) {
+		return;
+	}
+
+	const now = new Date();
+	const pad = function (value) {
+		return String(value).padStart(2, '0');
+	};
+
+	timestampElement.textContent = [
+		pad(now.getDate()),
+		pad(now.getMonth() + 1),
+		now.getFullYear()
+	].join('-') + ' ' + [
+		pad(now.getHours()),
+		pad(now.getMinutes()),
+		pad(now.getSeconds())
+	].join(':');
+}
+
+function printReport() {
+	updatePrintedTimestamp();
+	window.print();
+}
+
+function returnToSalesList(event) {
+	if (event) {
+		event.preventDefault();
+	}
+
+	const salesListUrl = "{{ return_url }}";
+	if (window.opener && !window.opener.closed) {
+		window.opener.location.href = salesListUrl;
+		window.opener.focus();
+		window.close();
+		return false;
+	}
+
+	window.location.replace(salesListUrl);
+	return false;
+}
+
+updatePrintedTimestamp();
+window.addEventListener('beforeprint', updatePrintedTimestamp);
+window.setTimeout(printReport, 500);
+</script>
+</body>
+</html>
