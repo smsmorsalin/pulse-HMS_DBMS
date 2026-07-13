@@ -606,6 +606,20 @@ body {
     border-radius: 8px;
 }
 
+.date-input-group label {
+    top: -10px;
+    left: 32px;
+    padding: 0 5px;
+    font-size: 11px;
+    color: #ff8aa8;
+    background: rgba(20, 21, 61, 0.92);
+    border-radius: 8px;
+}
+
+.date-input-group input[readonly] {
+    cursor: default;
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
@@ -737,7 +751,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .records-table table {
     width: 100%;
-    min-width: 1080px;
+    min-width: 1200px;
     border-collapse: collapse;
     color: #fff;
 }
@@ -758,6 +772,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .records-table tr:hover {
     background: rgba(255, 255, 255, 0.055);
+}
+
+.records-table .served-col {
+    width: 120px;
+    min-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.records-table .served-by-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 82px;
+    min-height: 30px;
+    padding: 5px 10px;
+    border: 1px solid rgba(154, 240, 187, 0.38);
+    border-radius: 999px;
+    color: #b8f8d0;
+    background: rgba(56, 193, 114, 0.14);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
 }
 
 .status-pill {
@@ -800,6 +838,204 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .table-action.print {
     background: rgba(74, 222, 128, 0.2);
     border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.admission-details-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+    color: #e9fbff;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.72), rgba(8, 145, 178, 0.72));
+    border: 1px solid rgba(103, 232, 249, 0.38);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admission-details-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(8, 145, 178, 0.24);
+}
+
+body.admission-modal-open {
+    overflow: hidden;
+}
+
+.admission-details-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.admission-details-modal[hidden] {
+    display: none;
+}
+
+.admission-details-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 7, 25, 0.82);
+    backdrop-filter: blur(8px);
+}
+
+.admission-details-dialog {
+    position: relative;
+    width: min(880px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    color: #f8fbff;
+    background: linear-gradient(145deg, #101943, #192a68 58%, #321b4d);
+    border: 1px solid rgba(165, 180, 252, 0.3);
+    border-radius: 22px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.admission-details-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 22px;
+    background: rgba(12, 22, 61, 0.96);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+}
+
+.admission-details-header span,
+.admission-details-content span {
+    display: block;
+    margin-bottom: 5px;
+    color: #9ca9d7;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admission-details-header > div > span {
+    color: #67e8f9;
+}
+
+.admission-details-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.admission-details-close {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(252, 165, 165, 0.35);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(239, 68, 68, 0.72);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.admission-details-close:hover {
+    transform: rotate(90deg);
+    background: #ef4444;
+}
+
+.admission-details-content {
+    padding: 22px;
+}
+
+.admission-details-patient,
+.admission-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.admission-details-grid {
+    margin-top: 12px;
+}
+
+.admission-details-patient > div,
+.admission-details-grid > div {
+    min-width: 0;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+}
+
+.admission-details-patient > div {
+    background: linear-gradient(145deg, rgba(37, 99, 235, 0.18), rgba(6, 182, 212, 0.1));
+}
+
+.admission-details-content strong {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.admission-details-grid .wide {
+    grid-column: 1 / -1;
+}
+
+.admission-modal-status {
+    color: #86efac;
+}
+
+.admission-details-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.admission-details-footer > div {
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: rgba(74, 222, 128, 0.11);
+    border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.admission-details-footer > div strong {
+    color: #86efac;
+    font-size: 19px;
+}
+
+.admission-modal-print {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+    color: #052e16;
+    font-weight: 800;
+    text-decoration: none;
+    background: linear-gradient(135deg, #86efac, #22c55e);
+    border-radius: 12px;
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.22);
+}
+
+.admission-details-loading,
+.admission-details-error {
+    display: flex;
+    min-height: 190px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.admission-details-error {
+    color: #fecaca;
 }
 
 .muted-action {
@@ -919,5 +1155,41 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .old-admission-badge {
         grid-column: 2;
         width: fit-content;
+    }
+
+    .admission-details-patient,
+    .admission-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .admission-details-modal {
+        padding: 8px;
+    }
+
+    .admission-details-dialog {
+        width: 100%;
+        max-height: 96vh;
+        border-radius: 16px;
+    }
+
+    .admission-details-header,
+    .admission-details-content {
+        padding: 16px;
+    }
+
+    .admission-details-patient,
+    .admission-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admission-details-grid .wide {
+        grid-column: auto;
+    }
+
+    .admission-details-footer {
+        align-items: stretch;
+        flex-direction: column;
     }
 }

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Transation | AL-JUMIRA HOSPITAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all_transation.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="brand">
+                <a href="{{ url_for('dashboard') }}" class="brand-link">
+                    <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+                    <span class="brand-text">AJH</span>
+                </a>
+            </div>
+            <div class="sidebar-menu">
+                <a class="sidebar-item" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+                {% if can_access_page('daily_expenses') %}
+                <a class="sidebar-item" href="{{ url_for('daily_expenses') }}"><i class="fas fa-wallet"></i><span>Daily Expenses</span></a>
+                {% endif %}
+                <a class="sidebar-item active" href="{{ url_for('all_transation') }}"><i class="fas fa-chart-pie"></i><span>All Transation</span></a>
+            </div>
+        </aside>
+
+    <main class="main-content">
+        <section class="transation-panel">
+        <header class="page-header patient-list-header">
+            <div>
+                <p class="eyebrow"><i class="fas fa-hospital"></i> Hospital Accounts</p>
+                <h1>All Transation</h1>
+                <h2>{{ format_date_display(selected_date) }} day-wise financial summary</h2>
+            </div>
+            <div class="header-actions">
+                <a class="date-step" href="{{ url_for('all_transation', date=previous_date) }}" aria-label="Previous date">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <form class="date-filter" method="GET" action="{{ url_for('all_transation') }}">
+                    <input type="date" name="date" value="{{ selected_date }}">
+                    <button type="submit"><i class="fas fa-search"></i><span>Show</span></button>
+                </form>
+                <a class="date-step" href="{{ url_for('all_transation', date=next_date) }}" aria-label="Next date">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a class="print-report-link" href="{{ url_for('all_transation_print', date=selected_date, auto_print=1) }}" target="_blank" rel="noopener">
+                    <i class="fas fa-print"></i><span>Print Report</span>
+                </a>
+                <a class="dashboard-link" href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i><span>Dashboard</span></a>
+            </div>
+        </header>
+
+        <section class="summary-grid" aria-label="Financial summary">
+            {% for card in summary_cards %}
+            <article class="summary-card {{ card.tone }}">
+                <div class="summary-icon"><i class="{{ card.icon }}"></i></div>
+                <div>
+                    <span>{{ card.label }}</span>
+                    <strong>Tk {{ '%.2f'|format(card.value) }}</strong>
+                    <small>{{ card.count }} records | {{ card.note }}</small>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="account-grid" aria-label="Account heads">
+            {% for card in section_cards %}
+            <article class="account-card {{ card.tone }}">
+                <div class="account-head">
+                    <i class="{{ card.icon }}"></i>
+                    <span>{{ card.count }} records</span>
+                </div>
+                <h3>{{ card.label }}</h3>
+                <strong>Tk {{ '%.2f'|format(card.value) }}</strong>
+                <p>{{ card.meta }}</p>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="control-strip" aria-label="Monthly summary">
+            {% if admin %}
+            <div>
+                <span>{{ format_month_display(selected_month) }}</span>
+                <strong>Tk {{ '%.2f'|format(month_summary.doctor + month_summary.pathology + month_summary.discharge) }}</strong>
+                <small>Month billing</small>
+            </div>
+            <div>
+                <span>Month Expenses</span>
+                <strong>Tk {{ '%.2f'|format(month_summary.expense) }}</strong>
+                <small>Recorded daily expenses</small>
+            </div>
+            {% endif %}
+            <div>
+                <span>Outstanding Today</span>
+                <strong>Tk {{ '%.2f'|format(total_due) }}</strong>
+                <small>Pathology and discharge due</small>
+            </div>
+        </section>
+
+        <section class="ledger-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="panel-kicker">Day Ledger</p>
+                    <h3>{{ format_date_display(selected_date) }}</h3>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Head</th>
+                            <th>Reference</th>
+                            <th>Patient / Party</th>
+                            <th>Details</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in transaction_rows %}
+                        <tr>
+                            <td>{{ format_date_display(row.time) }}</td>
+                            <td>
+                                <span class="head-badge {{ row.direction }}">
+                                    <i class="{{ row.icon }}"></i>{{ row.type }}
+                                </span>
+                            </td>
+                            <td>{{ row.ref }}</td>
+                            <td>
+                                <strong>{{ row.person or '-' }}</strong>
+                                {% if row.phone %}<small>{{ row.phone }}</small>{% endif %}
+                            </td>
+                            <td>{{ row.detail or '-' }}</td>
+                            <td>{{ row.payment }}</td>
+                            <td>{{ row.status }}</td>
+                            <td class="amount-cell {{ row.direction }}">Tk {{ '%.2f'|format(row.amount) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="empty-cell">
+                                <i class="fas fa-clipboard-list"></i>
+                                No transaction found for {{ format_date_display(selected_date) }}.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        </section>
+    </main>
+    </div>
+</body>
+</html>

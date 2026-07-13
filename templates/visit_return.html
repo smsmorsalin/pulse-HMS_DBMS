@@ -50,7 +50,7 @@
                 <div>
                     <span>Ticket {{ selected_visit[2] or '-' }}</span>
                     <h2>{{ selected_visit[3] }}</h2>
-                    <p>UHID {{ selected_visit[1] }} | {{ selected_visit[7] or '-' }}</p>
+                    <p>UHID {{ format_uhid(selected_visit[1]) }} | {{ selected_visit[7] or '-' }}</p>
                 </div>
                 <strong class="{{ 'is-returned' if selected_visit[15] else '' }}">
                     {{ selected_visit[15] or selected_visit[13] or 'Active' }}
@@ -108,7 +108,7 @@
                 {% for item in recent_returns %}
                 <div class="recent-row">
                     <strong>{{ item[0] }}</strong>
-                    <span>UHID {{ item[1] }} | Ticket {{ item[2] or '-' }}</span>
+                    <span>UHID {{ format_uhid(item[1]) }} | Ticket {{ item[2] or '-' }}</span>
                     <small>{{ item[3] }} | Tk {{ '%.2f'|format(item[4] or 0) }}</small>
                     <em>{{ format_date_display(item[5]) }}</em>
                 </div>

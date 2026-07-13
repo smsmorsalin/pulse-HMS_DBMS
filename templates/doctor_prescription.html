@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Prescription</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor_prescription.css') }}">
+</head>
+<body>
+    <main class="prescription-page">
+        <header class="page-header">
+            <a class="back-btn" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+            <div>
+                <p>Clinical Desk</p>
+                <h1>Doctor Prescription</h1>
+            </div>
+            <div class="header-actions">
+                <div class="prescription-clock" aria-label="Current date and time">
+                    <strong id="prescriptionLiveClock">--:--:--</strong>
+                    <span id="prescriptionLiveDate">--</span>
+                </div>
+                <a class="soft-btn prescription-list-btn" href="{{ url_for('doctor_prescription_list') }}">
+                    <i class="fas fa-clipboard-list"></i>
+                    View Pre List
+                </a>
+                <button type="button" class="soft-btn" id="clearPrescription">
+                    <i class="fas fa-rotate-left"></i>
+                    Reset
+                </button>
+                <button type="button" class="soft-btn" id="focusModeButton" title="Hide or show the preview (Alt+P)">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                    Focus Mode
+                </button>
+                <button type="button" class="print-btn" id="printPrescription">
+                    <i class="fas fa-print"></i>
+                    Print
+                </button>
+            </div>
+        </header>
+
+        <div hidden aria-hidden="true">
+            <strong id="queueDoctorName"></strong>
+            <button type="button" id="callNextPatient" disabled></button>
+            <small id="queueMessage"></small>
+        </div>
+
+        <section class="workspace">
+            <form class="editor-panel" id="prescriptionForm">
+                <div class="section-head">
+                    <div>
+                        <p>Patient and Doctor</p>
+                        <h2>Prescription Information</h2>
+                    </div>
+                    <span id="prescriptionNo">{{ prescription_no }}</span>
+                </div>
+
+                <div class="info-grid">
+                    <label class="field">
+                        <span>Search Patient</span>
+                        <div class="search-box">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <input type="text" id="patientSearch" placeholder="UHID, ticket, name, phone">
+                        </div>
+                    </label>
+                    <label class="field">
+                        <span>Select Patient</span>
+                        <select id="patientSelect" data-initial-patient-id="{{ initial_patient_id or '' }}">
+                            <option value="">Choose patient</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}" {% if patient.id == initial_patient_id %}selected{% endif %}>
+                                Ticket {{ patient.daily_patient_id }} | UHID {{ format_uhid(patient.id) }} | {{ patient.name }} | {{ patient.phone }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <select id="doctorSelect" hidden aria-hidden="true">
+                    <option value="">No assigned doctor</option>
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">{{ doctor.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" id="prescriptionDate" value="{{ today }}">
+                <div id="patientCard" hidden></div>
+
+                <section class="clinical-templates">
+                    <div>
+                        <p>One-click templates</p>
+                        <strong>Start common prescriptions faster</strong>
+                    </div>
+                    <button type="button" data-clinical-template="viral-fever"><i class="fas fa-temperature-high"></i> Viral Fever</button>
+                    <button type="button" data-clinical-template="urti"><i class="fas fa-lungs"></i> URTI</button>
+                    <button type="button" data-clinical-template="gastritis"><i class="fas fa-stomach"></i> Gastritis</button>
+                    <button type="button" data-clinical-template="pregnancy-followup"><i class="fas fa-person-pregnant"></i> Pregnancy F/U</button>
+                </section>
+
+                <div class="form-band vitals-grid">
+                    <label class="field">
+                        <span>BP</span>
+                        <input type="text" id="bp" placeholder="120/80">
+                    </label>
+                    <label class="field">
+                        <span>Pulse</span>
+                        <input type="text" id="pulse" placeholder="78/min">
+                    </label>
+                    <label class="field">
+                        <span>Temperature</span>
+                        <input type="text" id="temperature" placeholder="98.6 F">
+                    </label>
+                    <label class="field">
+                        <span>Weight</span>
+                        <input type="text" id="weight" placeholder="62 kg">
+                    </label>
+                </div>
+
+                <section class="quick-panel">
+                    <div class="section-head compact">
+                        <div>
+                            <p>Quick fill</p>
+                            <h2>Common Notes</h2>
+                        </div>
+                        <span class="hint-pill">Click to add</span>
+                    </div>
+                    <div class="quick-groups">
+                        <div class="quick-group">
+                            <span>Complaints</span>
+                            <button type="button" data-append-target="complaints" data-append-text="Fever for 3 days">Fever</button>
+                            <button type="button" data-append-target="complaints" data-append-text="Cough and cold">Cough</button>
+                            <button type="button" data-append-target="complaints" data-append-text="Lower abdominal pain">Abdominal pain</button>
+                            <button type="button" data-append-target="complaints" data-append-text="Headache and weakness">Headache</button>
+                        </div>
+                        <div class="quick-group">
+                            <span>Findings</span>
+                            <button type="button" data-append-target="findings" data-append-text="General condition stable">Stable</button>
+                            <button type="button" data-append-target="findings" data-append-text="Chest clear on auscultation">Chest clear</button>
+                            <button type="button" data-append-target="findings" data-append-text="Abdomen soft and non-tender">Abdomen SNT</button>
+                            <button type="button" data-append-target="findings" data-append-text="No dehydration">No dehydration</button>
+                        </div>
+                        <div class="quick-group">
+                            <span>Diagnosis</span>
+                            <button type="button" data-append-target="diagnosis" data-append-text="Viral fever">Viral fever</button>
+                            <button type="button" data-append-target="diagnosis" data-append-text="URTI">URTI</button>
+                            <button type="button" data-append-target="diagnosis" data-append-text="Gastritis">Gastritis</button>
+                            <button type="button" data-append-target="diagnosis" data-append-text="Pregnancy follow-up">Pregnancy F/U</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="quick-panel">
+                    <div class="section-head compact">
+                        <div>
+                            <p>Pathology</p>
+                            <h2>Test Picker</h2>
+                        </div>
+                        <span class="hint-pill">{{ tests|length }} tests</span>
+                    </div>
+                    <div class="picker-grid">
+                        <label class="field">
+                            <span>Search Test</span>
+                            <div class="search-box">
+                                <i class="fas fa-vial"></i>
+                                <input type="text" id="testSearch" placeholder="CBC, USG, X-ray">
+                            </div>
+                        </label>
+                        <label class="field">
+                            <span>Select Test</span>
+                            <select id="testSelect">
+                                <option value="">Choose test</option>
+                                {% for test in tests %}
+                                <option value="{{ test.name }}">{{ test.name }}{% if test.price %} | {{ "%.2f"|format(test.price) }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <button type="button" class="add-row-btn picker-add" id="addTestButton">
+                            <i class="fas fa-plus"></i>
+                            Add Test
+                        </button>
+                    </div>
+                    <div class="quick-group compact-chips">
+                        <span>Common</span>
+                        <button type="button" data-append-target="investigations" data-append-text="CBC">CBC</button>
+                        <button type="button" data-append-target="investigations" data-append-text="Urine R/E">Urine R/E</button>
+                        <button type="button" data-append-target="investigations" data-append-text="RBS">RBS</button>
+                        <button type="button" data-append-target="investigations" data-append-text="USG of whole abdomen">USG Abdomen</button>
+                    </div>
+                </section>
+
+                <div class="clinical-grid">
+                    <label class="field">
+                        <span>Chief Complaints</span>
+                        <textarea id="complaints" rows="4" placeholder="Fever for 3 days, cough, abdominal pain..."></textarea>
+                    </label>
+                    <label class="field">
+                        <span>Clinical Findings</span>
+                        <textarea id="findings" rows="4" placeholder="General condition, examination notes..."></textarea>
+                    </label>
+                    <label class="field">
+                        <span>Diagnosis</span>
+                        <textarea id="diagnosis" rows="3" placeholder="Provisional / final diagnosis"></textarea>
+                    </label>
+                    <label class="field">
+                        <span>Investigations</span>
+                        <textarea id="investigations" rows="3" placeholder="CBC, Urine R/E, USG, X-ray..."></textarea>
+                    </label>
+                </div>
+
+                <section class="medicine-section">
+                    <div class="section-head compact">
+                        <div>
+                            <p>Rx</p>
+                            <h2>Medicines</h2>
+                        </div>
+                        <span class="hint-pill">Select medicine to add next row</span>
+                    </div>
+
+                    <div class="medicine-table" id="medicineRows">
+                        <div class="medicine-head">
+                            <span>Medicine</span>
+                            <span>Dose</span>
+                            <span>Duration</span>
+                            <span>Instruction</span>
+                            <span></span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="clinical-grid bottom">
+                    <label class="field">
+                        <span>Advice</span>
+                        <textarea id="advice" rows="3" placeholder="Rest, hydration, diet, warning signs..."></textarea>
+                    </label>
+                    <label class="field">
+                        <span>Follow-up</span>
+                        <input type="text" id="followup" placeholder="After 7 days / SOS">
+                    </label>
+                </div>
+                <div class="quick-group advice-chips">
+                    <span>Advice / Follow-up</span>
+                    <button type="button" data-append-target="advice" data-append-text="Take adequate rest and fluids">Rest + fluids</button>
+                    <button type="button" data-append-target="advice" data-append-text="Avoid oily and spicy food">Diet advice</button>
+                    <button type="button" data-append-target="advice" data-append-text="Come back immediately if symptoms worsen">Warning signs</button>
+                    <button type="button" data-set-target="followup" data-set-text="After 3 days">F/U 3 days</button>
+                    <button type="button" data-set-target="followup" data-set-text="After 7 days">F/U 7 days</button>
+                    <button type="button" data-set-target="followup" data-set-text="SOS">SOS</button>
+                </div>
+            </form>
+
+            <aside class="preview-panel">
+                <div class="preview-toolbar">
+                    <div>
+                        <p>Live Preview</p>
+                        <h2>Prescription Sheet</h2>
+                    </div>
+                    <span id="previewStatus">Ready</span>
+                </div>
+
+                <article class="prescription-sheet" id="prescriptionSheet">
+                    <header class="sheet-header">
+                        <div class="sheet-hospital-brand">
+                            <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH logo">
+                            <div>
+                                <h2>আল-জুমিরা হাসপাতাল</h2>
+                                <p>AL-JUMIRA HOSPITAL</p>
+                                <small>মা-শিশু এবং বন্ধ্যাত্ব স্বাস্থ্যসেবা কেন্দ্র</small>
+                            </div>
+                        </div>
+                        <div class="sheet-doctor-heading">
+                            <strong id="previewDoctor">Select doctor</strong>
+                            <small id="previewDoctorMeta">Designation, department, registration</small>
+                        </div>
+                    </header>
+
+                    <section class="sheet-doctor-patient patient-yellow-band">
+                        <div>
+                            <span>Patient Name:</span>
+                            <strong id="previewPatient">Select patient</strong>
+                            <small id="previewPatientMeta">Age, gender, phone</small>
+                        </div>
+                        <div>
+                            <span>Date</span>
+                            <strong id="previewDate">{{ today }}</strong>
+                        </div>
+                    </section>
+
+                    <section class="sheet-meta reference-preview">
+                        <div>
+                            <span>Prescription No</span>
+                            <strong id="previewPrescriptionNo">{{ prescription_no }}</strong>
+                        </div>
+                        <div>
+                            <span>Professional Doctor Prescription</span>
+                            <strong>AL-JUMIRA HOSPITAL</strong>
+                        </div>
+                    </section>
+
+                    <section class="sheet-vitals" id="previewVitals">
+                        <span>BP: -</span>
+                        <span>Pulse: -</span>
+                        <span>Temp: -</span>
+                        <span>Weight: -</span>
+                    </section>
+
+                    <div class="sheet-body">
+                        <aside>
+                            <div class="note-block">
+                                <h3>C/C</h3>
+                                <p id="previewComplaints">-</p>
+                            </div>
+                            <div class="note-block">
+                                <h3>O/E</h3>
+                                <p id="previewFindings">-</p>
+                            </div>
+                            <div class="note-block">
+                                <h3>Diagnosis</h3>
+                                <p id="previewDiagnosis">-</p>
+                            </div>
+                            <div class="note-block">
+                                <h3>Investigations</h3>
+                                <p id="previewInvestigations">-</p>
+                            </div>
+                        </aside>
+                        <section class="rx-body">
+                            <h3>Rx</h3>
+                            <ol id="previewMedicines">
+                                <li>No medicine added.</li>
+                            </ol>
+                        </section>
+                    </div>
+
+                    <section class="sheet-advice">
+                        <div>
+                            <h3>Advice</h3>
+                            <p id="previewAdvice">-</p>
+                        </div>
+                        <div>
+                            <h3>Follow-up</h3>
+                            <p id="previewFollowup">-</p>
+                        </div>
+                    </section>
+
+                    <footer class="sheet-footer">
+                        <span>Prepared by AJH HMS</span>
+                        <strong>Doctor Signature</strong>
+                    </footer>
+                </article>
+            </aside>
+        </section>
+    </main>
+
+    <div class="draft-toast" id="draftToast" role="status"></div>
+    <nav class="action-dock">
+        <div>
+            <span id="draftStatus"><i class="fas fa-cloud"></i> Draft autosave ready</span>
+            <small>Stored only on this device</small>
+        </div>
+        <div class="dock-queue-metrics" aria-label="Live queue status">
+            <div class="queue-metric serving">
+                <span>Now Serving</span>
+                <strong id="queueCurrentTicket">---</strong>
+            </div>
+            <div class="queue-metric">
+                <span>Next Ticket</span>
+                <strong id="queueNextTicket">---</strong>
+            </div>
+            <div class="queue-metric">
+                <span>Waiting</span>
+                <strong id="queueWaitingCount">0</strong>
+            </div>
+        </div>
+        <button type="button" id="nextPatientButton"><i class="fas fa-user-clock"></i> Next Patient</button>
+        <button type="button" id="saveDraftButton"><i class="fas fa-floppy-disk"></i> Save Draft</button>
+        <button type="button" id="dockPrintButton"><i class="fas fa-print"></i> Review & Print</button>
+    </nav>
+
+    <template id="medicineRowTemplate">
+        <div class="medicine-row">
+            <div class="medicine-combo">
+                <input type="text" class="medicine-name" placeholder="Search, select, or write medicine" autocomplete="off">
+                <button type="button" class="medicine-option-toggle" aria-label="Show medicine options">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="medicine-option-list"></div>
+            </div>
+            <input type="text" class="medicine-dose" list="doseSuggestions" placeholder="1+0+1">
+            <input type="text" class="medicine-duration" list="durationSuggestions" placeholder="5 days">
+            <input type="text" class="medicine-instruction" list="instructionSuggestions" placeholder="After meal">
+            <button type="button" class="remove-medicine" aria-label="Remove medicine">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+    </template>
+
+    <datalist id="medicineSuggestions">
+        {% for medicine in medicines %}
+        <option value="{{ medicine.name }}"></option>
+        {% endfor %}
+    </datalist>
+    <datalist id="doseSuggestions">
+        <option value="1+0+1"></option>
+        <option value="1+1+1"></option>
+        <option value="1+0+0"></option>
+        <option value="0+0+1"></option>
+        <option value="SOS"></option>
+    </datalist>
+    <datalist id="durationSuggestions">
+        <option value="3 days"></option>
+        <option value="5 days"></option>
+        <option value="7 days"></option>
+        <option value="10 days"></option>
+        <option value="1 month"></option>
+    </datalist>
+    <datalist id="instructionSuggestions">
+        <option value="After meal"></option>
+        <option value="Before meal"></option>
+        <option value="At night"></option>
+        <option value="With water"></option>
+        <option value="As directed"></option>
+    </datalist>
+    
+    <script id="patientsData" type="application/json">{{ patients|tojson }}</script>
+    <script id="doctorsData" type="application/json">{{ doctors|tojson }}</script>
+    <script id="testsData" type="application/json">{{ tests|tojson }}</script>
+    <script id="medicinesData" type="application/json">{{ medicines|tojson }}</script>
+    <select id="manualMedicineOptions" hidden>
+       
+        <option value="Fertivia F"></option>
+        <option value="Proceive M"></option>
+        <option value="Ace 500 mg"></option>
+        <option value="Seclo 20 mg"></option>
+        <option value="Monas 10 mg"></option>
+        <option value="mmmmmmmmmm"></option>
+    </select>
+    <script>
+        function readJsonData(id) {
+            const element = document.getElementById(id);
+            if (!element) return [];
+            try {
+                return JSON.parse(element.textContent || "[]");
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function formatUHID(value) {
+            const text = String(value || "").trim();
+            if (!text) return "-";
+            return text.toUpperCase().startsWith("AJH") ? `AJH${text.slice(3).trim()}` : `AJH${text}`;
+        }
+
+        const patients = readJsonData("patientsData");
+        const doctors = readJsonData("doctorsData");
+        const tests = readJsonData("testsData");
+        const medicines = readJsonData("medicinesData");
+        const manualMedicineOptions = Array.from(document.querySelectorAll("#manualMedicineOptions option"))
+            .map(option => String(option.value || option.textContent || "").trim())
+            .filter(Boolean);
+        const medicineOptions = medicines
+            .map(medicine => String(medicine.name || "").trim())
+            .filter(Boolean)
+            .concat(manualMedicineOptions)
+            .filter((name, index, list) => list.findIndex(item => item.toLowerCase() === name.toLowerCase()) === index)
+            .sort((first, second) => first.localeCompare(second));
+        const patientSelect = document.getElementById("patientSelect");
+        const patientSearch = document.getElementById("patientSearch");
+        const doctorSelect = document.getElementById("doctorSelect");
+        const testSearch = document.getElementById("testSearch");
+        const testSelect = document.getElementById("testSelect");
+        const patientCard = document.getElementById("patientCard");
+        const prescriptionLiveClock = document.getElementById("prescriptionLiveClock");
+        const prescriptionLiveDate = document.getElementById("prescriptionLiveDate");
+        const medicineRows = document.getElementById("medicineRows");
+        const medicineRowTemplate = document.getElementById("medicineRowTemplate");
+        const printUrl = "{{ url_for('doctor_prescription_print') }}";
+        const queueStatusUrl = "{{ url_for('patients_serial_status') }}";
+        const queueNextUrl = "{{ url_for('advance_patient_serial') }}";
+        const queueCurrentTicket = document.getElementById("queueCurrentTicket");
+        const queueNextTicket = document.getElementById("queueNextTicket");
+        const queueWaitingCount = document.getElementById("queueWaitingCount");
+        const queueDoctorName = document.getElementById("queueDoctorName");
+        const queueMessage = document.getElementById("queueMessage");
+        const callNextPatient = document.getElementById("callNextPatient");
+        const draftBaseKey = "ajh-doctor-prescription-draft-v3";
+        const draftApiUrl = "{{ url_for('save_doctor_prescription_draft') }}";
+        const draftToast = document.getElementById("draftToast");
+        const draftStatus = document.getElementById("draftStatus");
+        let draftTimer = null;
+        let activePatientId = "";
+        let isLoadingDraft = false;
+        const clinicalTemplates = {
+            "viral-fever": {
+                complaints: "Fever, headache and generalized weakness",
+                findings: "General condition stable\nNo dehydration",
+                diagnosis: "Viral fever",
+                investigations: "CBC\nUrine R/E",
+                advice: "Take adequate rest and fluids",
+                followup: "After 3 days"
+            },
+            "urti": {
+                complaints: "Cough, cold and sore throat",
+                findings: "Chest clear on auscultation",
+                diagnosis: "URTI",
+                investigations: "CBC",
+                advice: "Warm fluids and adequate rest",
+                followup: "After 5 days"
+            },
+            "gastritis": {
+                complaints: "Upper abdominal discomfort and acidity",
+                findings: "Abdomen soft and non-tender",
+                diagnosis: "Gastritis",
+                investigations: "",
+                advice: "Avoid oily and spicy food",
+                followup: "After 7 days"
+            },
+            "pregnancy-followup": {
+                complaints: "Routine pregnancy follow-up",
+                findings: "General condition stable",
+                diagnosis: "Pregnancy follow-up",
+                investigations: "CBC\nUrine R/E\nUSG of pregnancy profile",
+                advice: "Continue antenatal care and warning-sign counselling",
+                followup: "After 4 weeks"
+            }
+        };
+
+        function updatePrescriptionClock() {
+            const now = new Date();
+            prescriptionLiveClock.textContent = now.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            });
+            prescriptionLiveDate.textContent = now.toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            });
+        }
+        const watchedFields = [
+            "prescriptionDate", "bp", "pulse", "temperature", "weight", "complaints",
+            "findings", "diagnosis", "investigations", "advice", "followup"
+        ].map(id => document.getElementById(id));
+
+        function byId(items, id) {
+            return items.find(item => String(item.id) === String(id));
+        }
+
+        function value(id) {
+            return (document.getElementById(id).value || "").trim();
+        }
+
+        function text(value) {
+            return value && String(value).trim() ? String(value).trim() : "-";
+        }
+
+        function showDraftToast(message) {
+            draftToast.textContent = message;
+            draftToast.classList.add("show");
+            window.clearTimeout(showDraftToast.timer);
+            showDraftToast.timer = window.setTimeout(() => draftToast.classList.remove("show"), 2200);
+        }
+
+        function patientDraftKey(patientId) {
+            return `${draftBaseKey}:${patientId}`;
+        }
+
+        function draftData(patientId = patientSelect.value) {
+            return {
+                saved_at: new Date().toISOString(),
+                doctor_id: doctorSelect.value,
+                patient_id: String(patientId || ""),
+                fields: Object.fromEntries(watchedFields.map(field => [field.id, field.value])),
+                medicines: medicineItems()
+            };
+        }
+
+        async function saveDraft(showConfirmation = false) {
+            const patientId = String(patientSelect.value || "");
+            if (!patientId) {
+                if (showConfirmation) showDraftToast("Select a patient before saving a draft.");
+                return;
+            }
+            const draft = draftData(patientId);
+            try {
+                localStorage.setItem(patientDraftKey(patientId), JSON.stringify(draft));
+                localStorage.setItem(`${draftBaseKey}:last-patient`, patientId);
+                const response = await fetch(draftApiUrl, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(draft)
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || "Server draft save failed");
+                draftStatus.innerHTML = '<i class="fas fa-cloud-check"></i> Draft saved just now';
+                if (showConfirmation) {
+                    showDraftToast("This patient's draft was saved separately.");
+                }
+            } catch (error) {
+                draftStatus.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Draft could not be saved';
+            }
+        }
+
+        function scheduleDraftSave() {
+            if (isLoadingDraft || !patientSelect.value) return;
+            window.clearTimeout(draftTimer);
+            draftStatus.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Saving draft...';
+            draftTimer = window.setTimeout(() => saveDraft(false), 650);
+        }
+
+        function applyPatientDraft(draft) {
+            if (!draft) return false;
+            Object.entries(draft.fields || {}).forEach(([id, fieldValue]) => {
+                const field = document.getElementById(id);
+                if (field) field.value = fieldValue || "";
+            });
+            medicineRows.querySelectorAll(".medicine-row").forEach(row => row.remove());
+            (draft.medicines || []).forEach(addMedicineRow);
+            ensureBlankMedicineRow();
+            syncPatientCard();
+            updatePreview();
+            loadDoctorQueue();
+            draftStatus.innerHTML = '<i class="fas fa-clock-rotate-left"></i> Patient draft restored';
+            return true;
+        }
+
+        function clearDraftFields() {
+            ["bp", "pulse", "temperature", "weight", "complaints", "findings",
+             "diagnosis", "investigations", "advice", "followup"].forEach(id => document.getElementById(id).value = "");
+            medicineRows.querySelectorAll(".medicine-row").forEach(row => row.remove());
+            addMedicineRow();
+        }
+
+        async function loadPatientDraft(patientId) {
+            isLoadingDraft = true;
+            clearDraftFields();
+            let draft = null;
+            try { draft = JSON.parse(localStorage.getItem(patientDraftKey(patientId)) || "null"); } catch (error) { draft = null; }
+            if (!draft) {
+                try {
+                    const response = await fetch(`${draftApiUrl}/${patientId}`);
+                    const data = await response.json();
+                    draft = data.draft || null;
+                    if (draft) localStorage.setItem(patientDraftKey(patientId), JSON.stringify(draft));
+                } catch (error) { draft = null; }
+            }
+            if (draft) {
+                applyPatientDraft(draft);
+                showDraftToast("This patient's saved draft was restored.");
+            } else {
+                syncPatientCard(); updatePreview(); loadDoctorQueue();
+                draftStatus.innerHTML = '<i class="fas fa-cloud"></i> New patient draft';
+            }
+            activePatientId = String(patientId);
+            isLoadingDraft = false;
+        }
+
+        function assignRegisteredDoctor(patient) {
+            let assignedDoctor = patient && patient.doctor_id ? byId(doctors, patient.doctor_id) : null;
+            if (!assignedDoctor && patient?.doctor_name) {
+                assignedDoctor = doctors.find(doctor => doctor.name.trim().toLowerCase() === patient.doctor_name.trim().toLowerCase());
+            }
+            doctorSelect.value = assignedDoctor ? String(assignedDoctor.id) : "";
+            return assignedDoctor;
+        }
+
+        function handlePatientSelectionChange() {
+            const patientId = String(patientSelect.value || "");
+            assignRegisteredDoctor(byId(patients, patientId));
+            if (!patientId) {
+                activePatientId = "";
+                clearDraftFields();
+                syncPatientCard();
+                updatePreview();
+                renderQueue(null);
+                return Promise.resolve();
+            }
+            return loadPatientDraft(patientId);
+        }
+
+        function applyClinicalTemplate(templateName) {
+            const template = clinicalTemplates[templateName];
+            if (!template) return;
+            Object.entries(template).forEach(([id, fieldValue]) => setFieldValue(id, fieldValue));
+            document.getElementById("complaints").focus();
+            showDraftToast("Clinical template applied. Review before printing.");
+            scheduleDraftSave();
+        }
+
+        function formatQueueTicket(ticket) {
+            return ticket == null ? "---" : String(ticket).padStart(3, "0");
+        }
+
+        function renderQueue(queue, message = "") {
+            const doctor = byId(doctors, doctorSelect.value);
+            queueDoctorName.textContent = doctor ? `${doctor.name}${doctor.room_number ? " • Room " + doctor.room_number : ""}` : "Select a doctor to start calling patients";
+            queueCurrentTicket.textContent = formatQueueTicket(queue?.current_ticket);
+            queueNextTicket.textContent = formatQueueTicket(queue?.next_ticket);
+            queueWaitingCount.textContent = queue?.waiting_count ?? 0;
+            callNextPatient.disabled = !doctor || !queue || queue.next_ticket == null;
+            queueMessage.textContent = message || (doctor
+                ? (queue?.next_ticket != null ? "Ready to call the next registered ticket." : "No patients are waiting for this doctor today.")
+                : "Choose a doctor below to load today's serial queue.");
+        }
+
+        async function loadDoctorQueue() {
+            if (!doctorSelect.value) {
+                renderQueue(null);
+                return;
+            }
+            try {
+                const response = await fetch(`${queueStatusUrl}?doctor_id=${encodeURIComponent(doctorSelect.value)}`, {headers: {"Accept": "application/json"}, cache: "no-store"});
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || "Queue could not be loaded.");
+                renderQueue(data.queues[0] || null);
+            } catch (error) {
+                renderQueue(null, error.message);
+            }
+        }
+
+        async function callNextTicket() {
+            if (!doctorSelect.value || callNextPatient.disabled) return;
+            callNextPatient.disabled = true;
+            callNextPatient.classList.add("is-loading");
+            queueMessage.textContent = "Calling the next patient...";
+            try {
+                const response = await fetch(queueNextUrl, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json", "Accept": "application/json"},
+                    body: JSON.stringify({doctor_id: doctorSelect.value})
+                });
+                const data = await response.json();
+                const queue = data.queues?.[0] || null;
+                renderQueue(queue, data.message || data.error || "Queue updated.");
+                if (data.success && queue?.current_patient_id) {
+                    patientSelect.value = String(queue.current_patient_id);
+                    patientSearch.value = "";
+                    filterPatients();
+                    await handlePatientSelectionChange();
+                }
+            } catch (error) {
+                queueMessage.textContent = "Unable to update the queue. Please check the connection.";
+            } finally {
+                callNextPatient.classList.remove("is-loading");
+                window.setTimeout(loadDoctorQueue, 700);
+            }
+        }
+
+        async function selectNextPatient(completedPatientId) {
+            const nextPatientButton = document.getElementById("nextPatientButton");
+            if (!completedPatientId) {
+                showDraftToast("Select the current patient before going to the next patient.");
+                return;
+            }
+            if (!doctorSelect.value) {
+                showDraftToast("This patient has no assigned doctor for serial management.");
+                return;
+            }
+
+            nextPatientButton.disabled = true;
+            try {
+                const response = await fetch(queueNextUrl, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json", "Accept": "application/json"},
+                    body: JSON.stringify({
+                        doctor_id: doctorSelect.value,
+                        after_patient_id: completedPatientId
+                    })
+                });
+                const data = await response.json();
+                const queue = data.queues?.[0] || null;
+                renderQueue(queue, data.message || data.error || "Serial management updated.");
+                if (!response.ok || !data.success) {
+                    showDraftToast(data.error || "The serial could not be updated.");
+                    return;
+                }
+
+                if (!data.queue_complete && queue?.current_patient_id) {
+                    patientSelect.value = String(queue.current_patient_id);
+                    patientSearch.value = "";
+                    filterPatients();
+                    await handlePatientSelectionChange();
+                    showDraftToast(`Ticket ${formatQueueTicket(queue.current_ticket)} selected automatically.`);
+                } else {
+                    showDraftToast(data.message || "Today's queue is complete.");
+                }
+            } catch (error) {
+                showDraftToast("The serial could not be updated.");
+            } finally {
+                nextPatientButton.disabled = false;
+            }
+        }
+
+        function syncPatientCard() {
+            const patient = byId(patients, patientSelect.value);
+            if (!patient) {
+                patientCard.innerHTML = '<i class="fas fa-user-injured"></i><div><strong>No patient selected</strong><span>Select a patient to load profile information.</span></div>';
+                return;
+            }
+            patientCard.innerHTML = `
+                <i class="fas fa-user-injured"></i>
+                <div class="patient-card-content">
+                    <div class="patient-card-title"><strong>${patient.name}</strong><em>${patient.blood_group ? "Blood " + patient.blood_group : "Blood group -"}</em></div>
+                    <span>UHID ${formatUHID(patient.id)}${patient.daily_patient_id ? " · Ticket " + patient.daily_patient_id : ""} · ${patient.age} ${patient.age_unit} · ${patient.gender} · ${patient.phone}</span>
+                    <div class="patient-clinical-meta">
+                        <small><b>Address:</b> ${patient.address || "Not recorded"}</small>
+                        <small><b>Assigned Doctor:</b> ${patient.doctor_name || "Not assigned"}</small>
+                        <small><b>Referred By:</b> ${patient.referer_name || "Self"}</small>
+                        <small class="history"><b>Medical History:</b> ${patient.medical_history || "No medical history recorded"}</small>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterPatients() {
+            const query = patientSearch.value.trim().toLowerCase();
+            Array.from(patientSelect.options).forEach(option => {
+                if (!option.value) return;
+                const patient = byId(patients, option.value);
+                const haystack = [
+                    patient.id, patient.daily_patient_id, patient.name, patient.phone,
+                    patient.address, patient.blood_group
+                ].join(" ").toLowerCase();
+                const visible = !query || haystack.includes(query);
+                option.hidden = !visible;
+                option.disabled = !visible;
+            });
+        }
+
+        function filterTests() {
+            const query = testSearch.value.trim().toLowerCase();
+            Array.from(testSelect.options).forEach(option => {
+                if (!option.value) return;
+                const visible = !query || option.value.toLowerCase().includes(query);
+                option.hidden = !visible;
+                option.disabled = !visible;
+            });
+        }
+
+        function appendToField(id, nextText) {
+            const field = document.getElementById(id);
+            const cleanText = String(nextText || "").trim();
+            if (!field || !cleanText) return;
+            const lines = field.value.split(/\n+/).map(line => line.trim()).filter(Boolean);
+            if (!lines.some(line => line.toLowerCase() === cleanText.toLowerCase())) {
+                lines.push(cleanText);
+            }
+            field.value = lines.join("\n");
+            field.dispatchEvent(new Event("input"));
+        }
+
+        function setFieldValue(id, nextText) {
+            const field = document.getElementById(id);
+            if (!field) return;
+            field.value = String(nextText || "").trim();
+            field.dispatchEvent(new Event("input"));
+        }
+
+        function closeMedicineOptionLists(exceptList = null) {
+            document.querySelectorAll(".medicine-option-list").forEach(list => {
+                if (list !== exceptList) {
+                    list.classList.remove("open");
+                    list.innerHTML = "";
+                }
+            });
+        }
+
+        function medicineMatches(query, showAll = false) {
+            const searchText = String(query || "").trim().toLowerCase();
+            const matches = medicineOptions.filter(name => showAll || !searchText || name.toLowerCase().includes(searchText));
+            return matches.slice(0, 40);
+        }
+
+        function renderMedicineOptions(row, showAll = false) {
+            const input = row.querySelector(".medicine-name");
+            const list = row.querySelector(".medicine-option-list");
+            const matches = medicineMatches(input.value, showAll);
+            closeMedicineOptionLists(list);
+            list.innerHTML = "";
+
+            if (!matches.length) {
+                const empty = document.createElement("div");
+                empty.className = "medicine-option-empty";
+                empty.textContent = "No saved medicine found";
+                list.appendChild(empty);
+                list.classList.add("open");
+                return;
+            }
+
+            matches.forEach(name => {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.textContent = name;
+                option.addEventListener("click", () => {
+                    input.value = name;
+                    input.dispatchEvent(new Event("input"));
+                    list.classList.remove("open");
+                    list.innerHTML = "";
+                    row.querySelector(".medicine-dose").focus();
+                });
+                list.appendChild(option);
+            });
+            list.classList.add("open");
+        }
+
+        function setupMedicineCombo(row) {
+            const input = row.querySelector(".medicine-name");
+            const toggle = row.querySelector(".medicine-option-toggle");
+            input.addEventListener("focus", () => renderMedicineOptions(row, false));
+            input.addEventListener("input", () => {
+                syncMedicineRows(row);
+                renderMedicineOptions(row, false);
+            });
+            input.addEventListener("keydown", event => {
+                if (event.key === "Escape") {
+                    closeMedicineOptionLists();
+                }
+            });
+            toggle.addEventListener("click", () => {
+                input.focus();
+                renderMedicineOptions(row, true);
+            });
+        }
+
+        function hasMedicineName(row) {
+            return Boolean(row.querySelector(".medicine-name").value.trim());
+        }
+
+        function isEmptyMedicineRow(row) {
+            return !row.querySelector(".medicine-name").value.trim()
+                && !row.querySelector(".medicine-dose").value.trim()
+                && !row.querySelector(".medicine-duration").value.trim()
+                && !row.querySelector(".medicine-instruction").value.trim();
+        }
+
+        function updateMedicineRowState(row) {
+            row.classList.toggle("medicine-active", hasMedicineName(row));
+        }
+
+        function ensureBlankMedicineRow() {
+            const rows = Array.from(medicineRows.querySelectorAll(".medicine-row"));
+            if (!rows.length || !isEmptyMedicineRow(rows[rows.length - 1])) {
+                addMedicineRow();
+            }
+        }
+
+        function removeExtraBlankMedicineRows() {
+            const rows = Array.from(medicineRows.querySelectorAll(".medicine-row"));
+            rows.forEach((row, index) => {
+                const isLastRow = index === rows.length - 1;
+                if (!isLastRow && isEmptyMedicineRow(row)) {
+                    row.remove();
+                }
+            });
+        }
+
+        function syncMedicineRows(activeRow = null) {
+            Array.from(medicineRows.querySelectorAll(".medicine-row")).forEach(updateMedicineRowState);
+            if (activeRow && hasMedicineName(activeRow)) {
+                ensureBlankMedicineRow();
+            }
+            removeExtraBlankMedicineRows();
+            updatePreview();
+        }
+
+        function addMedicineRow(seed = {}) {
+            const row = medicineRowTemplate.content.firstElementChild.cloneNode(true);
+            row.querySelector(".medicine-name").value = seed.name || "";
+            row.querySelector(".medicine-dose").value = seed.dose || "";
+            row.querySelector(".medicine-duration").value = seed.duration || "";
+            row.querySelector(".medicine-instruction").value = seed.instruction || "";
+            row.querySelectorAll("input").forEach(input => input.addEventListener("input", updatePreview));
+            setupMedicineCombo(row);
+            updateMedicineRowState(row);
+            row.querySelector(".remove-medicine").addEventListener("click", () => {
+                row.remove();
+                if (!medicineRows.querySelector(".medicine-row")) {
+                    addMedicineRow();
+                }
+                syncMedicineRows();
+            });
+            medicineRows.appendChild(row);
+            updateMedicineRowState(row);
+        }
+
+        function medicineItems() {
+            return Array.from(medicineRows.querySelectorAll(".medicine-row")).map(row => ({
+                name: row.querySelector(".medicine-name").value.trim(),
+                dose: row.querySelector(".medicine-dose").value.trim(),
+                duration: row.querySelector(".medicine-duration").value.trim(),
+                instruction: row.querySelector(".medicine-instruction").value.trim(),
+            })).filter(item => item.name || item.dose || item.duration || item.instruction);
+        }
+
+        function updatePreview() {
+            const patient = byId(patients, patientSelect.value);
+            const doctor = byId(doctors, doctorSelect.value);
+
+            document.getElementById("previewDate").textContent = text(value("prescriptionDate"));
+            document.getElementById("previewDoctor").textContent = doctor ? doctor.name : "Select doctor";
+            document.getElementById("previewDoctorMeta").textContent = doctor
+                ? [doctor.designation, doctor.specialization, doctor.department, doctor.license_number ? "Reg: " + doctor.license_number : "", doctor.room_number ? "Room: " + doctor.room_number : ""].filter(Boolean).join(" | ")
+                : "Designation, department, registration";
+            document.getElementById("previewPatient").textContent = patient ? patient.name : "Select patient";
+            document.getElementById("previewPatientMeta").textContent = patient
+                ? [`UHID ${formatUHID(patient.id)}`, patient.daily_patient_id ? "Ticket " + patient.daily_patient_id : "", `${patient.age} ${patient.age_unit}`, patient.gender, patient.phone].filter(Boolean).join(" | ")
+                : "Age, gender, phone";
+
+            document.getElementById("previewVitals").innerHTML = `
+                <span>BP: ${text(value("bp"))}</span>
+                <span>Pulse: ${text(value("pulse"))}</span>
+                <span>Temp: ${text(value("temperature"))}</span>
+                <span>Weight: ${text(value("weight"))}</span>
+            `;
+            document.getElementById("previewComplaints").textContent = text(value("complaints"));
+            document.getElementById("previewFindings").textContent = text(value("findings"));
+            document.getElementById("previewDiagnosis").textContent = text(value("diagnosis"));
+            document.getElementById("previewInvestigations").textContent = text(value("investigations"));
+            document.getElementById("previewAdvice").textContent = text(value("advice"));
+            document.getElementById("previewFollowup").textContent = text(value("followup"));
+
+            const medicines = medicineItems();
+            document.getElementById("previewMedicines").innerHTML = medicines.length
+                ? medicines.map(item => `<li><strong>${text(item.name)}</strong><span>${[item.dose, item.duration, item.instruction].filter(Boolean).join(" | ") || "-"}</span></li>`).join("")
+                : "<li>No medicine added.</li>";
+            document.getElementById("previewStatus").textContent = medicines.length ? `${medicines.length} medicine${medicines.length === 1 ? "" : "s"}` : "Ready";
+        }
+
+        patientSearch.addEventListener("input", filterPatients);
+        patientSearch.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const option = Array.from(patientSelect.options).find(option => option.value && !option.hidden && !option.disabled);
+                if (option) {
+                    patientSelect.value = option.value;
+                    handlePatientSelectionChange();
+                }
+            }
+        });
+        patientSelect.addEventListener("change", handlePatientSelectionChange);
+        callNextPatient.addEventListener("click", callNextTicket);
+        testSearch.addEventListener("input", filterTests);
+        testSearch.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const option = Array.from(testSelect.options).find(option => option.value && !option.hidden && !option.disabled);
+                if (option) {
+                    testSelect.value = option.value;
+                    appendToField("investigations", option.value);
+                }
+            }
+        });
+        document.getElementById("addTestButton").addEventListener("click", () => {
+            appendToField("investigations", testSelect.value || testSearch.value);
+        });
+        watchedFields.forEach(field => field.addEventListener("input", updatePreview));
+        document.addEventListener("click", event => {
+            if (!event.target.closest(".medicine-combo")) {
+                closeMedicineOptionLists();
+            }
+        });
+        document.querySelectorAll("[data-append-target]").forEach(button => {
+            button.addEventListener("click", () => appendToField(button.dataset.appendTarget, button.dataset.appendText));
+        });
+        document.querySelectorAll("[data-set-target]").forEach(button => {
+            button.addEventListener("click", () => setFieldValue(button.dataset.setTarget, button.dataset.setText));
+        });
+        document.querySelectorAll("[data-clinical-template]").forEach(button => {
+            button.addEventListener("click", () => applyClinicalTemplate(button.dataset.clinicalTemplate));
+        });
+        document.getElementById("printPrescription").addEventListener("click", () => {
+            if (!doctorSelect.value) {
+                showDraftToast("The selected patient has no assigned doctor. Update the patient registration first.");
+                patientSearch.focus();
+                return;
+            }
+            if (!patientSelect.value) {
+                showDraftToast("Select a patient before printing.");
+                patientSearch.focus();
+                return;
+            }
+            const params = new URLSearchParams({
+                doctor_id: doctorSelect.value || "",
+                patient_id: patientSelect.value || "",
+                prescription_no: document.getElementById("prescriptionNo").textContent.trim(),
+                date: value("prescriptionDate"),
+                bp: value("bp"),
+                pulse: value("pulse"),
+                temperature: value("temperature"),
+                weight: value("weight"),
+                complaints: value("complaints"),
+                findings: value("findings"),
+                diagnosis: value("diagnosis"),
+                investigations: value("investigations"),
+                advice: value("advice"),
+                followup: value("followup"),
+                auto_print: "1",
+            });
+            medicineItems().forEach(item => {
+                params.append("medicine_name", item.name);
+                params.append("medicine_dose", item.dose);
+                params.append("medicine_duration", item.duration);
+                params.append("medicine_instruction", item.instruction);
+            });
+            saveDraft(false);
+            localStorage.removeItem(patientDraftKey(patientSelect.value));
+            window.open(`${printUrl}?${params.toString()}`, "_blank");
+        });
+        document.getElementById("clearPrescription").addEventListener("click", () => {
+            if (!window.confirm("Clear the current prescription and its saved draft?")) return;
+            document.getElementById("prescriptionForm").reset();
+            medicineRows.querySelectorAll(".medicine-row").forEach(row => row.remove());
+            addMedicineRow();
+            if (activePatientId) {
+                localStorage.removeItem(patientDraftKey(activePatientId));
+                fetch(`${draftApiUrl}/${activePatientId}`, {method: "DELETE"});
+            }
+            syncPatientCard();
+            updatePreview();
+            renderQueue(null);
+            draftStatus.innerHTML = '<i class="fas fa-cloud"></i> New blank prescription';
+            showDraftToast("Prescription cleared.");
+        });
+
+        document.getElementById("prescriptionForm").addEventListener("input", scheduleDraftSave);
+        document.getElementById("prescriptionForm").addEventListener("change", scheduleDraftSave);
+        document.getElementById("nextPatientButton").addEventListener("click", () => selectNextPatient(String(patientSelect.value || "")));
+        document.getElementById("saveDraftButton").addEventListener("click", () => saveDraft(true));
+        document.getElementById("dockPrintButton").addEventListener("click", () => document.getElementById("printPrescription").click());
+        document.getElementById("focusModeButton").addEventListener("click", event => {
+            document.body.classList.toggle("preview-collapsed");
+            const collapsed = document.body.classList.contains("preview-collapsed");
+            event.currentTarget.innerHTML = collapsed
+                ? '<i class="fas fa-table-columns"></i> Show Preview'
+                : '<i class="fas fa-expand-arrows-alt"></i> Focus Mode';
+        });
+        document.addEventListener("keydown", event => {
+            const key = event.key.toLowerCase();
+            if ((event.ctrlKey || event.metaKey) && key === "k") {
+                event.preventDefault(); patientSearch.focus(); patientSearch.select();
+            } else if (event.altKey && key === "m") {
+                event.preventDefault();
+                ensureBlankMedicineRow();
+                const medicineInputs = medicineRows.querySelectorAll(".medicine-name");
+                medicineInputs[medicineInputs.length - 1]?.focus();
+            } else if (event.altKey && key === "n") {
+                event.preventDefault(); document.getElementById("nextPatientButton").click();
+            } else if (event.altKey && key === "p") {
+                event.preventDefault(); document.getElementById("focusModeButton").click();
+            } else if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                event.preventDefault(); document.getElementById("printPrescription").click();
+            } else if ((event.ctrlKey || event.metaKey) && key === "s") {
+                event.preventDefault(); saveDraft(true);
+            }
+        });
+
+        updatePrescriptionClock();
+        window.setInterval(updatePrescriptionClock, 1000);
+        addMedicineRow();
+        if (patients.length) {
+            const initialPatientId = String(patientSelect.dataset.initialPatientId || patients[0].id);
+            patientSelect.value = byId(patients, initialPatientId) ? initialPatientId : String(patients[0].id);
+            handlePatientSelectionChange();
+        } else {
+            syncPatientCard(); updatePreview(); renderQueue(null);
+        }
+        window.setInterval(() => {
+            if (doctorSelect.value && !callNextPatient.classList.contains("is-loading")) loadDoctorQueue();
+        }, 4000);
+    </script>
+</body>
+</html>

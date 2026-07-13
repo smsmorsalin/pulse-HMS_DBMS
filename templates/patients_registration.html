@@ -120,6 +120,7 @@
                             <th class="gender-col">Gender</th>
                             <th class="phone-col">Phone</th>
                             <th class="address-col">Address</th>
+                            <th class="served-col">Served By</th>
                             <th class="action-col">Action</th>
                         </tr>
                     </thead>
@@ -127,13 +128,14 @@
                         {% if patients %}
                             {% for patient in patients %}
                             <tr>
-                                <td class="id-col">{{ patient[8] or patient[0] }}</td>
+                                <td class="id-col">{{ format_uhid(patient[8] or patient[0]) }}</td>
                                 <td class="ticket-col">{{ patient[1] or '-' }}</td>
                                 <td class="name-col">{{ patient[2] }}</td>
                                 <td class="age-col">{{ patient[3] }} {{ patient[4] }}</td>
                                 <td class="gender-col">{{ patient[5] }}</td>
                                 <td class="phone-col">{{ patient[6] }}</td>
                                 <td class="address-col">{{ patient[7] }}</td>
+                                <td class="served-col"><span class="served-by-badge">{{ patient[10] or 'Admin' }}</span></td>
                                 <td class="action-col">
                                     <div class="row-actions">
                                         <a href="{{ url_for('ticket_print', patient_id=patient[0]) }}" class="print-ticket-btn">
@@ -165,7 +167,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="8">No patients found.</td>
+                                <td colspan="9">No patients found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -214,7 +216,7 @@
                 <div class="old-patient-search-panel" id="oldPatientSearchPanel">
                     <div class="old-patient-search-bar">
                         <i class="fas fa-magnifying-glass"></i>
-                        <input type="text" id="oldPatientSearchInput" placeholder="Search old patient by UHID, Ticket No, Name, or Phone">
+                        <input type="text" id="oldPatientSearchInput" placeholder="Search UHID (example: 18 or AJH18), Ticket No, Name, or Phone">
                         <button type="button" id="oldPatientSearchBtn">Search</button>
                         <button type="button" id="oldPatientClearBtn">Clear</button>
                     </div>
@@ -321,7 +323,7 @@
                             <select id="doctorname" name="doctor_name" required>
                                 <option value="" disabled selected></option>
                                 {% for doctor in doctor_options %}
-                                <option value="{{ doctor[1] }}" data-designation="{{ doctor[2] }}">{{ doctor[1] }}</option>
+                                <option value="{{ doctor[1] }}" data-designation="{{ doctor[2] }}" data-fee="{{ doctor[3] or 0 }}">{{ doctor[1] }}</option>
                                 {% endfor %}
                             </select>
                             <label>Doctor Name</label>
@@ -359,11 +361,36 @@
                         </div>
 
 
-                        <div class="input-group">
-                            <i class="fas fa-wallet"></i>
-                            <input type="text" id="doctorFee" name="doctor_fee"  required placeholder=" ">
-                            <label>Doctor Fee</label>
-                        </div>
+                        <section class="registration-payment-section">
+                            <div class="payment-section-heading">
+                                <div>
+                                    <span>Ticket Payment</span>
+                                    <h3>Billing &amp; Due</h3>
+                                </div>
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <div class="payment-field-grid">
+                                <div class="input-group">
+                                    <i class="fas fa-wallet"></i>
+                                    <input type="number" id="doctorFee" name="doctor_fee" min="0" step="0.01" placeholder="0.00" readonly>
+                                    <label>Doctor Fee</label>
+                                </div>
+                                <div class="input-group">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <input type="number" id="doctorPaidAmount" name="doctor_paid_amount" min="0" step="0.01" placeholder="0.00">
+                                    <label>Paid Amount</label>
+                                </div>
+                                <div class="input-group due-amount-field">
+                                    <i class="fas fa-hand-holding-dollar"></i>
+                                    <input type="number" id="doctorDueAmount" name="doctor_due_amount" value="0.00" readonly>
+                                    <label>Due Amount</label>
+                                </div>
+                            </div>
+                            <div class="payment-status-line">
+                                <span id="registrationPaymentStatus">Enter the doctor fee and paid amount.</span>
+                                <strong id="registrationDuePreview">Due Tk 0.00</strong>
+                            </div>
+                        </section>
 
 
                     </div>
@@ -441,8 +468,38 @@
     const refererNameSelect = document.getElementById("refererName");
     const emergencyContactNumberInput = document.getElementById("emergencyContactNumber");
     const doctorFeeInput = document.getElementById("doctorFee");
+    const doctorPaidAmountInput = document.getElementById("doctorPaidAmount");
+    const doctorDueAmountInput = document.getElementById("doctorDueAmount");
+    const registrationPaymentStatus = document.getElementById("registrationPaymentStatus");
+    const registrationDuePreview = document.getElementById("registrationDuePreview");
     let oldPatientSearchTimer = null;
     let oldPatientSearchRequestId = 0;
+
+    function formatUHID(value) {
+        const text = String(value || "").trim();
+        if (!text) return "-";
+        return text.toUpperCase().startsWith("AJH") ? `AJH${text.slice(3).trim()}` : `AJH${text}`;
+    }
+
+    function readPaymentAmount(field) {
+        const value = Number(field && field.value ? field.value : 0);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+    }
+
+    function updateRegistrationDue() {
+        const fee = readPaymentAmount(doctorFeeInput);
+        const paid = readPaymentAmount(doctorPaidAmountInput);
+        const due = Math.max(fee - Math.min(paid, fee), 0);
+        doctorDueAmountInput.value = due.toFixed(2);
+        doctorDueAmountInput.classList.add("has-value");
+        doctorPaidAmountInput.setCustomValidity(paid > fee ? "Paid amount cannot be greater than the doctor fee." : "");
+        registrationDuePreview.textContent = `Due Tk ${due.toFixed(2)}`;
+        registrationPaymentStatus.textContent = due > 0
+            ? "This ticket will be saved with an outstanding due."
+            : (fee > 0 ? "Doctor fee is fully paid." : "Enter the doctor fee and paid amount.");
+        registrationPaymentStatus.classList.toggle("has-due", due > 0);
+        registrationPaymentStatus.classList.toggle("is-paid", fee > 0 && due === 0);
+    }
 
     function setActiveSidebarItem(activeItem) {
         sidebarItems.forEach(function (item) {
@@ -489,14 +546,22 @@
         updateAgeState();
     });
 
-    function updateDoctorDesignation() {
+    function updateDoctorDesignation(resetPaidAmount) {
         if (!doctorNameSelect || !doctorDesignationInput) return;
 
         const selectedOption = doctorNameSelect.options[doctorNameSelect.selectedIndex];
         const designation = selectedOption ? selectedOption.dataset.designation || "" : "";
+        const configuredFee = selectedOption ? Number(selectedOption.dataset.fee || 0) : 0;
 
         doctorDesignationInput.value = designation;
         doctorDesignationInput.classList.toggle("has-value", designation !== "");
+        doctorFeeInput.value = selectedOption ? configuredFee.toFixed(2) : "";
+        if (resetPaidAmount) {
+            doctorPaidAmountInput.value = "";
+        }
+        markFieldHasValue(doctorFeeInput);
+        markFieldHasValue(doctorPaidAmountInput);
+        updateRegistrationDue();
     }
 
     function markFieldHasValue(field) {
@@ -525,7 +590,7 @@
 
     function fillOldPatient(patient) {
         existingPatientIdInput.value = patient.id || "";
-        patientUHID.textContent = patient.id ? "Old UHID " + patient.id : "Auto";
+        patientUHID.textContent = patient.id ? "Old UHID " + formatUHID(patient.id) : "Auto";
         fullNameInput.value = patient.name || "";
         ageInput.value = patient.age || "";
         setSelectValue(ageUnitSelect, patient.age_unit || "Y");
@@ -539,18 +604,21 @@
         setSelectValue(refererNameSelect, patient.referer_name || "Self");
         emergencyContactNumberInput.value = patient.emergency_contact_phone || "";
         doctorFeeInput.value = patient.doctor_fee || "";
+        doctorPaidAmountInput.value = "";
+        updateRegistrationDue();
 
         [
             fullNameInput, ageInput, phoneInput, bloodGroupSelect, addressInput,
             patientStatusSelect, doctorNameSelect, doctorDesignationInput,
-            refererNameSelect, emergencyContactNumberInput, doctorFeeInput
+            refererNameSelect, emergencyContactNumberInput, doctorFeeInput,
+            doctorPaidAmountInput, doctorDueAmountInput
         ].forEach(markFieldHasValue);
-        updateDoctorDesignation();
+        updateDoctorDesignation(false);
         if (patient.doctor_designation && !doctorDesignationInput.value) {
             doctorDesignationInput.value = patient.doctor_designation;
             markFieldHasValue(doctorDesignationInput);
         }
-        oldPatientResults.innerHTML = "<p class=\"old-patient-selected\"><i class=\"fas fa-circle-check\"></i> Old patient selected: " + (patient.name || "") + " | UHID " + (patient.id || "") + ". Now create today's bill and print.</p>";
+        oldPatientResults.innerHTML = "<p class=\"old-patient-selected\"><i class=\"fas fa-circle-check\"></i> Old patient selected: " + (patient.name || "") + " | UHID " + formatUHID(patient.id) + ". Now create today's bill and print.</p>";
     }
 
     function clearOldPatientSelection() {
@@ -569,7 +637,7 @@
         oldPatientResults.innerHTML = patients.map(function (patient) {
             return '<button type="button" class="old-patient-result" data-patient-id="' + patient.id + '">' +
                 '<strong>' + patient.name + '</strong>' +
-                '<span>UHID ' + patient.id + ' | ' + (patient.phone || '-') + ' | ' + (patient.age || '-') + ' ' + (patient.age_unit || '') + ' | ' + (patient.gender || '-') + '</span>' +
+                '<span>UHID ' + formatUHID(patient.id) + ' | ' + (patient.phone || '-') + ' | ' + (patient.age || '-') + ' ' + (patient.age_unit || '') + ' | ' + (patient.gender || '-') + '</span>' +
                 '<small>' + (patient.address || '') + '</small>' +
             '</button>';
         }).join("");
@@ -630,9 +698,15 @@
     }
 
     if (doctorNameSelect) {
-        doctorNameSelect.addEventListener("change", updateDoctorDesignation);
-        updateDoctorDesignation();
+        doctorNameSelect.addEventListener("change", function () {
+            updateDoctorDesignation(true);
+        });
+        updateDoctorDesignation(false);
     }
+
+    doctorFeeInput.addEventListener("input", updateRegistrationDue);
+    doctorPaidAmountInput.addEventListener("input", updateRegistrationDue);
+    updateRegistrationDue();
 
     oldPatientSearchToggle.addEventListener("click", function () {
         oldPatientSearchPanel.classList.toggle("show");
@@ -683,8 +757,12 @@
 
         submitButtons.forEach(function (button) {
             button.addEventListener("click", function () {
+                const selectedAction = button.dataset.saveAction || "register";
                 if (patientSaveActionInput) {
-                    patientSaveActionInput.value = button.dataset.saveAction || "register";
+                    patientSaveActionInput.value = selectedAction;
+                }
+                if (doctorFeeInput) {
+                    doctorFeeInput.required = selectedAction === "save_print";
                 }
             });
         });
@@ -696,6 +774,9 @@
 
             if (patientSaveActionInput) {
                 patientSaveActionInput.value = saveAction;
+            }
+            if (doctorFeeInput) {
+                doctorFeeInput.required = saveAction === "save_print";
             }
 
             submitButtons.forEach(function (button) {
@@ -789,15 +870,15 @@
         return String(value).padStart(2, "0");
     };
 
-    timestampElement.textContent = [
-        pad(now.getDate()),
-        pad(now.getMonth() + 1),
-        now.getFullYear()
-    ].join("-") + " " + [
-        pad(now.getHours()),
-        pad(now.getMinutes()),
-        pad(now.getSeconds())
-    ].join(":");
+    timestampElement.textContent = now.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+    }) + " " + now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+    });
 }
 
     updatePrintedTimestamp();

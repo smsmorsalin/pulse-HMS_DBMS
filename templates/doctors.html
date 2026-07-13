@@ -19,13 +19,13 @@
                     Back
                 </a>
 
-                <div>
+                <div class="doctors-heading-copy">
                     <h1><i class="fas fa-user-doctor"></i> Doctors</h1>
                     <p>Review the registered doctors in the system.</p>
                 </div>
 
                 <div class="header-actions">
-                    {% if admin %}
+                    {% if can_access_page('add_doctor') %}
                     <a class="add-doctor-btn" href="{{ url_for('add_doctor') }}">
                         <i class="fas fa-plus"></i>
                         Add Doctor
@@ -52,7 +52,8 @@
                             <th>Availability</th>
                             <th>Experience</th>
                             <th>Room Number</th>
-                            {% if admin %}
+                            <th>Doctor Fee</th>
+                            {% if can_access_page('edit_doctor') or can_access_page('delete_doctor') %}
                             <th>Action</th>
                             {% endif %}
                         </tr>
@@ -71,19 +72,32 @@
                                 <td>{{ doctor[8] }}</td>
                                 <td>{{ doctor[9] }}</td>
                                 <td>{{ doctor[10] }}</td>
-                                {% if admin %}
+                                <td>Tk {{ '%.2f'|format(doctor[11] or 0) }}</td>
+                                {% if can_access_page('edit_doctor') or can_access_page('delete_doctor') %}
                                 <td>
+                                    <div class="doctor-row-actions">
+                                    {% if can_access_page('edit_doctor') %}
                                     <a class="edit-doctor-btn" href="{{ url_for('edit_doctor', doctor_id=doctor[0]) }}">
                                         <i class="fas fa-pen-to-square"></i>
                                         Edit
                                     </a>
+                                    {% endif %}
+                                    {% if can_access_page('delete_doctor') %}
+                                    <form class="delete-doctor-form" method="POST" action="{{ url_for('delete_doctor', doctor_id=doctor[0]) }}" data-doctor-name="{{ doctor[1] }}">
+                                        <button type="submit" class="delete-doctor-btn">
+                                            <i class="fas fa-trash-can"></i>
+                                            Delete
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    </div>
                                 </td>
                                 {% endif %}
                             </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="{% if admin %}11{% else %}10{% endif %}">No doctors found.</td>
+                                <td colspan="{% if can_access_page('edit_doctor') or can_access_page('delete_doctor') %}12{% else %}11{% endif %}">No doctors found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -91,5 +105,15 @@
             </div>
         </section>
     </main>
+    <script>
+        document.querySelectorAll(".delete-doctor-form").forEach(function (form) {
+            form.addEventListener("submit", function (event) {
+                const doctorName = form.dataset.doctorName || "this doctor";
+                if (!window.confirm(`Delete ${doctorName}? This action cannot be undone.`)) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense List | AL-JUMIRA HOSPITAL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/daily_expenses_print.css') }}">
+</head>
+<body>
+    <div class="print-toolbar no-print">
+        <a href="{{ url_for('daily_expenses', date=selected_date, category=selected_category, keyword=keyword) }}">Back</a>
+        <button type="button" onclick="printReport()">Print Expense List</button>
+    </div>
+
+    <main class="print-sheet">
+        <header>
+            <div class="hospital-brand">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital logo">
+                <div>
+                    <h1>AL-JUMIRA HOSPITAL</h1>
+                    <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                    <p>Phone: 017767617979 | Email: aljumirahospital@gmail.com</p>
+                </div>
+            </div>
+            <h2>DAILY EXPENSE LIST</h2>
+        </header>
+
+        <section class="report-meta">
+            <div><span>Expense Date</span><strong>{{ format_date_display(selected_date) }}</strong></div>
+            <div><span>Category</span><strong>{{ selected_category or 'All Categories' }}</strong></div>
+            <div><span>Search</span><strong>{{ keyword or 'All Records' }}</strong></div>
+            <div><span>Prepared By</span><strong>{{ printed_by or 'Admin' }}</strong></div>
+        </section>
+
+        <section class="summary">
+            <div><span>Total Records</span><strong>{{ expense_rows|length }}</strong></div>
+            <div><span>Total Expense</span><strong>Tk {{ '%.2f'|format(total_amount) }}</strong></div>
+            <div><span>Printed At</span><strong id="printedTimestamp">--</strong></div>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="sl">SL</th>
+                    <th>Category</th>
+                    <th>Description / Note</th>
+                    <th>Vendor / Paid To</th>
+                    <th>Payment</th>
+                    <th class="amount">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in expense_rows %}
+                <tr>
+                    <td class="sl">{{ loop.index }}</td>
+                    <td>{{ item[2] }}</td>
+                    <td>{{ item[3] or '-' }}{% if item[7] %}<small>{{ item[7] }}</small>{% endif %}</td>
+                    <td>{{ item[4] or '-' }}</td>
+                    <td>{{ item[6] }}</td>
+                    <td class="amount">Tk {{ '%.2f'|format(item[5] or 0) }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="empty" colspan="6">No expenses found for the selected filters.</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><th colspan="5">Grand Total</th><th class="amount">Tk {{ '%.2f'|format(total_amount) }}</th></tr>
+            </tfoot>
+        </table>
+
+        <footer>
+            <div>Prepared By<br><strong>____________________</strong></div>
+            <div>Accounts Checked By<br><strong>____________________</strong></div>
+            <div>Authorized Signature<br><strong>____________________</strong></div>
+        </footer>
+    </main>
+
+    <script>
+        function updatePrintedTimestamp() {
+            document.getElementById('printedTimestamp').textContent = new Date().toLocaleString('en-GB', {
+                day: '2-digit', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
+            }).replace(',', '');
+        }
+        function printReport() { updatePrintedTimestamp(); window.print(); }
+        updatePrintedTimestamp();
+        window.addEventListener('beforeprint', updatePrintedTimestamp);
+        {% if auto_print %}window.setTimeout(printReport, 500);{% endif %}
+    </script>
+</body>
+</html>

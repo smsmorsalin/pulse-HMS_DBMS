@@ -46,7 +46,7 @@ body {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 1300px;
+    max-width: 1780px;
     margin: 0 auto;
 }
 
@@ -74,6 +74,11 @@ body {
     margin-left: auto;
 }
 
+.doctors-heading-copy {
+    flex: 1;
+    min-width: 360px;
+}
+
 .doctors-header h1 {
     display: flex;
     align-items: center;
@@ -88,7 +93,8 @@ body {
 }
 
 .add-doctor-btn,
-.edit-doctor-btn {
+.edit-doctor-btn,
+.delete-doctor-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -102,8 +108,16 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.delete-doctor-btn {
+    border: 1px solid rgba(251, 113, 133, 0.5);
+    background: linear-gradient(135deg, #be123c, #fb7185);
+    cursor: pointer;
+    font: inherit;
+}
+
 .add-doctor-btn:hover,
-.edit-doctor-btn:hover {
+.edit-doctor-btn:hover,
+.delete-doctor-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
 }
@@ -139,8 +153,28 @@ body {
 
 .doctors-table table {
     width: 100%;
+    min-width: 1580px;
     border-collapse: collapse;
     color: #fff;
+}
+
+.doctor-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 205px;
+}
+
+.delete-doctor-form {
+    margin: 0;
+}
+
+.doctor-row-actions .edit-doctor-btn,
+.doctor-row-actions .delete-doctor-btn {
+    min-height: 39px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    box-shadow: none;
 }
 
 .doctors-table th,
@@ -185,6 +219,10 @@ body {
         align-items: stretch;
     }
 
+    .doctors-heading-copy {
+        min-width: 0;
+    }
+
     .header-actions {
         margin-left: 0;
     }
@@ -195,7 +233,8 @@ body {
 
     .back-btn,
     .add-doctor-btn,
-    .edit-doctor-btn {
+    .edit-doctor-btn,
+    .delete-doctor-btn {
         width: fit-content;
     }
 }

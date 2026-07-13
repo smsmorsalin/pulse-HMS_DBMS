@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Advertisement Display | AL-JUMIRA HOSPITAL</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/hospital_advertisement.css') }}">
+</head>
+<body>
+    <main class="advertisement-display">
+        <header class="advertisement-header controls">
+            <div class="brand">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital logo">
+                <div><strong>AL-JUMIRA HOSPITAL</strong><span>Reception Media Display</span></div>
+            </div>
+            <div class="toolbar">
+                <a href="{{ url_for('patients_serial') }}"><i class="fas fa-list-ol"></i> Serial Display</a>
+                <button type="button" id="uploadToggle"><i class="fas fa-cloud-arrow-up"></i> Add Picture / Video</button>
+                <button type="button" id="fullscreenButton"><i class="fas fa-expand"></i> Full Screen</button>
+            </div>
+        </header>
+
+        {% if message %}<div class="notice error controls">{{ message }}</div>{% endif %}
+        {% if success %}<div class="notice success controls">{{ success }}</div>{% endif %}
+
+        <section class="upload-panel controls" id="uploadPanel" hidden>
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_hospital_advertisement') }}">
+                <label>
+                    <span>Hospital picture or video</span>
+                    <input type="file" name="media_file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg" required>
+                </label>
+                <p>Images display for 8 seconds. Videos play completely before the next advertisement. Maximum file size: 150 MB.</p>
+                <button type="submit"><i class="fas fa-upload"></i> Upload Advertisement</button>
+            </form>
+        </section>
+
+        <section class="media-stage" id="mediaStage">
+            {% for media in media_items %}
+                {% if media.type == 'video' %}
+                <video class="media-slide" data-type="video" preload="metadata" playsinline muted>
+                    <source src="{{ media.url }}">
+                </video>
+                {% else %}
+                <img class="media-slide" data-type="image" src="{{ media.url }}" alt="Hospital advertisement">
+                {% endif %}
+            {% else %}
+            <div class="empty-media">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital logo">
+                <h1>AL-JUMIRA HOSPITAL</h1>
+                <p>Mother, Child and Infertility Care Center</p>
+                <span>Use “Add Picture / Video” to create your hospital advertisement playlist.</span>
+            </div>
+            {% endfor %}
+
+            <div class="media-overlay">
+                <div><strong>AL-JUMIRA HOSPITAL</strong><span>Advanced care with compassion</span></div>
+                <div class="slide-progress"><span id="currentSlide">0</span> / <span id="totalSlides">{{ media_items|length }}</span></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const slides = Array.from(document.querySelectorAll('.media-slide'));
+        const currentSlide = document.getElementById('currentSlide');
+        let activeIndex = -1;
+        let imageTimer = null;
+
+        function showSlide(index) {
+            if (!slides.length) return;
+            window.clearTimeout(imageTimer);
+            slides.forEach(slide => {
+                slide.classList.remove('active');
+                if (slide.tagName === 'VIDEO') { slide.pause(); slide.currentTime = 0; }
+            });
+            activeIndex = (index + slides.length) % slides.length;
+            const activeSlide = slides[activeIndex];
+            activeSlide.classList.add('active');
+            currentSlide.textContent = activeIndex + 1;
+            if (activeSlide.dataset.type === 'video') {
+                activeSlide.muted = false;
+                activeSlide.play().catch(() => { activeSlide.muted = true; activeSlide.play(); });
+            } else {
+                imageTimer = window.setTimeout(() => showSlide(activeIndex + 1), 8000);
+            }
+        }
+
+        slides.filter(slide => slide.dataset.type === 'video').forEach(video => {
+            video.addEventListener('ended', () => showSlide(activeIndex + 1));
+            video.addEventListener('error', () => showSlide(activeIndex + 1));
+        });
+        document.getElementById('uploadToggle').addEventListener('click', () => {
+            const panel = document.getElementById('uploadPanel');
+            panel.hidden = !panel.hidden;
+        });
+        document.getElementById('fullscreenButton').addEventListener('click', async () => {
+            if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+            else await document.exitFullscreen();
+        });
+        if (slides.length) showSlide(0);
+    </script>
+</body>
+</html>

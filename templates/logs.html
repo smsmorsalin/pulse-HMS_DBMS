@@ -90,7 +90,7 @@
                             {% for item in logs %}
                             <tr>
                                 <td>{{ item.id }}</td>
-                                <td>{{ item.timestamp }}</td>
+                                <td>{{ format_date_display(item.timestamp) }}</td>
                                 <td>
                                     <strong>{{ item.actor_name }}</strong>
                                     {% if item.user_id %}

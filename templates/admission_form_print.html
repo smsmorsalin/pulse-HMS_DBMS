@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admission Form #{{ record.id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission_form_print.css') }}">
+</head>
+<body>
+    <div class="print-toolbar no-print">
+        <a href="{{ url_for('admissions', admission_id=record.id) }}">Back to Admission</a>
+        <button type="button" onclick="window.print()">Print Admission Form</button>
+    </div>
+
+    <main class="a4-page">
+        <header class="hospital-header">
+            <img src="{{ url_for('assets', filename='logo.png') }}" alt="Hospital logo">
+            <div>
+                <h1>AL-JUMIRA HOSPITAL</h1>
+                <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                <p>Phone: 017767617979 &nbsp;|&nbsp; Email: aljumirahospital@gmail.com</p>
+            </div>
+        </header>
+
+        <section class="form-heading">
+            <p><strong>Patient's Reg. No.:</strong> {{ record.registration_no or '-' }}</p>
+            <h2>Admission Form</h2>
+            <p><strong>Bed/Cabin No.:</strong> {{ record.room_number or record.bed_number or '-' }}</p>
+        </section>
+
+        <section class="details-table">
+            <div><span>Patient's Name</span><b>:</b><strong>{{ record.patient_name or '-' }}</strong></div>
+            <div><span>Patient's Age</span><b>:</b><strong>{{ record.age or '-' }} {{ record.age_unit or '' }}</strong></div>
+            <div><span>Patient's Gender</span><b>:</b><strong>{{ record.gender or '-' }}</strong></div>
+            <div><span>Guardian Name</span><b>:</b><strong>{{ record.guardian_name or '-' }}</strong></div>
+            <div><span>Relation with Guardian</span><b>:</b><strong>{{ record.guardian_relation or '-' }}</strong></div>
+            <div><span>Mobile</span><b>:</b><strong>{{ record.phone or '-' }}</strong></div>
+            <div><span>Address</span><b>:</b><strong>{{ record.address or '-' }}</strong></div>
+            <div><span>Date of Admission</span><b>:</b><strong>{{ format_date_display(record.admission_date) }}</strong></div>
+            <div><span>Time</span><b>:</b><strong>{{ admission_time or '-' }}</strong></div>
+            <div><span>Under Treatment</span><b>:</b><strong>{{ record.doctor_name or '-' }}</strong></div>
+            <div><span>Name of Anaesthetist</span><b>:</b><strong>&nbsp;</strong></div>
+            <div><span>Name of Disease</span><b>:</b><strong>{{ record.reason or '-' }}</strong></div>
+            <div><span>Referrer Name</span><b>:</b><strong>{{ record.referer_name or 'Self' }}</strong></div>
+            <div><span>Admission Fee</span><b>:</b><strong>&#2547;{{ "%.2f"|format(record.admission_fee or 0) }}</strong></div>
+        </section>
+
+        <section class="notes"><strong>Notes:</strong> {{ record.notes or '' }}</section>
+
+        <footer class="signatures">
+            <div><span></span><p>Signature, on behalf of patient</p></div>
+            <div><span></span><p>Admitted by {{ record.admitted_by or 'Staff' }}</p></div>
+        </footer>
+    </main>
+
+    {% if auto_print %}
+    <script>
+        window.addEventListener("load", function () {
+            window.setTimeout(function () { window.print(); }, 300);
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -1,3 +1,4 @@
+
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +11,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+  background-color: #06133f;
+  background-image: url("/assets/background.png");
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   overflow: hidden;
   
 }
@@ -248,26 +254,15 @@ button {
 
 body::before,
 body::after {
-  content: "";
-  position: fixed;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  filter: blur(130px);
-  z-index: -1;
-  animation: float 12s infinite alternate ease-in-out;
+  display: none;
 }
 
 body::before {
-  background: #1e3cfa; /* Blue */
-  top: -120px;
-  left: -120px;
+  background: none;
 }
 
 body::after {
-  background: #ff1e56; /* Red */
-  bottom: -120px;
-  right: -120px;
+  background: none;
 }
 
 @keyframes float {

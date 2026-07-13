@@ -387,6 +387,409 @@ tbody tr:hover {
     min-width: 118px;
 }
 
+.select-due-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 112px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(85, 184, 240, 0.42);
+    border-radius: 13px;
+    color: #e0f2fe;
+    background: linear-gradient(135deg, rgba(30, 60, 250, 0.82), rgba(56, 193, 114, 0.78));
+    box-shadow: 0 9px 20px rgba(10, 16, 40, 0.24);
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select-due-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(10, 16, 40, 0.34);
+}
+
+body.due-modal-open {
+    overflow: hidden;
+}
+
+.due-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+}
+
+.due-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 8, 28, 0.78);
+    backdrop-filter: blur(10px);
+}
+
+.due-modal-dialog {
+    position: relative;
+    width: min(1180px, 96vw);
+    max-height: 92vh;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 26px;
+    color: #fff;
+    background: linear-gradient(145deg, rgba(20, 24, 70, 0.98), rgba(15, 42, 92, 0.98));
+    box-shadow: 0 32px 90px rgba(0, 0, 0, 0.5);
+}
+
+.due-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 19px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.due-modal-header p {
+    color: #9af0bb;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.due-modal-header h2 {
+    margin-top: 3px;
+    font-size: 25px;
+}
+
+.due-modal-close {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 13px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.due-modal-body {
+    max-height: calc(92vh - 82px);
+    overflow-y: auto;
+    padding: 22px;
+}
+
+.due-modal-loading,
+.due-modal-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 260px;
+    color: rgba(255, 255, 255, 0.76);
+    font-weight: 700;
+}
+
+.due-modal-error {
+    color: #fecdd3;
+}
+
+.settlement-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.settlement-details,
+.settlement-form {
+    display: grid;
+    gap: 16px;
+}
+
+.settlement-patient,
+.settlement-tests,
+.settlement-bill-summary,
+.settlement-form {
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 19px;
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.settlement-patient {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+}
+
+.settlement-patient div {
+    display: grid;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    background: rgba(4, 8, 28, 0.25);
+}
+
+.settlement-patient span,
+.settlement-bill-summary span,
+.settlement-calculation span {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.settlement-patient strong {
+    overflow-wrap: anywhere;
+    font-size: 14px;
+}
+
+.settlement-tests {
+    padding: 16px;
+}
+
+.settlement-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 11px;
+}
+
+.settlement-section-title span {
+    font-weight: 800;
+}
+
+.settlement-section-title strong {
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: #9af0bb;
+    background: rgba(56, 193, 114, 0.13);
+    font-size: 12px;
+}
+
+.settlement-test-list {
+    display: grid;
+    gap: 7px;
+    max-height: 210px;
+    overflow-y: auto;
+}
+
+.settlement-test-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 11px;
+    border-radius: 11px;
+    background: rgba(4, 8, 28, 0.27);
+    font-size: 13px;
+}
+
+.settlement-test-list strong {
+    flex: 0 0 auto;
+    color: #bae6fd;
+}
+
+.no-test-items {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.settlement-bill-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 9px;
+    padding: 13px;
+}
+
+.settlement-bill-summary div {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(4, 8, 28, 0.25);
+}
+
+.settlement-bill-summary strong {
+    font-size: 15px;
+}
+
+.settlement-form {
+    padding: 18px;
+    background: rgba(4, 8, 28, 0.25);
+}
+
+.settlement-form-heading span {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.settlement-form-heading small {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.58);
+    line-height: 1.45;
+}
+
+.settlement-balance-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 14px;
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    border-radius: 14px;
+    background: rgba(190, 24, 93, 0.13);
+}
+
+.settlement-balance-card span {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.settlement-balance-card strong {
+    color: #fecdd3;
+    font-size: 20px;
+}
+
+.settlement-field {
+    display: grid;
+    gap: 7px;
+}
+
+.settlement-field > span {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.settlement-field em {
+    color: rgba(255, 255, 255, 0.48);
+    font-style: normal;
+    font-weight: 500;
+}
+
+.settlement-field small {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+}
+
+.money-field {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.money-field b {
+    padding: 0 11px;
+    color: #9af0bb;
+    font-size: 12px;
+}
+
+.money-field input,
+.settlement-field select,
+.settlement-field textarea {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 13px;
+    outline: none;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.money-field input {
+    min-height: 44px;
+    padding: 0 12px 0 0;
+    border: 0;
+    background: transparent;
+    font-weight: 800;
+}
+
+.settlement-field select {
+    min-height: 46px;
+    padding: 0 12px;
+}
+
+.settlement-field textarea {
+    min-height: 66px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.discount-field .money-field {
+    border-color: rgba(250, 204, 21, 0.32);
+    background: rgba(202, 138, 4, 0.1);
+}
+
+.discount-field input::placeholder {
+    color: rgba(255, 255, 255, 0.36);
+    opacity: 1;
+}
+
+.settlement-calculation {
+    display: grid;
+    gap: 7px;
+    padding: 12px 13px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.settlement-calculation div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settlement-calculation strong {
+    font-size: 13px;
+}
+
+.settlement-calculation .remaining-line {
+    margin-top: 4px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.remaining-line strong {
+    color: #9af0bb;
+    font-size: 17px;
+}
+
+.settlement-error {
+    padding: 10px 12px;
+    border-radius: 11px;
+    color: #fecdd3;
+    background: rgba(190, 24, 93, 0.15);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.confirm-settlement-btn {
+    min-height: 48px;
+    border: 0;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3cfa, #38c172);
+    box-shadow: 0 12px 26px rgba(10, 16, 40, 0.28);
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.confirm-settlement-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .empty-row td {
     padding: 34px 12px;
     color: rgba(255, 255, 255, 0.72);
@@ -421,6 +824,10 @@ tbody tr:hover {
 
     .due-search input {
         width: min(420px, 100%);
+    }
+
+    .settlement-layout {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -463,5 +870,25 @@ tbody tr:hover {
 
     .collect-form {
         min-width: 260px;
+    }
+
+    .due-modal {
+        padding: 8px;
+    }
+
+    .due-modal-dialog {
+        width: 100%;
+        max-height: 96vh;
+        border-radius: 19px;
+    }
+
+    .due-modal-body {
+        max-height: calc(96vh - 78px);
+        padding: 13px;
+    }
+
+    .settlement-patient,
+    .settlement-bill-summary {
+        grid-template-columns: 1fr 1fr;
     }
 }

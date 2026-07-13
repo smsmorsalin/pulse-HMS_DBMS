@@ -16,9 +16,20 @@
             <p class="flash-message"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
         {% endif %}
 
-        <form class="billing-workspace" method="POST" action="{{ url_for('test_billing') }}">
+        <form
+            class="billing-workspace"
+            id="testBillingForm"
+            method="POST"
+            action="{{ url_for('test_billing') }}"
+            data-prescribed-tests-url="{{ url_for('patient_prescribed_tests', patient_id=0) }}"
+        >
+            <div class="billing-main-grid">
             <section class="panel patient-panel">
                 <div class="patient-panel-header">
+                    <a class="back-btn panel-back-btn" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </a>
                     <div class="patient-panel-title">
                        
                     <p class="panel-kicker">Pathology</p>
@@ -28,10 +39,6 @@
                         <a class="due-page-btn" href="/test-billing/due-collection">
                             <i class="fas fa-hand-holding-dollar"></i>
                             Due Collection
-                        </a>
-                        <a class="back-btn panel-back-btn" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-arrow-left"></i>
-                            Back
                         </a>
                         <a class="soft-link" href="{{ url_for('patients_registration') }}">
                             <i class="fas fa-user-plus"></i>
@@ -43,18 +50,22 @@
 
                 <div class="patient-panel-body">
                     <div class="patient-form-grid">
-                        <label class="field patient-select-field">
-                            <span>Patient Name / ID</span>
+                        <div class="field patient-lookup-field">
+                            <span>Patient Name / UHID</span>
                             <div class="patient-lookup">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="patientLookupInput" placeholder="Search UHID, name, phone, ticket">
+                                <input type="text" id="patientLookupInput" placeholder="Search all patients by UHID, name, phone or ticket">
                             </div>
-                            <select id="patientSelect" name="patient_id" required>
-                                <option value="" selected>Select registered patient</option>
+                            <div class="patient-search-results" id="patientSearchResults" hidden></div>
+                        </div>
+                        <label class="field patient-select-field">
+                            <span>Daily Patients · {{ bill_date_label }}</span>
+                            <select id="patientSelect">
+                                <option value="" selected>Select a daily patient</option>
                                 {% for patient in patients %}
                                     <option
                                         value="{{ patient.id }}"
-                                        data-uhid="{{ patient.patient_uhid }}"
+                                        data-uhid="{{ format_uhid(patient.patient_uhid) }}"
                                         data-ticket="{{ patient.daily_patient_id or '' }}"
                                         data-name="{{ patient.name }}"
                                         data-phone="{{ patient.phone }}"
@@ -63,34 +74,19 @@
                                         data-address="{{ patient.address }}"
                                         data-doctor="{{ patient.doctor_name }}"
                                         data-referer="{{ patient.referer_name }}"
-                                        {% if selected_patient_id|string == patient.id|string %}selected{% endif %}
+                                        data-daily="{{ 'true' if patient.is_daily else 'false' }}"
+                                        {% if not patient.is_daily %}hidden disabled{% endif %}
+                                        {% if patient.is_daily and selected_patient_id|string == patient.id|string %}selected{% endif %}
                                     >
-                                        UHID {{ patient.patient_uhid }} | {{ patient.name }}{% if patient.daily_patient_id %} | Ticket {{ patient.daily_patient_id }}{% endif %} | {{ patient.phone }}
+                                        UHID {{ format_uhid(patient.patient_uhid) }} | {{ patient.name }}{% if patient.daily_patient_id %} | Ticket {{ patient.daily_patient_id }}{% endif %} | {{ patient.phone }}
                                     </option>
                                 {% endfor %}
                             </select>
-                            <small class="patient-match-count" id="patientMatchCount">{{ patients|length }} patients available</small>
+                            <small class="patient-match-count" id="patientMatchCount">Daily patients available · Click the search box to browse all patients</small>
                         </label>
-                        <label class="field">
-                            <span>Referring Doctor</span>
-                            <input type="text" name="doctor_name" id="doctorName" placeholder="Doctor name">
-                        </label>
-                        <label class="field">
-                            <span>Referred By</span>
-                            <input type="text" name="referred_by" id="referredBy" placeholder="Hospital / consultant / clinic">
-                        </label>
-                        <label class="field">
-                            <span>Sample Status</span>
-                            <select name="sample_status">
-                                <option>Pending</option>
-                                <option>Collected</option>
-                                <option>Delivered</option>
-                            </select>
-                        </label>
-                        <label class="field">
-                            <span>Report Delivery</span>
-                            <input type="text" name="delivery_time" placeholder="Same day / Tomorrow 5 PM / As advised">
-                        </label>
+                        <input type="hidden" name="patient_id" id="selectedPatientId" value="{{ selected_patient_id or '' }}">
+                        <input type="hidden" name="doctor_name" id="doctorName">
+                        <input type="hidden" name="referred_by" id="referredBy">
                     </div>
 
                     <div class="patient-card patient-card-horizontal" id="patientPreview">
@@ -103,7 +99,6 @@
                 </div>
             </section>
 
-            <div class="billing-lower-grid">
                 <section class="panel tests-panel">
                     <div class="panel-header">
                         <div>
@@ -184,17 +179,27 @@
                             <input type="number" name="received_amount" id="receivedAmount" min="0" step="0.01" value="">
                         </label>
                         <label>
-                            <span>Total</span>
-                            <input type="text" id="totalAmount" value="0.00" readonly>
+                            <span>Total Bill</span>
+                            <input type="text" id="subtotalAmount" value="0.00" readonly>
                         </label>
-                        <label>
-                            <span>Flat Discount</span>
-                            <input type="number" name="flat_discount_amount" id="flatDiscountAmount" min="0" step="0.01" value="">
-                        </label>
+
                         <label>
                             <span>Percentage Discount</span>
                             <input type="number" name="percentage_discount_amount" id="percentageDiscountAmount" min="0" step="0.01" value="">
                         </label>
+
+                        <label>
+                            <span>Flat Discount</span>
+                            <input type="number" name="flat_discount_amount" id="flatDiscountAmount" min="0" step="0.01" value="">
+                        </label>
+
+                        <label>
+                            <span>Gross Bill</span>
+                            <input type="text" id="totalAmount" value="0.00" readonly>
+                        </label>
+
+
+                        <input type="hidden" name="discount_source" id="discountSource" value="flat">
                         <label>
                             <span>Due Amount</span>
                             <input type="text" id="dueAmount" value="" readonly>
@@ -227,9 +232,27 @@
             </div>
         </form>
 
-        {% include '_day_wise_pathology_bills.html' %}
+        {% include 'day_wise_pathology_bills.html' %}
 
     </main>
+
+    <div class="bill-details-modal" id="billDetailsModal" hidden aria-hidden="true">
+        <div class="bill-details-backdrop" data-close-bill-details></div>
+        <section class="bill-details-dialog" role="dialog" aria-modal="true" aria-labelledby="billDetailsTitle">
+            <header class="bill-details-header">
+                <div>
+                    <p class="panel-kicker">Pathology Bill</p>
+                    <h2 id="billDetailsTitle">Selected Tests &amp; Pricing</h2>
+                </div>
+                <button type="button" class="bill-details-close" data-close-bill-details aria-label="Close details">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </header>
+            <div class="bill-details-content" id="billDetailsContent">
+                <div class="bill-details-loading"><i class="fas fa-spinner fa-spin"></i> Loading bill details...</div>
+            </div>
+        </section>
+    </div>
 
     <template id="manualRowTemplate">
         <div class="manual-row">
@@ -245,6 +268,10 @@
         const patientSelect = document.getElementById("patientSelect");
         const patientLookupInput = document.getElementById("patientLookupInput");
         const patientMatchCount = document.getElementById("patientMatchCount");
+        const selectedPatientId = document.getElementById("selectedPatientId");
+        const testBillingForm = document.getElementById("testBillingForm");
+        const prescribedTestsUrlTemplate = testBillingForm.dataset.prescribedTestsUrl;
+        const patientSearchResults = document.getElementById("patientSearchResults");
         const patientPreview = document.getElementById("patientPreview");
         const doctorName = document.getElementById("doctorName");
         const referredBy = document.getElementById("referredBy");
@@ -253,9 +280,96 @@
         const visibleTestCount = document.getElementById("visibleTestCount");
         const selectVisibleTestsBtn = document.getElementById("selectVisibleTestsBtn");
         const clearVisibleTestsBtn = document.getElementById("clearVisibleTestsBtn");
+        let prescribedTestRequestId = 0;
 
         let dayBillSearchTimer = null;
         let dayBillRequestId = 0;
+        const billDetailsModal = document.getElementById("billDetailsModal");
+        const billDetailsContent = document.getElementById("billDetailsContent");
+        const billDetailsClose = billDetailsModal.querySelector(".bill-details-close");
+
+        function escapeBillText(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            })[character]);
+        }
+
+        function formatUHID(value) {
+            const text = String(value || "").trim();
+            if (!text) return "-";
+            return text.toUpperCase().startsWith("AJH") ? `AJH${text.slice(3).trim()}` : `AJH${text}`;
+        }
+
+        function closeBillDetails() {
+            billDetailsModal.hidden = true;
+            billDetailsModal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("modal-open");
+        }
+
+        function renderBillDetails(data) {
+            const bill = data.bill;
+            const items = data.items || [];
+            billDetailsContent.innerHTML = `
+                <div class="bill-details-patient">
+                    <div><span>Patient</span><strong>${escapeBillText(bill.patient_name)}</strong></div>
+                    <div><span>UHID</span><strong>${escapeBillText(formatUHID(bill.patient_uhid))}</strong></div>
+                    <div><span>Phone</span><strong>${escapeBillText(bill.phone)}</strong></div>
+                    <div><span>Age / Gender</span><strong>${escapeBillText(bill.age)} ${escapeBillText(bill.age_unit)} / ${escapeBillText(bill.gender)}</strong></div>
+                    <div><span>Invoice</span><strong>${escapeBillText(bill.invoice_no)}</strong></div>
+                    <div><span>Served By</span><strong>${escapeBillText(bill.served_by)}</strong></div>
+                </div>
+                <div class="bill-details-meta">
+                    <span><b>Date:</b> ${escapeBillText(bill.bill_date)}</span>
+                    <span><b>Doctor:</b> ${escapeBillText(bill.doctor_name)}</span>
+                    <span><b>Status:</b> ${escapeBillText(bill.sample_status)}</span>
+                </div>
+                <div class="bill-details-tests">
+                    <div class="bill-details-test-head"><span>#</span><span>Selected Test</span><span>Price</span></div>
+                    ${items.length ? items.map((item, index) => `
+                        <div class="bill-details-test-row">
+                            <span>${index + 1}</span>
+                            <strong>${escapeBillText(item.name)}</strong>
+                            <span>Tk ${money(item.price)}</span>
+                        </div>
+                    `).join("") : '<p class="bill-details-empty">No selected tests were found.</p>'}
+                </div>
+                <div class="bill-details-totals">
+                    <p><span>Subtotal</span><strong>Tk ${money(bill.subtotal)}</strong></p>
+                    <p><span>Discount</span><strong>Tk ${money(bill.discount)}</strong></p>
+                    <p class="grand-total"><span>Total</span><strong>Tk ${money(bill.total)}</strong></p>
+                    <p><span>Received</span><strong>Tk ${money(bill.received)}</strong></p>
+                    <p class="due-total"><span>Due</span><strong>Tk ${money(bill.due)}</strong></p>
+                </div>
+            `;
+        }
+
+        function openBillDetails(url) {
+            billDetailsModal.hidden = false;
+            billDetailsModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("modal-open");
+            billDetailsContent.innerHTML = '<div class="bill-details-loading"><i class="fas fa-spinner fa-spin"></i> Loading bill details...</div>';
+            billDetailsClose.focus();
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(result => {
+                    if (!result.ok || !result.data.success) throw new Error(result.data.error || "Unable to load bill details.");
+                    renderBillDetails(result.data);
+                })
+                .catch(error => {
+                    billDetailsContent.innerHTML = `<div class="bill-details-error"><i class="fas fa-triangle-exclamation"></i>${escapeBillText(error.message)}</div>`;
+                });
+        }
+
+        document.addEventListener("click", event => {
+            const detailsButton = event.target.closest(".bill-details-btn");
+            if (detailsButton) openBillDetails(detailsButton.dataset.detailsUrl);
+            if (event.target.closest("[data-close-bill-details]")) closeBillDetails();
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !billDetailsModal.hidden) closeBillDetails();
+        });
 
         function reloadDayBills() {
             const panel = document.getElementById("dayBillsPanel");
@@ -338,6 +452,8 @@
         const selectedTestCount = document.getElementById("selectedTestCount");
         const flatDiscountAmount = document.getElementById("flatDiscountAmount");
         const percentageDiscountAmount = document.getElementById("percentageDiscountAmount");
+        const discountSource = document.getElementById("discountSource");
+        const subtotalAmount = document.getElementById("subtotalAmount");
         const totalAmount = document.getElementById("totalAmount");
         const receivedAmount = document.getElementById("receivedAmount");
         const dueAmount = document.getElementById("dueAmount");
@@ -345,6 +461,7 @@
         const manualTestList = document.getElementById("manualTestList");
         const addManualTestBtn = document.getElementById("addManualTestBtn");
         const manualRowTemplate = document.getElementById("manualRowTemplate");
+        let activeDiscountSource = discountSource ? discountSource.value : "flat";
 
         function money(value) {
             return Number(value || 0).toFixed(2);
@@ -352,6 +469,21 @@
 
         function maybeMoney(value) {
             return Number(value || 0) > 0 ? money(value) : "";
+        }
+
+        function numberValue(input) {
+            return Number(input.value || 0);
+        }
+
+        function setDiscountValue(input, value) {
+            input.value = Number(value || 0) > 0 ? money(value) : "";
+        }
+
+        function setDiscountSource(source) {
+            activeDiscountSource = source;
+            if (discountSource) {
+                discountSource.value = source;
+            }
         }
 
         function getPatientOptions() {
@@ -368,36 +500,81 @@
             ].join(" ").toLowerCase();
         }
 
-        function filterPatientOptions() {
+        function getPatientOption(patientId) {
+            return getPatientOptions().find(option => String(option.value) === String(patientId || "")) || null;
+        }
+
+        function filterPatientOptions(showResults = true) {
             const query = patientLookupInput.value.trim().toLowerCase();
-            let visibleCount = 0;
-            let firstVisibleOption = null;
-            const selectedOption = patientSelect.selectedOptions[0];
-
-            getPatientOptions().forEach(option => {
-                const isVisible = query === "" || getPatientSearchText(option).includes(query);
-                option.hidden = !isVisible;
-                option.disabled = !isVisible;
-                if (isVisible) {
-                    visibleCount += 1;
-                    if (!firstVisibleOption) {
-                        firstVisibleOption = option;
-                    }
-                }
-            });
-
-            if (selectedOption && selectedOption.value && selectedOption.disabled) {
-                patientSelect.value = firstVisibleOption ? firstVisibleOption.value : "";
-                syncPatientPreview();
-            }
+            const visibleCount = getPatientOptions()
+                .filter(option => !query || getPatientSearchText(option).includes(query))
+                .length;
 
             if (patientMatchCount) {
-                patientMatchCount.textContent = visibleCount + (visibleCount === 1 ? " patient found" : " patients found");
+                patientMatchCount.textContent = visibleCount + (visibleCount === 1 ? " patient" : " patients") + " from all patients";
+            }
+
+            if (showResults) {
+                renderPatientSearchResults(query);
+            } else {
+                patientSearchResults.hidden = true;
             }
         }
 
-        function syncPatientPreview() {
+        function renderPatientSearchResults(query) {
+            patientSearchResults.innerHTML = "";
+
+            const matches = getPatientOptions()
+                .filter(option => !query || getPatientSearchText(option).includes(query));
+
+            if (!matches.length) {
+                const empty = document.createElement("div");
+                empty.className = "patient-search-empty";
+                empty.textContent = "No patient found";
+                patientSearchResults.appendChild(empty);
+            } else {
+                matches.forEach(option => {
+                    const result = document.createElement("button");
+                    result.type = "button";
+                    result.className = "patient-search-result";
+
+                    const name = document.createElement("strong");
+                    name.textContent = option.dataset.name || "Unnamed patient";
+                    const meta = document.createElement("span");
+                    meta.textContent = `UHID ${option.dataset.uhid || "-"} · Ticket ${option.dataset.ticket || "-"} · ${option.dataset.phone || "-"}`;
+                    result.append(name, meta);
+
+                    result.addEventListener("click", () => {
+                        selectSearchedPatient(option);
+                    });
+                    patientSearchResults.appendChild(result);
+                });
+            }
+            patientSearchResults.hidden = false;
+        }
+
+        function selectSearchedPatient(option) {
+            if (!option) return;
+            selectedPatientId.value = option.value;
+            patientSelect.value = "";
+            patientLookupInput.value = `${option.dataset.name || ""} · UHID ${option.dataset.uhid || "-"}`;
+            patientLookupInput.setCustomValidity("");
+            patientSearchResults.hidden = true;
+            syncPatientPreview(option);
+            loadPrescribedTests(option.value);
+        }
+
+        function selectDailyPatient() {
             const option = patientSelect.selectedOptions[0];
+            selectedPatientId.value = option && option.value ? option.value : "";
+            patientLookupInput.value = "";
+            patientLookupInput.setCustomValidity("");
+            patientSearchResults.hidden = true;
+            syncPatientPreview(option);
+            loadPrescribedTests(option && option.value ? option.value : "");
+        }
+
+        function syncPatientPreview(option = getPatientOption(selectedPatientId.value)) {
             if (!option || !option.value) {
                 patientPreview.innerHTML = '<i class="fas fa-user-injured"></i><div><strong>No patient selected</strong><span>Select a registered patient to auto-fill pathology details.</span></div>';
                 doctorName.value = "";
@@ -417,11 +594,42 @@
             referredBy.value = option.dataset.referer || "";
         }
 
+        async function loadPrescribedTests(patientId) {
+            const requestId = ++prescribedTestRequestId;
+            const catalogInputs = Array.from(document.querySelectorAll('input[name="test_ids"]'));
+            catalogInputs.forEach(input => {
+                input.checked = false;
+            });
+            calculateSummary();
+            if (!patientId) return;
+
+            try {
+                const requestUrl = prescribedTestsUrlTemplate.replace('/0/', `/${encodeURIComponent(patientId)}/`);
+                const response = await fetch(requestUrl, {
+                    headers: {"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+                    cache: "no-store"
+                });
+                const data = await response.json();
+                if (requestId !== prescribedTestRequestId) return;
+                if (!response.ok || !data.success) throw new Error(data.error || "Could not load prescribed tests.");
+
+                const prescribedIds = new Set((data.tests || []).map(test => String(test.id)));
+                catalogInputs.forEach(input => {
+                    input.checked = prescribedIds.has(String(input.value));
+                });
+                calculateSummary();
+            } catch (error) {
+                if (requestId === prescribedTestRequestId) calculateSummary();
+            }
+        }
+
         function getManualTests() {
             return Array.from(manualTestList.querySelectorAll(".manual-row")).map(row => {
                 const nameInput = row.querySelector('input[name="custom_test_name[]"]');
                 const priceInput = row.querySelector('input[name="custom_test_price[]"]');
                 return {
+                    kind: "manual",
+                    rowIndex: Array.from(manualTestList.querySelectorAll(".manual-row")).indexOf(row),
                     name: nameInput.value.trim(),
                     price: Number(priceInput.value || 0)
                 };
@@ -430,19 +638,33 @@
 
         function calculateSummary() {
             const checkedTests = Array.from(document.querySelectorAll('input[name="test_ids"]:checked')).map(input => ({
+                kind: "catalog",
+                value: input.value,
                 name: input.dataset.name,
                 price: Number(input.dataset.price || 0)
             }));
             const allTests = checkedTests.concat(getManualTests());
             const subtotal = allTests.reduce((sum, item) => sum + item.price, 0);
-            const flatDiscount = Number(flatDiscountAmount.value || 0);
-            const percentageDiscount = Math.min(Number(percentageDiscountAmount.value || 0), 100);
-            const discount = Math.min(flatDiscount + (subtotal * percentageDiscount / 100), subtotal);
+            let flatDiscount = 0;
+            let percentageDiscount = 0;
+
+            if (activeDiscountSource === "percentage") {
+                percentageDiscount = Math.min(numberValue(percentageDiscountAmount), 100);
+                flatDiscount = subtotal * (percentageDiscount / 100);
+                setDiscountValue(flatDiscountAmount, flatDiscount);
+            } else {
+                flatDiscount = Math.min(numberValue(flatDiscountAmount), subtotal);
+                percentageDiscount = subtotal > 0 ? (flatDiscount / subtotal) * 100 : 0;
+                setDiscountValue(percentageDiscountAmount, percentageDiscount);
+            }
+
+            const discount = Math.min(flatDiscount, subtotal);
             const total = Math.max(subtotal - discount, 0);
             const received = Number(receivedAmount.value || 0);
             const due = Math.max(total - received, 0);
             const change = Math.max(received - total, 0);
 
+            subtotalAmount.value = money(subtotal);
             totalAmount.value = money(total);
             dueAmount.value = maybeMoney(due);
             changeAmount.value = maybeMoney(change);
@@ -455,18 +677,47 @@
 
             selectedTests.innerHTML = `
                 <div class="selected-table-head">
+                    <span>Delete</span>
                     <span>Sno</span>
                     <span>Test Name</span>
                     <span>Amount</span>
                 </div>
                 ${allTests.map((item, index) => `
                     <div class="selected-row">
+                        <button
+                            class="selected-delete-btn"
+                            type="button"
+                            data-kind="${item.kind}"
+                            data-value="${item.kind === "catalog" ? item.value : item.rowIndex}"
+                            aria-label="Delete test"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
                         <span class="selected-sno">${index + 1}</span>
                         <span class="selected-name">${item.name}</span>
                         <strong>Tk ${money(item.price)}</strong>
                     </div>
                 `).join("")}
             `;
+        }
+
+        function deleteSummaryTest(kind, value) {
+            if (kind === "catalog") {
+                const testInput = Array.from(document.querySelectorAll('input[name="test_ids"]')).find(test => test.value === value);
+                if (testInput) testInput.checked = false;
+            } else if (kind === "manual") {
+                const index = Number(value);
+                const manualRows = Array.from(manualTestList.querySelectorAll(".manual-row"));
+                const row = manualRows[index];
+                if (!row) return;
+                if (manualTestList.querySelectorAll(".manual-row").length > 1) {
+                    row.remove();
+                } else {
+                    row.querySelectorAll("input").forEach(input => input.value = "");
+                }
+            }
+
+            calculateSummary();
         }
 
         function updateVisibleTestCount() {
@@ -497,20 +748,52 @@
             });
         }
 
-        patientSelect.addEventListener("change", syncPatientPreview);
-        patientLookupInput.addEventListener("input", filterPatientOptions);
+        patientSelect.addEventListener("change", selectDailyPatient);
+        patientLookupInput.addEventListener("input", () => filterPatientOptions(true));
+        patientLookupInput.addEventListener("focus", () => {
+            renderPatientSearchResults(patientLookupInput.value.trim().toLowerCase());
+        });
         patientLookupInput.addEventListener("keydown", event => {
             if (event.key === "Enter") {
                 event.preventDefault();
-                const firstVisibleOption = getPatientOptions().find(option => !option.hidden && !option.disabled);
-                if (firstVisibleOption) {
-                    patientSelect.value = firstVisibleOption.value;
-                    syncPatientPreview();
-                }
+                const query = patientLookupInput.value.trim().toLowerCase();
+                const firstMatch = getPatientOptions().find(option => !query || getPatientSearchText(option).includes(query));
+                if (firstMatch) selectSearchedPatient(firstMatch);
             }
         });
-        document.querySelectorAll('input[name="test_ids"]').forEach(input => input.addEventListener("change", calculateSummary));
-        [flatDiscountAmount, percentageDiscountAmount, receivedAmount].forEach(input => input.addEventListener("input", calculateSummary));
+        testBillingForm.addEventListener("submit", event => {
+            if (selectedPatientId.value) return;
+            event.preventDefault();
+            patientLookupInput.setCustomValidity("Please select a patient from either patient box.");
+            patientLookupInput.reportValidity();
+        });
+        document.addEventListener("click", event => {
+            if (!event.target.closest(".patient-lookup-field")) patientSearchResults.hidden = true;
+        });
+        document.querySelectorAll('input[name="test_ids"]').forEach(input => input.addEventListener("change", () => {
+            calculateSummary();
+            if (input.checked && testSearch.value.trim()) {
+                testSearch.value = "";
+                testList.querySelectorAll(".test-item").forEach(item => item.hidden = false);
+                updateVisibleTestCount();
+                requestAnimationFrame(() => testSearch.focus());
+            }
+        }));
+        selectedTests.addEventListener("click", event => {
+            const deleteButton = event.target.closest(".selected-delete-btn");
+            if (deleteButton) {
+                deleteSummaryTest(deleteButton.dataset.kind, deleteButton.dataset.value);
+            }
+        });
+        flatDiscountAmount.addEventListener("input", () => {
+            setDiscountSource("flat");
+            calculateSummary();
+        });
+        percentageDiscountAmount.addEventListener("input", () => {
+            setDiscountSource("percentage");
+            calculateSummary();
+        });
+        receivedAmount.addEventListener("input", calculateSummary);
         manualTestList.querySelectorAll(".manual-row").forEach(bindManualRow);
 
         addManualTestBtn.addEventListener("click", () => {
@@ -532,7 +815,8 @@
         clearVisibleTestsBtn.addEventListener("click", () => toggleVisibleTests(false));
 
         syncPatientPreview();
-        filterPatientOptions();
+        if (selectedPatientId.value) loadPrescribedTests(selectedPatientId.value);
+        filterPatientOptions(false);
         updateVisibleTestCount();
         calculateSummary();
     </script>

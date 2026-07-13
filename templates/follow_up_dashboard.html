@@ -56,7 +56,7 @@
             <div>
                 <p class="eyebrow"><i class="fas fa-clipboard-check"></i> Admin Follow Up</p>
                 <h1>Daily Follow Up Dashboard</h1>
-                <p>One screen for compliance logs, medicine sales, patients, bills, services, appointments, tests, and admissions.</p>
+                <p>One screen for compliance logs, medicine sales, patients, bills, services, tests, and admissions.</p>
             </div>
             <form class="date-filter" method="GET" action="{{ url_for('follow_up_dashboard') }}">
                 <label for="followDate">Record Date</label>
@@ -277,7 +277,7 @@
                         {% for patient in patient_rows %}
                         <article>
                             <strong>{{ patient[2] }}</strong>
-                            <span>UHID {{ patient[0] }} | Ticket {{ patient[1] or '-' }} | {{ patient[5] }} | {{ patient[6] }}</span>
+                            <span>UHID {{ format_uhid(patient[0]) }} | Ticket {{ patient[1] or '-' }} | {{ patient[5] }} | {{ patient[6] }}</span>
                             <small>{{ patient[3] }} {{ patient[4] or 'Y' }} | {{ patient[7] or 'General' }} | Fee Tk {{ '%.2f'|format(patient[9] or 0) }}</small>
                         </article>
                         {% endfor %}
@@ -305,29 +305,6 @@
                         {% endfor %}
                     {% else %}
                         <div class="empty-state">No service bills found for this date.</div>
-                    {% endif %}
-                </div>
-            </section>
-
-            <section class="record-section">
-                <div class="section-head">
-                    <div>
-                        <p class="eyebrow small">Doctor Visits</p>
-                        <h2>Appointments</h2>
-                    </div>
-                    <a href="{{ url_for('appointment_doctors') }}">Open <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="compact-list">
-                    {% if appointments %}
-                        {% for appointment in appointments %}
-                        <article>
-                            <strong>{{ appointment[1] }} | {{ appointment[4] }}</strong>
-                            <span>{{ appointment[2] }} | Dr. {{ appointment[3] }}</span>
-                            <small>{{ format_date_display(appointment[5]) }}</small>
-                        </article>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">No appointments found for this date.</div>
                     {% endif %}
                 </div>
             </section>

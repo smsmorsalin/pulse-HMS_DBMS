@@ -152,12 +152,59 @@ tbody tr:hover {
 
 .permission-form {
 	display: grid;
+	gap: 12px;
+	min-width: 570px;
+}
+
+.permission-toolbar,
+.permission-toolbar > div,
+.permission-group legend {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.permission-toolbar strong {
+	font-size: 12px;
+	color: #b8f4ff;
+}
+
+.permission-toolbar button,
+.permission-group-toggle {
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	border-radius: 8px;
+	padding: 5px 8px;
+	color: #fff;
+	background: rgba(255, 255, 255, 0.09);
+	font-size: 10px;
+	cursor: pointer;
+}
+
+.permission-groups {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(270px, 1fr));
 	gap: 10px;
+}
+
+.permission-group {
+	min-width: 0;
+	padding: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	border-radius: 12px;
+}
+
+.permission-group legend {
+	width: 100%;
+	padding: 0 5px;
+	color: #ffd166;
+	font-size: 11px;
+	font-weight: 700;
 }
 
 .permission-list {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(150px, 1fr));
+	grid-template-columns: 1fr;
 	gap: 8px;
 }
 
@@ -174,6 +221,12 @@ tbody tr:hover {
 .permission-list span {
 	display: grid;
 	gap: 2px;
+}
+
+.permission-list label > i {
+	width: 15px;
+	color: #85e8ff;
+	text-align: center;
 }
 
 .permission-list small {
@@ -218,5 +271,13 @@ tbody tr:hover {
 	.action-btn {
 		width: 100%;
 		justify-content: center;
+	}
+
+	.permission-form {
+		min-width: 460px;
+	}
+
+	.permission-groups {
+		grid-template-columns: 1fr;
 	}
 }

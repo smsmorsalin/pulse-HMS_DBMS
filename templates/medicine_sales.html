@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Sales</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
 
 </head>
-<body data-cart-column-count="{{ 8 if admin else 7 }}">
+<body data-cart-column-count="{{ 7 if admin else 6 }}">
 <aside class="sidebar">
 	<div class="brand">
 		<a href="{{ url_for('dashboard') }}" class="brand-link">
@@ -52,9 +52,9 @@
 <main class="content">
 	<header class="top-header">
 		<div class="title-group">
-			<p class="eyebrow"><i class="fas fa-cash-register"></i> Pharmacy POS</p>
+			
 			<h1>Sales</h1>
-			<h2>Find medicine by name or batch, add quantity, calculate payment, and print invoice.</h2>
+			
 		</div>
 
 		<div class="profile">
@@ -140,7 +140,6 @@
 					<thead>
 						<tr>
 							<th>Medicine</th>
-							<th>Batch / Unit</th>
 							<th>Stock</th>
 							<th>Qty</th>
 							<th>Unit Price</th>
@@ -157,13 +156,6 @@
 							<td>
 								<span class="product-name"><i class="fas fa-capsules"></i>{{ item.product }}</span>
 								<span class="product-meta">Pharmacy sale item</span>
-							</td>
-							<td>
-								<span class="batch-badge">
-									<i class="fas fa-barcode"></i>
-									{{ item.batch }}
-									<small>{{ item.unit|title }}</small>
-								</span>
 							</td>
 							<td>
 								<span class="stock-pill {% if item.available <= 0 %}out{% elif item.available <= 10 %}low{% endif %}">
@@ -192,7 +184,7 @@
 						</tr>
 						{% else %}
 						<tr class="empty-row">
-							<td colspan="{{ 8 if admin else 7 }}">
+							<td colspan="{{ 7 if admin else 6 }}">
 								<div class="cart-empty-message">
 									<i class="fas fa-magnifying-glass-plus"></i>
 									<span>No medicines in cart. Search by medicine name or batch number to start a sale.</span>
@@ -285,7 +277,7 @@
 
 				<div class="summary-actions">
 					<button class="summary-btn reset-btn" id="resetSale" type="button">Reset</button>
-					<button class="summary-btn hold-btn" id="holdSale" type="button">Hold Sale</button>
+					<button class="summary-btn save-btn" id="saveSale" type="button"><i class="fas fa-floppy-disk"></i> Save</button>
 					<button class="summary-btn print-btn" id="savePrint" type="button"><i class="fas fa-print"></i> Save &amp; Print</button>
 				</div>
 
@@ -340,6 +332,7 @@ const customerNameInput = document.getElementById('customerName');
 const customerPhoneInput = document.getElementById('customerPhone');
 const customerAddressInput = document.getElementById('customerAddress');
 const paymentType = document.getElementById('paymentType');
+const saveButton = document.getElementById('saveSale');
 const savePrintButton = document.getElementById('savePrint');
 const cartMedicineSearch = document.getElementById('cartMedicineSearch');
 const clearCartSearch = document.getElementById('clearCartSearch');
@@ -616,11 +609,24 @@ function collectSalePayload() {
 
 function displayDateTime(value) {
 	if (!value) return '-';
-	const parts = String(value).split(' ');
-	const dateParts = parts[0].split('-');
-	if (dateParts.length !== 3) return value;
-	const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-	return parts[1] ? `${formattedDate} ${parts.slice(1).join(' ')}` : formattedDate;
+	const normalized = String(value).replace(' ', 'T');
+	const parsed = new Date(normalized);
+	if (Number.isNaN(parsed.getTime())) return value;
+	const includesTime = String(value).includes(' ') || String(value).includes('T');
+
+	const dateText = parsed.toLocaleDateString('en-GB', {
+		day: '2-digit',
+		month: 'long',
+		year: 'numeric',
+	});
+	if (!includesTime) {
+		return dateText;
+	}
+	return dateText + ' ' + parsed.toLocaleTimeString('en-US', {
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: true,
+	});
 }
 
 function receiptHtml(sale) {
@@ -645,7 +651,7 @@ function receiptHtml(sale) {
 	<html>
 	<head>
 		<title>${sale.invoice_no}</title>
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=4">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
 	</head>
 	<body class="receipt-print-page">
 		<div class="receipt">
@@ -794,19 +800,16 @@ document.getElementById('resetSale').addEventListener('click', function () {
 	resetSaleState();
 });
 
-document.getElementById('holdSale').addEventListener('click', function () {
-	saleStatus.textContent = 'Sale held on this screen. Complete or print when ready.';
-});
-
-savePrintButton.addEventListener('click', async function () {
+async function saveSale(printAfterSave) {
 	const payload = collectSalePayload();
 	if (!payload.items.length) {
 		saleStatus.textContent = 'Please set quantity above 0 for at least one medicine.';
 		return;
 	}
 
-	savePrintButton.disabled = true;
-	saleStatus.textContent = 'Saving sale and preparing receipt...';
+	if (saveButton) saveButton.disabled = true;
+	if (savePrintButton) savePrintButton.disabled = true;
+	saleStatus.textContent = printAfterSave ? 'Saving sale and preparing receipt...' : 'Saving sale summary...';
 
 	try {
 		const response = await fetch('{{ url_for("save_medicine_sale") }}', {
@@ -818,15 +821,32 @@ savePrintButton.addEventListener('click', async function () {
 		if (!response.ok || !result.success) {
 			throw new Error(result.error || 'Could not save this sale.');
 		}
-		window.location.href = result.sale.print_url || '{{ url_for("medicine_sales_list") }}';
+		if (printAfterSave) {
+			window.location.href = result.sale.print_url || '{{ url_for("medicine_sales_list") }}';
+			return;
+		}
+		saleStatus.textContent = `Sale summary saved successfully. Invoice: ${result.sale.invoice_no}`;
+		reloadForNextSale();
 	} catch (error) {
 		saleStatus.textContent = error.message;
-		savePrintButton.disabled = false;
+		if (saveButton) saveButton.disabled = false;
+		if (savePrintButton) savePrintButton.disabled = false;
 	} finally {
-		if (!saleStatus.textContent.includes('Saving')) {
-			savePrintButton.disabled = false;
+		if (!saleStatus.textContent.includes('Saving') && !saleStatus.textContent.includes('saved successfully')) {
+			if (saveButton) saveButton.disabled = false;
+			if (savePrintButton) savePrintButton.disabled = false;
 		}
 	}
+}
+
+if (saveButton) {
+	saveButton.addEventListener('click', function () {
+		saveSale(false);
+	});
+}
+
+savePrintButton.addEventListener('click', function () {
+	saveSale(true);
 });
 
 updateSummary();

@@ -32,6 +32,8 @@
                     <th>Total</th>
                     <th>Due</th>
                     <th>Date</th>
+                    <th class="served-col">Served By</th>
+                    <th>Details</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -45,6 +47,17 @@
                             <td>Tk {{ '%.2f'|format(bill[4] or 0) }}</td>
                             <td>Tk {{ '%.2f'|format(bill[5] or 0) }}</td>
                             <td>{{ format_date_display(bill[6]) }}</td>
+                            <td class="served-col"><span class="served-by-badge">{{ bill[10] or 'Admin' }}</span></td>
+                            <td>
+                                <button
+                                    type="button"
+                                    class="bill-details-btn"
+                                    data-details-url="{{ url_for('test_bill_details', test_bill_id=bill[0]) }}"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                    View Details
+                                </button>
+                            </td>
                             <td>
                                 <div class="bill-row-actions">
                                     {% if bill[5] and bill[5] > 0 %}
@@ -74,7 +87,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="7" class="empty-cell">No pathology bills found.</td>
+                        <td colspan="9" class="empty-cell">No pathology bills found.</td>
                     </tr>
                 {% endif %}
             </tbody>

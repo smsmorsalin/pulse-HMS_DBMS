@@ -1,0 +1,35 @@
+* { box-sizing: border-box; }
+body { margin: 0; color: #172033; background: #eef2f7; font: 11px Arial, sans-serif; }
+.print-toolbar { display: flex; justify-content: center; gap: 10px; padding: 14px; }
+.print-toolbar a, .print-toolbar button { border: 0; border-radius: 6px; padding: 10px 18px; color: #fff; background: #176b43; text-decoration: none; cursor: pointer; font-weight: 700; }
+.print-toolbar a { background: #46546a; }
+.print-sheet { width: 210mm; min-height: 297mm; margin: 0 auto 20px; padding: 10mm; background: #fff; box-shadow: 0 5px 22px rgba(0,0,0,.12); }
+header { padding-bottom: 8px; border-bottom: 2px solid #176b43; }
+.hospital-brand { display: flex; align-items: center; gap: 12px; }
+.hospital-brand img { width: 58px; height: 58px; object-fit: contain; }
+h1 { margin: 0 0 4px; color: #176b43; font-size: 22px; }
+p { margin: 2px 0; color: #536174; }
+h2 { margin: 10px 0 0; padding: 6px; color: #fff; background: #176b43; text-align: center; font-size: 14px; letter-spacing: 1px; }
+.report-meta, .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 9px; }
+.summary { grid-template-columns: repeat(3, 1fr); }
+.report-meta div, .summary div { padding: 7px; border: 1px solid #cbd4df; background: #f7f9fb; }
+.report-meta span, .summary span { display: block; margin-bottom: 3px; color: #667386; font-size: 8px; text-transform: uppercase; }
+table { width: 100%; margin-top: 10px; border-collapse: collapse; table-layout: fixed; }
+th, td { padding: 6px 5px; border: 1px solid #aeb9c6; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+thead th, tfoot th { color: #fff; background: #176b43; }
+tbody tr:nth-child(even) { background: #f4f7f9; }
+small { display: block; margin-top: 3px; color: #687587; }
+.sl { width: 8mm; text-align: center; }
+.amount { width: 25mm; text-align: right; white-space: nowrap; }
+.empty { padding: 18px; text-align: center; }
+footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-top: 28px; text-align: center; font-size: 9px; }
+footer strong { display: inline-block; margin-top: 8px; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+@media print {
+    @page { size: A4 portrait; margin: 7mm; }
+    html, body { width: auto; margin: 0; background: #fff; }
+    .no-print { display: none !important; }
+    .print-sheet { width: 100%; min-height: auto; margin: 0; padding: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

@@ -12,9 +12,21 @@ body {
     justify-content: flex-start;
     align-items: stretch;
     color: #fff;
-    background: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+    background-color: #0f0c29;
+    background-image: linear-gradient(135deg, #0f0c29, #1a2980, #b21f1f);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
     padding: 40px 15px;
     overflow-x: hidden;
+}
+
+.background-blobs {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .background-blobs::before,
@@ -265,6 +277,30 @@ body {
     font-size: 13px;
 }
 
+.view-details-btn {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 13px;
+    border: 1px solid rgba(103, 232, 249, 0.38);
+    border-radius: 10px;
+    color: #e9fbff;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.78), rgba(8, 145, 178, 0.78));
+    box-shadow: 0 8px 18px rgba(8, 145, 178, 0.18);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.view-details-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 11px 24px rgba(8, 145, 178, 0.3);
+}
+
 .detail-grid,
 .charges-grid {
     display: grid;
@@ -331,10 +367,157 @@ body {
     text-align: center;
 }
 
+body.discharge-modal-open {
+    overflow: hidden;
+}
+
+.discharge-details-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.discharge-details-modal[hidden] {
+    display: none;
+}
+
+.discharge-details-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 7, 25, 0.84);
+    backdrop-filter: blur(8px);
+}
+
+.discharge-details-dialog {
+    position: relative;
+    width: min(920px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    color: #f8fbff;
+    background: linear-gradient(145deg, #101943, #192a68 58%, #321b4d);
+    border: 1px solid rgba(165, 180, 252, 0.3);
+    border-radius: 22px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.52);
+}
+
+.discharge-details-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 22px;
+    background: rgba(12, 22, 61, 0.96);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+}
+
+.discharge-details-header span,
+.modal-patient-summary span {
+    display: block;
+    margin-bottom: 5px;
+    color: #9ca9d7;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.discharge-details-header > div > span {
+    color: #67e8f9;
+}
+
+.discharge-details-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.discharge-details-close {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(252, 165, 165, 0.35);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(239, 68, 68, 0.72);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.discharge-details-close:hover {
+    transform: rotate(90deg);
+    background: #ef4444;
+}
+
+.discharge-details-content {
+    padding: 22px;
+}
+
+.modal-patient-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.modal-patient-summary > div {
+    min-width: 0;
+    padding: 14px;
+    background: linear-gradient(145deg, rgba(37, 99, 235, 0.18), rgba(6, 182, 212, 0.1));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+}
+
+.modal-patient-summary strong {
+    display: block;
+    overflow-wrap: anywhere;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.modal-patient-summary .discharged-text {
+    color: #cbd5e1;
+}
+
+.modal-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modal-footer-actions .print-link {
+    min-height: 44px;
+    padding: 11px 18px;
+    color: #052e16;
+    background: linear-gradient(135deg, #86efac, #22c55e);
+    border: none;
+    font-weight: 800;
+}
+
+.modal-footer-actions .missing-bill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
 @media (max-width: 1120px) {
     .summary-grid,
     .detail-grid,
     .charges-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modal-patient-summary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -360,6 +543,7 @@ body {
     .back-btn,
     .bill-btn,
     .print-link,
+    .view-details-btn,
     .search-box {
         width: 100%;
     }
@@ -376,5 +560,24 @@ body {
 
     .detail-grid .wide {
         grid-column: auto;
+    }
+
+    .discharge-details-modal {
+        padding: 8px;
+    }
+
+    .discharge-details-dialog {
+        width: 100%;
+        max-height: 96vh;
+        border-radius: 16px;
+    }
+
+    .discharge-details-header,
+    .discharge-details-content {
+        padding: 16px;
+    }
+
+    .modal-patient-summary {
+        grid-template-columns: 1fr;
     }
 }

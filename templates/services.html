@@ -15,12 +15,12 @@
         <section class="services-card">
             <div class="services-header">
                 <div class="title-with-back">
-                    <a href="{{ url_for('admin_portal') }}" class="back-btn" aria-label="Back to admin portal">
+                    <a href="{{ url_for('admin_portal') if admin else url_for('dashboard') }}" class="back-btn" aria-label="Back">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <h2>All Services</h2>
                 </div>
-                {% if admin %}
+                {% if can_access_page('add_service') %}
                 <a class="action-btn" href="{{ url_for('add_service') }}">Add New Service</a>
                 {% endif %}
             </div>
@@ -29,14 +29,22 @@
             <p class="flash-message">{{ message }}</p>
             {% endif %}
 
+            <div class="table-summary">
+                <span><i class="fas fa-layer-group"></i> {{ services|length }} active services</span>
+                <span><i class="fas fa-circle-info"></i> Scroll horizontally on smaller screens</span>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th class="name-column">Service / Test Name</th>
                             <th>Type</th>
-                            <th>Price</th>
-                            {% if admin %}
+                            <th>Sample Type</th>
+                            <th>Test Category</th>
+                            <th>Unit</th>
+                            <th>Reference Ranges</th>
+                            <th class="price-column">Price</th>
+                            {% if can_access_page('edit_service') or admin %}
                             <th>Actions</th>
                             {% endif %}
                         </tr>
@@ -44,14 +52,26 @@
                     <tbody>
                         {% for s in services %}
                         <tr>
-                            <td>{{ s[1] }}</td>
-                            <td>{{ s[2] }}</td>
-                            <td>{{ s[3] }}</td>
+                            <td class="service-name"><strong>{{ s[1] }}</strong></td>
+                            <td><span class="type-badge {{ s[2] }}">{{ s[2]|title }}</span></td>
+                            <td>{{ s[4] or '-' }}</td>
+                            <td>{{ s[5] or '-' }}</td>
+                            <td>{{ s[6] or '-' }}</td>
+                            <td class="reference-cell">{{ s[7] or '-' }}</td>
+                            <td class="service-price">Tk {{ '%.2f'|format(s[3] or 0) }}</td>
 
-                            {% if admin %}
+                            {% if can_access_page('edit_service') or admin %}
                             <td class="actions-cell">
+                                {% if can_access_page('edit_service') %}
                                 <a class="row-action" href="{{ url_for('edit_service', service_id=s[0]) }}">Edit</a>
-                                <a class="row-action delete" href="{{ url_for('delete_service', service_id=s[0]) }}">Delete</a>
+                                {% endif %}
+                                {% if admin %}
+                                <form class="delete-service-form" method="POST" action="{{ url_for('delete_service', service_id=s[0]) }}" onsubmit="return confirm('Delete {{ s[1]|e }}? This action cannot be undone.');">
+                                    <button class="row-action delete" type="submit">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                                {% endif %}
                             </td>
                             {% endif %}
                         </tr>

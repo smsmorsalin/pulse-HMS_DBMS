@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Fee Due Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_due-collection.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+    <main class="due-page">
+        {% if message %}<p class="flash-message"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>{% endif %}
+
+        <section class="panel due-hero">
+            <div class="hero-title">
+                <p class="panel-kicker">Outpatient Accounts</p>
+                <h1><i class="fas fa-user-doctor"></i> Doctor Fee Due Collection</h1>
+                <p>Collect pending consultation fees by patient, UHID or daily ticket.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="soft-link" href="{{ url_for('patients_registration') }}"><i class="fas fa-user-plus"></i> Registration</a>
+                <a class="back-btn" href="{{ url_for('due_collection_hub') }}"><i class="fas fa-arrow-left"></i> Due Collection</a>
+            </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Doctor fee due summary">
+            <div class="stat-card"><span><i class="fas fa-ticket"></i> Pending Tickets</span><strong>{{ summary.pending_count }}</strong></div>
+            <div class="stat-card urgent"><span><i class="fas fa-sack-dollar"></i> Total Due</span><strong>Tk {{ '%.2f'|format(summary.total_due) }}</strong></div>
+            <div class="stat-card"><span><i class="fas fa-calendar-day"></i> Today's Due</span><strong>Tk {{ '%.2f'|format(summary.today_due) }}</strong></div>
+            <div class="stat-card"><span><i class="fas fa-clock"></i> Oldest Due</span><strong>{{ format_date_display(summary.oldest_due_date) if summary.oldest_due_date else 'None' }}</strong></div>
+        </section>
+
+        <section class="panel collection-panel">
+            <div class="panel-header">
+                <div><p class="panel-kicker">Collection Desk</p><h2>Pending Doctor Fee Tickets</h2></div>
+                <form class="due-search" method="GET" action="{{ url_for('doctor_fee_due_collection') }}">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="UHID, patient, phone, doctor, ticket">
+                    <select name="sort" aria-label="Sort due tickets">
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                        <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest due</option>
+                        <option value="patient" {% if sort == 'patient' %}selected{% endif %}>Patient name</option>
+                    </select>
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+            <div class="quick-filter">
+                <i class="fas fa-filter"></i><input type="text" id="quickFilterInput" placeholder="Filter visible tickets"><a href="{{ url_for('doctor_fee_due_collection') }}">Reset</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Patient</th><th>Ticket</th><th>Doctor</th><th>Fee</th><th>Paid</th><th>Due</th><th>Date</th><th>Action</th></tr></thead>
+                    <tbody id="dueTableBody">
+                        {% for ticket in due_tickets %}
+                        <tr data-search="{{ (format_uhid(ticket.patient_uhid) ~ ' ' ~ ticket.patient_name ~ ' ' ~ ticket.phone ~ ' ' ~ ticket.ticket_no ~ ' ' ~ ticket.doctor_name)|lower }}">
+                            <td><div class="patient-cell"><strong>{{ ticket.patient_name }}</strong><span>UHID {{ format_uhid(ticket.patient_uhid) }} | {{ ticket.phone or 'No phone' }}</span><small>{{ ticket.age }} {{ ticket.age_unit }} / {{ ticket.gender }}</small></div></td>
+                            <td><a class="invoice-link" href="{{ url_for('ticket_print', patient_id=ticket.id, return_to='doctor_due') }}">Ticket {{ ticket.ticket_no or '-' }}</a></td>
+                            <td>{{ ticket.doctor_name }}</td>
+                            <td>Tk {{ '%.2f'|format(ticket.doctor_fee) }}</td>
+                            <td>Tk {{ '%.2f'|format(ticket.paid_amount) }}</td>
+                            <td><strong class="due-amount">Tk {{ '%.2f'|format(ticket.due_amount) }}</strong></td>
+                            <td>{{ format_date_display(ticket.created_at) }}</td>
+                            <td><button type="button" class="select-due-btn" data-patient="{{ ticket.patient_name }}" data-uhid="{{ format_uhid(ticket.patient_uhid) }}" data-ticket="{{ ticket.ticket_no or '-' }}" data-doctor="{{ ticket.doctor_name }}" data-fee="{{ ticket.doctor_fee }}" data-paid="{{ ticket.paid_amount }}" data-due="{{ ticket.due_amount }}" data-action="{{ url_for('collect_doctor_fee_due', patient_id=ticket.id) }}"><i class="fas fa-arrow-pointer"></i> Select</button></td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="8"><i class="fas fa-circle-check"></i> No pending doctor fee due found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="due-modal" id="dueCollectionModal" hidden aria-hidden="true">
+        <div class="due-modal-backdrop" data-close-modal></div>
+        <section class="due-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dueModalTitle">
+            <header class="due-modal-header"><div><p>Consultation Due Settlement</p><h2 id="dueModalTitle">Collect Doctor Fee Due</h2></div><button type="button" class="due-modal-close" data-close-modal aria-label="Close"><i class="fas fa-xmark"></i></button></header>
+            <div class="due-modal-body">
+                <div class="settlement-layout">
+                    <section class="settlement-details">
+                        <div class="settlement-patient" id="patientDetails"></div>
+                        <div class="settlement-bill-summary" id="billSummary"></div>
+                    </section>
+                    <form class="settlement-form" id="settlementForm" method="POST">
+                        <div class="settlement-form-heading"><span><i class="fas fa-cash-register"></i> Settlement</span><small>Full payment, partial payment and approved discounts are supported.</small></div>
+                        <div class="settlement-balance-card"><span>Current Outstanding Due</span><strong id="outstandingDue">Tk 0.00</strong></div>
+                        <label class="settlement-field discount-field"><span>Due Discount</span><div class="money-field"><b>Tk</b><input type="number" id="dueDiscount" name="due_discount" min="0" step="0.01" placeholder="0.00"></div><small>Optional approved discount from the current due.</small></label>
+                        <label class="settlement-field"><span>Collection Amount</span><div class="money-field"><b>Tk</b><input type="number" id="collectionAmount" name="collection_amount" min="0" step="0.01" required></div><small>You can collect the full or a partial balance.</small></label>
+                        <label class="settlement-field"><span>Payment Method</span><select name="payment_method"><option>Cash</option><option>Bkash</option><option>Nagad</option><option>Card</option><option>Bank</option></select></label>
+                        <label class="settlement-field"><span>Discount Note <em>Optional</em></span><textarea name="discount_note" rows="2" placeholder="Reason or authorization for discount"></textarea></label>
+                        <div class="settlement-calculation"><div><span>Outstanding Due</span><strong id="calcDue">Tk 0.00</strong></div><div><span>Discount</span><strong id="calcDiscount">- Tk 0.00</strong></div><div><span>Collect Now</span><strong id="calcCollect">- Tk 0.00</strong></div><div class="remaining-line"><span>Remaining Due</span><strong id="calcRemaining">Tk 0.00</strong></div></div>
+                        <p class="settlement-error" id="settlementError" hidden></p>
+                        <button type="submit" class="confirm-settlement-btn"><i class="fas fa-circle-check"></i> Confirm &amp; Print Ticket</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const modal = document.getElementById("dueCollectionModal");
+        const form = document.getElementById("settlementForm");
+        const discountInput = document.getElementById("dueDiscount");
+        const collectionInput = document.getElementById("collectionAmount");
+        let selectedDue = 0;
+        const money = value => Number(value || 0).toFixed(2);
+        const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character]);
+
+        function updateCalculation() {
+            let discount = Math.min(Math.max(Number(discountInput.value || 0), 0), selectedDue);
+            if (Number(discountInput.value || 0) > selectedDue) discountInput.value = money(selectedDue);
+            const collectible = Math.max(selectedDue - discount, 0);
+            collectionInput.max = money(collectible);
+            let collection = Math.min(Math.max(Number(collectionInput.value || 0), 0), collectible);
+            if (Number(collectionInput.value || 0) > collectible) collectionInput.value = money(collectible);
+            document.getElementById("calcDue").textContent = `Tk ${money(selectedDue)}`;
+            document.getElementById("calcDiscount").textContent = `- Tk ${money(discount)}`;
+            document.getElementById("calcCollect").textContent = `- Tk ${money(collection)}`;
+            document.getElementById("calcRemaining").textContent = `Tk ${money(collectible - collection)}`;
+        }
+
+        document.querySelectorAll(".select-due-btn").forEach(button => button.addEventListener("click", () => {
+            selectedDue = Number(button.dataset.due || 0);
+            form.action = button.dataset.action;
+            document.getElementById("patientDetails").innerHTML = `<div><span>Patient</span><strong>${escapeHtml(button.dataset.patient)}</strong></div><div><span>UHID</span><strong>${escapeHtml(button.dataset.uhid)}</strong></div><div><span>Ticket</span><strong>${escapeHtml(button.dataset.ticket)}</strong></div><div><span>Doctor</span><strong>${escapeHtml(button.dataset.doctor)}</strong></div>`;
+            document.getElementById("billSummary").innerHTML = `<div><span>Doctor Fee</span><strong>Tk ${money(button.dataset.fee)}</strong></div><div><span>Already Paid</span><strong>Tk ${money(button.dataset.paid)}</strong></div><div><span>Outstanding Due</span><strong>Tk ${money(selectedDue)}</strong></div>`;
+            document.getElementById("outstandingDue").textContent = `Tk ${money(selectedDue)}`;
+            discountInput.value = "";
+            discountInput.max = money(selectedDue);
+            collectionInput.value = money(selectedDue);
+            document.getElementById("settlementError").hidden = true;
+            updateCalculation();
+            modal.hidden = false;
+            modal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("due-modal-open");
+        }));
+
+        function closeModal() { modal.hidden = true; modal.setAttribute("aria-hidden", "true"); document.body.classList.remove("due-modal-open"); }
+        document.querySelectorAll("[data-close-modal]").forEach(element => element.addEventListener("click", closeModal));
+        document.addEventListener("keydown", event => { if (event.key === "Escape" && !modal.hidden) closeModal(); });
+        discountInput.addEventListener("input", updateCalculation);
+        collectionInput.addEventListener("input", updateCalculation);
+        form.addEventListener("submit", event => {
+            if (Number(discountInput.value || 0) <= 0 && Number(collectionInput.value || 0) <= 0) {
+                event.preventDefault();
+                const error = document.getElementById("settlementError");
+                error.textContent = "Enter a collection amount or an approved discount.";
+                error.hidden = false;
+            }
+        });
+
+        const quickFilter = document.getElementById("quickFilterInput");
+        const rows = Array.from(document.querySelectorAll("#dueTableBody tr[data-search]"));
+        quickFilter.addEventListener("input", () => {
+            const query = quickFilter.value.trim().toLowerCase();
+            rows.forEach(row => { row.hidden = query && !row.dataset.search.includes(query); });
+        });
+    </script>
+</body>
+</html>

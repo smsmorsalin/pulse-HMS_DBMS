@@ -54,7 +54,7 @@
                 <div>
                     <span>{{ selected_bill[1] }}</span>
                     <h2>{{ selected_bill[10] }}</h2>
-                    <p>UHID {{ selected_bill[13] }} | Ticket {{ selected_bill[14] or '-' }} | {{ selected_bill[11] or '-' }}</p>
+                    <p>UHID {{ format_uhid(selected_bill[13]) }} | Ticket {{ selected_bill[14] or '-' }} | {{ selected_bill[11] or '-' }}</p>
                 </div>
                 <strong class="{{ 'is-returned' if selected_bill[15] else '' }}">{{ selected_bill[15] or selected_bill[8] or 'Active' }}</strong>
             </div>

@@ -89,18 +89,18 @@
                             <th>Paid</th>
                             <th>Due</th>
                             <th>Date</th>
-                            <th>Collect</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="dueTableBody">
                         {% if due_bills %}
                             {% for bill in due_bills %}
-                                <tr data-search="{{ (bill.patient_uhid ~ ' ' ~ bill.patient_name ~ ' ' ~ bill.phone ~ ' ' ~ bill.invoice_no ~ ' ' ~ bill.doctor_name ~ ' ' ~ bill.test_names)|lower }}">
+                                <tr data-search="{{ (format_uhid(bill.patient_uhid) ~ ' ' ~ bill.patient_uhid ~ ' ' ~ bill.patient_name ~ ' ' ~ bill.phone ~ ' ' ~ bill.invoice_no ~ ' ' ~ bill.doctor_name ~ ' ' ~ bill.test_names)|lower }}">
                                     <td>
                                         <div class="patient-cell">
                                             <strong>{{ bill.patient_name }}</strong>
                                             <span>
-                                                {% if bill.patient_uhid %}UHID {{ bill.patient_uhid }} | {% endif %}
+                                                {% if bill.patient_uhid %}UHID {{ format_uhid(bill.patient_uhid) }} | {% endif %}
                                                 {{ bill.phone or 'No phone' }}
                                             </span>
                                             <small>{{ bill.doctor_name }}</small>
@@ -117,19 +117,14 @@
                                     <td><strong class="due-amount">Tk {{ '%.2f'|format(bill.due_amount) }}</strong></td>
                                     <td>{{ format_date_display(bill.created_at) }}</td>
                                     <td>
-                                        <form class="collect-form" method="POST" action="{{ url_for('collect_test_due', test_bill_id=bill.id) }}">
-                                            <input type="number" name="collection_amount" min="0" max="{{ '%.2f'|format(bill.due_amount) }}" step="0.01" value="{{ '%.2f'|format(bill.due_amount) }}" aria-label="Collection amount for {{ bill.invoice_no }}">
-                                            <select name="payment_method" aria-label="Payment method for {{ bill.invoice_no }}">
-                                                <option>Cash</option>
-                                                <option>Bkash</option>
-                                                <option>Nagad</option>
-                                                <option>Card</option>
-                                            </select>
-                                            <button type="submit">
-                                                <i class="fas fa-print"></i>
-                                                Collect
-                                            </button>
-                                        </form>
+                                        <button
+                                            type="button"
+                                            class="select-due-btn"
+                                            data-details-url="{{ url_for('test_due_details', test_bill_id=bill.id) }}"
+                                        >
+                                            <i class="fas fa-arrow-pointer"></i>
+                                            Select
+                                        </button>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -147,16 +142,234 @@
         </section>
     </main>
 
+    <div class="due-modal" id="dueCollectionModal" hidden aria-hidden="true">
+        <div class="due-modal-backdrop" data-close-due-modal></div>
+        <section class="due-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dueModalTitle">
+            <header class="due-modal-header">
+                <div>
+                    <p>Pathology Due Settlement</p>
+                    <h2 id="dueModalTitle">Collect Patient Due</h2>
+                </div>
+                <button type="button" class="due-modal-close" data-close-due-modal aria-label="Close due collection">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </header>
+
+            <div class="due-modal-body" id="dueModalBody">
+                <div class="due-modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading invoice details...</div>
+            </div>
+        </section>
+    </div>
+
+    <template id="dueSettlementTemplate">
+        <div class="settlement-layout">
+            <section class="settlement-details">
+                <div class="settlement-patient" id="modalPatientDetails"></div>
+                <div class="settlement-tests">
+                    <div class="settlement-section-title">
+                        <span><i class="fas fa-vials"></i> Selected Tests</span>
+                        <strong id="modalTestCount">0 tests</strong>
+                    </div>
+                    <div class="settlement-test-list" id="modalTestList"></div>
+                </div>
+                <div class="settlement-bill-summary" id="modalBillSummary"></div>
+            </section>
+
+            <form class="settlement-form" id="dueSettlementForm" method="POST">
+                <div class="settlement-form-heading">
+                    <span><i class="fas fa-cash-register"></i> Settlement</span>
+                    <small>Enter a discount first; the collection amount adjusts automatically.</small>
+                </div>
+
+                <div class="settlement-balance-card">
+                    <span>Current Outstanding Due</span>
+                    <strong id="modalOutstandingDue">Tk 0.00</strong>
+                </div>
+
+                <label class="settlement-field discount-field">
+                    <span>Due Discount</span>
+                    <div class="money-field"><b>Tk</b><input type="number" id="dueDiscount" name="due_discount" min="0" step="0.01" placeholder="0.00"></div>
+                    <small>Discount is deducted from the current due.</small>
+                </label>
+
+                <label class="settlement-field">
+                    <span>Collection Amount</span>
+                    <div class="money-field"><b>Tk</b><input type="number" id="collectionAmount" name="collection_amount" min="0" step="0.01" required></div>
+                    <small>Full or partial collection is supported.</small>
+                </label>
+
+                <label class="settlement-field">
+                    <span>Payment Method</span>
+                    <select id="modalPaymentMethod" name="payment_method">
+                        <option>Cash</option>
+                        <option>Bkash</option>
+                        <option>Nagad</option>
+                        <option>Card</option>
+                        <option>Bank</option>
+                    </select>
+                </label>
+
+                <label class="settlement-field">
+                    <span>Discount Note <em>Optional</em></span>
+                    <textarea name="discount_note" rows="2" placeholder="Reason or authorization for discount"></textarea>
+                </label>
+
+                <div class="settlement-calculation">
+                    <div><span>Outstanding Due</span><strong id="calculationDue">Tk 0.00</strong></div>
+                    <div><span>Discount</span><strong id="calculationDiscount">- Tk 0.00</strong></div>
+                    <div><span>Collect Now</span><strong id="calculationCollect">- Tk 0.00</strong></div>
+                    <div class="remaining-line"><span>Remaining Due</span><strong id="calculationRemaining">Tk 0.00</strong></div>
+                </div>
+
+                <p class="settlement-error" id="settlementError" hidden></p>
+                <button type="submit" class="confirm-settlement-btn">
+                    <i class="fas fa-circle-check"></i>
+                    Confirm &amp; Print Receipt
+                </button>
+            </form>
+        </div>
+    </template>
+
     <script>
         const quickFilterInput = document.getElementById("quickFilterInput");
         const dueTableBody = document.getElementById("dueTableBody");
         const dueRows = Array.from(dueTableBody.querySelectorAll("tr[data-search]"));
+        const dueCollectionModal = document.getElementById("dueCollectionModal");
+        const dueModalBody = document.getElementById("dueModalBody");
+        const dueSettlementTemplate = document.getElementById("dueSettlementTemplate");
+        const selectDueButtons = document.querySelectorAll(".select-due-btn");
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            })[character]);
+        }
+
+        function money(value) {
+            return Number(value || 0).toFixed(2);
+        }
+
+        function closeDueModal() {
+            dueCollectionModal.hidden = true;
+            dueCollectionModal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("due-modal-open");
+        }
+
+        function updateSettlementCalculation(dueAmount) {
+            const discountInput = document.getElementById("dueDiscount");
+            const collectionInput = document.getElementById("collectionAmount");
+            if (!discountInput || !collectionInput) return;
+
+            let discount = Math.max(0, Number(discountInput.value || 0));
+            discount = Math.min(discount, dueAmount);
+            if (Number(discountInput.value || 0) > dueAmount) discountInput.value = money(dueAmount);
+            const collectible = Math.max(0, dueAmount - discount);
+            collectionInput.max = money(collectible);
+            let collection = Math.max(0, Number(collectionInput.value || 0));
+            if (collection > collectible) {
+                collection = collectible;
+                collectionInput.value = money(collectible);
+            }
+            const remaining = Math.max(0, collectible - collection);
+
+            document.getElementById("calculationDue").textContent = `Tk ${money(dueAmount)}`;
+            document.getElementById("calculationDiscount").textContent = `- Tk ${money(discount)}`;
+            document.getElementById("calculationCollect").textContent = `- Tk ${money(collection)}`;
+            document.getElementById("calculationRemaining").textContent = `Tk ${money(remaining)}`;
+        }
+
+        function renderDueSettlement(data) {
+            const bill = data.bill;
+            const items = data.items || [];
+            dueModalBody.innerHTML = "";
+            dueModalBody.appendChild(dueSettlementTemplate.content.cloneNode(true));
+
+            document.getElementById("modalPatientDetails").innerHTML = `
+                <div><span>Patient</span><strong>${escapeHtml(bill.patient_name)}</strong></div>
+                <div><span>UHID / Ticket</span><strong>${escapeHtml(bill.patient_uhid)} / ${escapeHtml(bill.ticket_no)}</strong></div>
+                <div><span>Phone</span><strong>${escapeHtml(bill.phone)}</strong></div>
+                <div><span>Age / Gender</span><strong>${escapeHtml(bill.age)} ${escapeHtml(bill.age_unit)} / ${escapeHtml(bill.gender)}</strong></div>
+                <div><span>Invoice</span><strong>${escapeHtml(bill.invoice_no)}</strong></div>
+                <div><span>Bill Date</span><strong>${escapeHtml(bill.bill_date)}</strong></div>
+                <div><span>Doctor</span><strong>${escapeHtml(bill.doctor_name)}</strong></div>
+                <div><span>Referred By</span><strong>${escapeHtml(bill.referred_by)}</strong></div>
+            `;
+            document.getElementById("modalTestCount").textContent = `${items.length} test${items.length === 1 ? "" : "s"}`;
+            document.getElementById("modalTestList").innerHTML = items.length ? items.map((item, index) => `
+                <div><span>${index + 1}. ${escapeHtml(item.name)}</span><strong>Tk ${money(item.price)}</strong></div>
+            `).join("") : '<p class="no-test-items">No test items found.</p>';
+            document.getElementById("modalBillSummary").innerHTML = `
+                <div><span>Subtotal</span><strong>Tk ${money(bill.subtotal)}</strong></div>
+                <div><span>Previous Discount</span><strong>Tk ${money(bill.discount)}</strong></div>
+                <div><span>Net Bill</span><strong>Tk ${money(bill.total)}</strong></div>
+                <div><span>Already Paid</span><strong>Tk ${money(bill.received)}</strong></div>
+            `;
+
+            const form = document.getElementById("dueSettlementForm");
+            const discountInput = document.getElementById("dueDiscount");
+            const collectionInput = document.getElementById("collectionAmount");
+            const paymentMethod = document.getElementById("modalPaymentMethod");
+            form.action = bill.collect_url;
+            discountInput.max = money(bill.due);
+            collectionInput.max = money(bill.due);
+            collectionInput.value = money(bill.due);
+            paymentMethod.value = ["Cash", "Bkash", "Nagad", "Card", "Bank"].includes(bill.payment_method) ? bill.payment_method : "Cash";
+            document.getElementById("modalOutstandingDue").textContent = `Tk ${money(bill.due)}`;
+            updateSettlementCalculation(bill.due);
+
+            discountInput.addEventListener("input", () => {
+                const discount = Math.min(Math.max(0, Number(discountInput.value || 0)), bill.due);
+                collectionInput.value = money(Math.max(0, bill.due - discount));
+                updateSettlementCalculation(bill.due);
+            });
+            collectionInput.addEventListener("input", () => updateSettlementCalculation(bill.due));
+            form.addEventListener("submit", event => {
+                const discount = Math.max(0, Number(discountInput.value || 0));
+                const collection = Math.max(0, Number(collectionInput.value || 0));
+                const error = document.getElementById("settlementError");
+                if (discount <= 0 && collection <= 0) {
+                    event.preventDefault();
+                    error.textContent = "Enter a collection amount or a due discount.";
+                    error.hidden = false;
+                    return;
+                }
+                error.hidden = true;
+                form.querySelector("button[type='submit']").disabled = true;
+            });
+        }
+
+        function openDueModal(url) {
+            dueCollectionModal.hidden = false;
+            dueCollectionModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("due-modal-open");
+            dueModalBody.innerHTML = '<div class="due-modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading invoice details...</div>';
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(result => {
+                    if (!result.ok || !result.data.success) throw new Error(result.data.error || "Unable to load due details.");
+                    renderDueSettlement(result.data);
+                })
+                .catch(error => {
+                    dueModalBody.innerHTML = `<div class="due-modal-error"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(error.message)}</div>`;
+                });
+        }
 
         quickFilterInput.addEventListener("input", () => {
             const query = quickFilterInput.value.trim().toLowerCase();
             dueRows.forEach((row) => {
                 row.hidden = query && !(row.dataset.search || "").includes(query);
             });
+        });
+
+        selectDueButtons.forEach(button => {
+            button.addEventListener("click", () => openDueModal(button.dataset.detailsUrl));
+        });
+        dueCollectionModal.querySelectorAll("[data-close-due-modal]").forEach(element => {
+            element.addEventListener("click", closeDueModal);
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !dueCollectionModal.hidden) closeDueModal();
         });
     </script>
 </body>

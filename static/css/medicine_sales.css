@@ -943,11 +943,20 @@ td {
 	color: #ff6a00;
 }
 
-.hold-btn {
+.save-btn {
 	background: rgba(255, 255, 255, 0.96);
 	border: 1px solid #76c9ff;
 	color: #55b8f0;
 }
+
+/* Larger text for selected medicines in the Billing summary. */
+.summary-panel .selected-items-head { font-size: 18px; }
+.summary-panel .selected-items-head strong { font-size: 18px; }
+.summary-panel .selected-items-head span { font-size: 16px; }
+.summary-panel .selected-item strong { font-size: 18px; }
+.summary-panel .selected-item span { font-size: 16px; line-height: 1.45; }
+.summary-panel .selected-item b { font-size: 18px; }
+.summary-panel .selected-empty { font-size: 17px; }
 
 .print-btn {
 	background: rgba(255, 255, 255, 0.96);

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients Report Print</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_reports_print.css') }}">
+</head>
+<body>
+    <div class="print-actions no-print">
+        <a href="{{ url_for('patient_reports', from_date=filters.from_date, to_date=filters.to_date, keyword=filters.keyword, doctor=filters.doctor, patient_status=filters.patient_status, payment_status=filters.payment_status) }}">Back to Report</a>
+        <button type="button" onclick="window.print()">Print Report</button>
+    </div>
+    <main class="report-sheet">
+        <header class="hospital-header">
+            <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo">
+            <div><h1>AL-JUMIRA HOSPITAL</h1><p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p><p>Phone: 01719-866977 | Email: aljumirahospital@gmail.com</p></div>
+        </header>
+        <section class="report-title"><h2>PATIENTS REPORT</h2><p>{{ format_date_display(filters.from_date) }} to {{ format_date_display(filters.to_date) }}</p></section>
+        <section class="filter-summary">
+            <div><span>Patient Search</span><strong>{{ filters.keyword or 'All' }}</strong></div>
+            <div><span>Doctor</span><strong>{{ filters.doctor or 'All Doctors' }}</strong></div>
+            <div><span>Patient Type</span><strong>{{ filters.patient_status|title }}</strong></div>
+            <div><span>Payment Status</span><strong>{{ filters.payment_status|title }}</strong></div>
+        </section>
+        <section class="totals-grid">
+            <div><span>Unique Patients</span><strong>{{ summary.patient_count }}</strong></div>
+            <div><span>Total Visits</span><strong>{{ summary.visit_count }}</strong></div>
+            <div><span>Total Billing</span><strong>Tk {{ '%.2f'|format(summary.total_billing) }}</strong></div>
+            <div><span>Total Collected</span><strong>Tk {{ '%.2f'|format(summary.total_paid) }}</strong></div>
+            <div><span>Total Due</span><strong>Tk {{ '%.2f'|format(summary.total_due) }}</strong></div>
+        </section>
+        <table>
+            <thead><tr><th>#</th><th>Date</th><th>UHID / Ticket</th><th>Patient</th><th>Phone</th><th>Doctor</th><th>Type</th><th>Fee</th><th>Paid</th><th>Due</th><th>Served By</th></tr></thead>
+            <tbody>
+                {% for row in rows %}
+                <tr><td>{{ loop.index }}</td><td>{{ format_date_display(row.created_at) }}</td><td>UHID {{ format_uhid(row.uhid) }}<br>Ticket {{ row.ticket_no or '-' }}</td><td><strong>{{ row.name }}</strong><br>{{ row.age }} {{ row.age_unit }} / {{ row.gender }}</td><td>{{ row.phone }}</td><td>{{ row.doctor_name }}</td><td>{{ row.patient_status }}</td><td>{{ '%.2f'|format(row.doctor_fee) }}</td><td>{{ '%.2f'|format(row.paid_amount) }}</td><td>{{ '%.2f'|format(row.due_amount) }}</td><td>{{ row.served_by }}</td></tr>
+                {% else %}<tr><td colspan="11" class="empty">No patient records found for the selected filters.</td></tr>{% endfor %}
+            </tbody>
+            {% if rows %}<tfoot><tr><td colspan="7">Report Total</td><td>{{ '%.2f'|format(summary.total_billing) }}</td><td>{{ '%.2f'|format(summary.total_paid) }}</td><td>{{ '%.2f'|format(summary.total_due) }}</td><td></td></tr></tfoot>{% endif %}
+        </table>
+        <section class="signatures"><div><span></span><p>Prepared By</p></div><div><span></span><p>Accounts Officer</p></div><div><span></span><p>Authorised Signature</p></div></section>
+        <footer><span>Generated: {{ format_date_display(generated_at) }}</span><span>Printed By: {{ printed_by }}</span><span>AL-JUMIRA HOSPITAL</span></footer>
+    </main>
+</body>
+</html>

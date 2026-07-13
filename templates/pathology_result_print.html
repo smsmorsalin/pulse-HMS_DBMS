@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratory Report {{ report[1] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pathology_result_print.css') }}">
+</head>
+<body>
+<main class="report-page">
+    <div class="report-actions no-print">
+        <a href="{{ url_for('pathology_dashboard', date=(report[2] or '')[:10]) }}">Back to Pathology</a>
+        <button type="button" onclick="window.print()">Print Report</button>
+    </div>
+    <article class="report-sheet">
+        <header class="hospital-header">
+            <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo">
+            <div>
+                <h1>AL-JUMIRA HOSPITAL</h1>
+                <h2>DIAGNOSTIC &amp; LABORATORY SERVICES</h2>
+                <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                <p>Phone: 01719-866 977 · Email: aljumirahospital@gmail.com</p>
+            </div>
+        </header>
+        <h3 class="report-title">LABORATORY SERVICES</h3>
+        <section class="patient-lab-box">
+            <div class="info-column">
+                <p><b>Patient Name</b><i>:</i><span>{{ report[7] }}</span></p>
+                <p><b>UHID</b><i>:</i><span>{{ format_uhid(report[12]) }}</span></p>
+                <p><b>Age / Gender</b><i>:</i><span>{{ report[8] }} {{ report[9] }} / {{ report[10] }}</span></p>
+                <p><b>Referred By</b><i>:</i><span>{{ report[4] or report[3] or '-' }}</span></p>
+                <p><b>Sample Type</b><i>:</i><span>{{ items[0].sample_type if items else '-' }}</span></p>
+            </div>
+            <div class="info-column lab-column">
+                <div class="barcode"><span>{{ report[1] }}</span></div>
+                <p><b>Lab No</b><i>:</i><span>{{ report[1] }}</span></p>
+                <p><b>Sample Collection</b><i>:</i><span>{{ format_date_display(report[2]) }}</span></p>
+                <p><b>Receiving Date</b><i>:</i><span>{{ format_date_display(report[2]) }}</span></p>
+                <p><b>Report Date</b><i>:</i><span>{{ format_date_display(latest_result_at) }}</span></p>
+                <p><b>Report Status</b><i>:</i><span>{% if items and items|selectattr('result', 'equalto', 'Pending')|list|length == 0 %}Final{% else %}Partial{% endif %}</span></p>
+            </div>
+        </section>
+        {% for category, category_items in items|groupby('category') %}
+        <section class="result-section">
+            <h3>{{ category|upper }}</h3>
+            <table>
+                <thead><tr><th>Test Name</th><th>Result</th><th>Unit</th><th>Reference Ranges</th><th>Methodology / Note</th></tr></thead>
+                <tbody>{% for item in category_items %}<tr>
+                    <td>{{ item.test_name }}</td><td class="result-value">{{ item.result }}</td><td>{{ item.unit }}</td>
+                    <td class="ranges">{{ item.reference_ranges }}</td><td>{{ item.methodology }}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </section>
+        {% endfor %}
+        <p class="end-report">*** &nbsp; End Of Report &nbsp; ***</p>
+        <section class="signature-area"><div></div><div><span></span><strong>Authorized Signatory</strong><small>Laboratory Department<br>AL-JUMIRA HOSPITAL</small></div></section>
+        <footer>
+            <span><b>Verified By:</b> {{ verified_by }}</span><span><b>Verified At:</b> {{ format_date_display(latest_result_at) }}</span>
+            <span><b>Printed By:</b> {{ printed_by }}</span><span><b>Printed At:</b> <i id="printedAt"></i></span><span>1 of 1</span>
+        </footer>
+    </article>
+</main>
+<script>
+const printedAt = document.getElementById('printedAt');
+function updatePrintTime(){ printedAt.textContent = new Date().toLocaleString('en-GB'); }
+updatePrintTime(); window.addEventListener('beforeprint', updatePrintTime); window.setTimeout(() => window.print(), 550);
+</script>
+</body>
+</html>

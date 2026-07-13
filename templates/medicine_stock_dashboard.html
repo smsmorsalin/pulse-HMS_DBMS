@@ -55,9 +55,9 @@
 			<h2>Track available stock, purchase entry, unit price, and sales movement from one professional view.</h2>
 		</div>
 
-		<a class="header-action" href="#addMedicinePanel">
-			<i class="fas fa-plus"></i>
-			Add Medicine
+		<a class="header-action" href="{{ url_for('medicine_stock_movements', movement_type='stock-in') }}">
+			<i class="fas fa-arrow-trend-up"></i>
+			Stock In Details
 		</a>
 
 		<div class="profile">
@@ -94,7 +94,7 @@
 			<h3>{{ active_medicines }}</h3>
 			<p>Active Medicines</p>
 		</div>
-		{% if admin %}
+		{% if can_access_page('medicine_stock_dashboard') %}
 		<div class="card">
 			<i class="fas fa-triangle-exclamation"></i>
 			<h3>{{ low_stock_count }}</h3>
@@ -122,7 +122,7 @@
 		</div>
 	</div>
 
-	{% if admin %}
+	{% if can_access_page('medicine_stock_dashboard') %}
 	<div class="forms-grid">
 		<section class="panel accent-in add-medicine-panel" id="addMedicinePanel">
 			<div class="panel-header">
@@ -237,173 +237,6 @@
 			</div>
 		</section>
 
-		<section class="panel table-panel">
-			<div class="panel-header">
-				<div>
-					<p class="panel-kicker">Recent Activity</p>
-					<h3>Latest Stock Movements</h3>
-				</div>
-				<i class="fas fa-clock-rotate-left"></i>
-			</div>
-
-			<div class="movement-columns">
-				<div class="movement-column">
-					<div class="movement-column-head">
-						<span><i class="fas fa-arrow-trend-up"></i> Stock In</span>
-						<strong>{{ recent_stock_in|length }}</strong>
-					</div>
-					<div class="activity-list">
-						{% if recent_stock_in %}
-							{% for item in recent_stock_in %}
-							<article class="activity-item in">
-								<div class="movement-icon">
-									<i class="fas fa-arrow-trend-up"></i>
-								</div>
-								<div class="activity-main">
-									<div class="movement-title">
-										<h4>{{ item.medicine_name }}</h4>
-										<span class="movement-type in">Stock In</span>
-									</div>
-									<div class="movement-tags">
-										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
-										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
-										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
-									</div>
-									<p>{{ item.note }}</p>
-								</div>
-								<div class="activity-meta">
-									<strong>+{{ item.quantity }}</strong>
-									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
-									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
-									{% if admin %}
-									<div class="movement-actions">
-										<form class="activity-edit-form" method="POST" action="{{ url_for('edit_medicine_transaction', transaction_id=item.id) }}">
-											<label>
-												Qty
-												<input type="number" name="quantity" min="1" value="{{ item.quantity }}" required>
-											</label>
-											<label>
-												Price
-												<input type="number" name="price" min="0.01" step="0.01" value="{{ '%.2f'|format(item.price) }}" required>
-											</label>
-											<button type="submit" class="mini-btn">Update</button>
-										</form>
-										<form class="movement-delete-form" method="POST" action="{{ url_for('delete_medicine_transaction', transaction_id=item.id) }}" onsubmit="return confirm('Delete this stock in movement?');">
-											<button class="danger-btn" type="submit"><i class="fas fa-trash"></i> Delete</button>
-										</form>
-									</div>
-									{% endif %}
-								</div>
-							</article>
-							{% endfor %}
-						{% else %}
-							<div class="empty-card">
-								<p>No stock-in records.</p>
-								<span>Incoming purchases will appear here.</span>
-							</div>
-						{% endif %}
-					</div>
-				</div>
-
-				<div class="movement-column">
-					<div class="movement-column-head">
-						<span><i class="fas fa-rotate-left"></i> Return In</span>
-						<strong>{{ recent_return_in|length }}</strong>
-					</div>
-					<div class="activity-list">
-						{% if recent_return_in %}
-							{% for item in recent_return_in %}
-							<article class="activity-item in return-in">
-								<div class="movement-icon">
-									<i class="fas fa-rotate-left"></i>
-								</div>
-								<div class="activity-main">
-									<div class="movement-title">
-										<h4>{{ item.medicine_name }}</h4>
-										<span class="movement-type in">Return In</span>
-									</div>
-									<div class="movement-tags">
-										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
-										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
-										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
-									</div>
-									<p>{{ item.note }}</p>
-								</div>
-								<div class="activity-meta">
-									<strong>+{{ item.quantity }}</strong>
-									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
-									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
-								</div>
-							</article>
-							{% endfor %}
-						{% else %}
-							<div class="empty-card">
-								<p>No return-in records.</p>
-								<span>Medicine returns will appear here.</span>
-							</div>
-						{% endif %}
-					</div>
-				</div>
-
-				<div class="movement-column">
-					<div class="movement-column-head out">
-						<span><i class="fas fa-cash-register"></i> Sold / Issued</span>
-						<strong>{{ recent_stock_out|length }}</strong>
-					</div>
-					<div class="activity-list">
-						{% if recent_stock_out %}
-							{% for item in recent_stock_out %}
-							<article class="activity-item out">
-								<div class="movement-icon">
-									<i class="fas fa-cash-register"></i>
-								</div>
-								<div class="activity-main">
-									<div class="movement-title">
-										<h4>{{ item.medicine_name }}</h4>
-										<span class="movement-type out">Sold / Issued</span>
-									</div>
-									<div class="movement-tags">
-										<span><i class="fas fa-barcode"></i> {{ item.batch_no or 'General' }}</span>
-										<span><i class="fas fa-box"></i> {{ item.unit_type|title }}</span>
-										<span><i class="fas fa-calendar-day"></i> {{ format_date_display(item.transaction_date) }}</span>
-									</div>
-									<p>{{ item.note }}</p>
-								</div>
-								<div class="activity-meta">
-									<strong>-{{ item.quantity }}</strong>
-									<small>TK {{ '%.2f'|format(item.price) }} / {{ item.unit_type|title }}</small>
-									<span>Value TK {{ '%.2f'|format(item.quantity * item.price) }}</span>
-									{% if admin %}
-									<div class="movement-actions">
-										<form class="activity-edit-form" method="POST" action="{{ url_for('edit_medicine_transaction', transaction_id=item.id) }}">
-											<label>
-												Qty
-												<input type="number" name="quantity" min="1" value="{{ item.quantity }}" required>
-											</label>
-											<label>
-												Price
-												<input type="number" name="price" min="0.01" step="0.01" value="{{ '%.2f'|format(item.price) }}" required>
-											</label>
-											<button type="submit" class="mini-btn">Update</button>
-										</form>
-										<form class="movement-delete-form" method="POST" action="{{ url_for('delete_medicine_transaction', transaction_id=item.id) }}" onsubmit="return confirm('Delete this sold / issued movement?');">
-											<button class="danger-btn" type="submit"><i class="fas fa-trash"></i> Delete</button>
-										</form>
-									</div>
-									{% endif %}
-								</div>
-							</article>
-							{% endfor %}
-						{% else %}
-							<div class="empty-card">
-								<p>No sold / issued records.</p>
-								<span>Medicine Sales deductions will appear here.</span>
-							</div>
-						{% endif %}
-					</div>
-				</div>
-			</div>
-		</section>
 	</div>
 </div>
 

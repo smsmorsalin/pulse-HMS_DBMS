@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Patients Serial | AL-JUMIRA HOSPITAL</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patients_serial.css') }}">
+</head>
+<body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="serial-display">
+        <header class="display-header">
+            <div class="hospital-brand">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="AL-JUMIRA HOSPITAL logo">
+                <div>
+                    <p>Live Patient Queue</p>
+                    <h1>AL-JUMIRA HOSPITAL</h1>
+                    <span>Patient Serial Display</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <span class="live-dot"></span>
+                LIVE
+            </div>
+            <div class="clock-panel">
+                <strong id="liveClock">--:--</strong>
+                <span id="liveDate">{{ format_date_display(display_date) }}</span>
+            </div>
+        </header>
+
+        <section class="announcement-banner">
+            <i class="fas fa-bell"></i>
+            <div>
+                <strong>Please watch the screen for your ticket number</strong>
+                <span>অনুগ্রহ করে আপনার সিরিয়াল নম্বরের জন্য স্ক্রিনটি লক্ষ্য করুন</span>
+            </div>
+            <div class="display-actions no-tv">
+                <label class="doctor-display-select">
+                    <i class="fas fa-user-doctor"></i>
+                    <select id="displayDoctorSelect" aria-label="Select doctor for this display">
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.doctor_id }}" {% if doctor.doctor_id == selected_doctor_id %}selected{% endif %}>{{ doctor.doctor_name }}{% if doctor.room_number %} — Room {{ doctor.room_number }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <a href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i> Dashboard</a>
+                <a href="{{ url_for('hospital_advertisement') }}" target="_blank"><i class="fas fa-photo-film"></i> Advertisement Display</a>
+                <button type="button" id="soundToggle"><i class="fas fa-volume-high"></i> Sound On</button>
+                <button type="button" id="fullscreenToggle"><i class="fas fa-expand"></i> Full Screen</button>
+            </div>
+        </section>
+
+        <section class="queue-grid single-doctor" id="queueGrid" aria-live="polite"></section>
+
+        <footer class="display-footer">
+            <span><i class="fas fa-circle-info"></i> Keep your ticket ready and proceed when your number is called.</span>
+            <strong>Thank you for choosing AL-JUMIRA HOSPITAL</strong>
+        </footer>
+    </main>
+
+    <script id="initialQueueData" type="application/json">{{ queue_data|tojson }}</script>
+    <script>
+        const statusUrl = "{{ url_for('patients_serial_status') }}";
+        const queueGrid = document.getElementById("queueGrid");
+        const displayDoctorSelect = document.getElementById("displayDoctorSelect");
+        const knownUpdates = new Map();
+        let soundEnabled = true;
+        let firstLoad = true;
+
+        function escapeHtml(value) {
+            const element = document.createElement("div");
+            element.textContent = value == null ? "" : String(value);
+            return element.innerHTML;
+        }
+
+        function ticket(value) {
+            return value == null ? "--" : String(value).padStart(3, "0");
+        }
+
+        function queueCard(queue) {
+            const active = queue.current_ticket != null;
+            const hasWaiting = queue.next_ticket != null;
+            return `
+                <article class="queue-card ${active ? "is-serving" : ""}">
+                    <header>
+                        <div class="doctor-icon"><i class="fas fa-user-doctor"></i></div>
+                        <div>
+                            <p>${escapeHtml(queue.department || queue.specialization || "Consultation")}</p>
+                            <h2>${escapeHtml(queue.doctor_name)}</h2>
+                            <span>${escapeHtml(queue.designation || queue.specialization || "Medical Officer")}</span>
+                        </div>
+                        <div class="room-badge"><small>ROOM</small><strong>${escapeHtml(queue.room_number || "--")}</strong></div>
+                    </header>
+                    <div class="ticket-stage">
+                        <div class="now-serving">
+                            <span><i class="fas fa-bell"></i> NOW SERVING</span>
+                            <strong>${ticket(queue.current_ticket)}</strong>
+                            <small>${active ? "Please proceed to consultation room" : "Queue has not started"}</small>
+                        </div>
+                        <div class="next-ticket">
+                            <span>NEXT</span>
+                            <strong>${ticket(queue.next_ticket)}</strong>
+                            <small>${hasWaiting ? `${queue.waiting_count} waiting` : "No patient waiting"}</small>
+                        </div>
+                    </div>
+                    <footer>
+                        <span><i class="fas fa-users"></i> Today's Patients</span>
+                        <strong>${queue.total_today}</strong>
+                    </footer>
+                </article>
+            `;
+        }
+
+        function announceQueueChanges(queues) {
+            queues.forEach(queue => {
+                const oldUpdate = knownUpdates.get(queue.doctor_id);
+                if (!firstLoad && queue.updated_at && oldUpdate && oldUpdate !== queue.updated_at && queue.current_ticket != null) {
+                    const card = queueGrid.querySelector(`[data-doctor-id="${queue.doctor_id}"]`);
+                    if (card) card.classList.add("just-called");
+                    if (soundEnabled && "speechSynthesis" in window) {
+                        window.speechSynthesis.cancel();
+                        const room = queue.room_number ? `, room ${queue.room_number}` : "";
+                        const call = new SpeechSynthesisUtterance(`Ticket number ${queue.current_ticket}${room}. Please proceed.`);
+                        call.rate = 0.82;
+                        call.pitch = 1;
+                        window.speechSynthesis.speak(call);
+                    }
+                }
+                knownUpdates.set(queue.doctor_id, queue.updated_at || "");
+            });
+            firstLoad = false;
+        }
+
+        function renderQueues(data) {
+            const queues = data.queues || [];
+            queueGrid.innerHTML = queues.length
+                ? queues.map(queue => `<div data-doctor-id="${queue.doctor_id}">${queueCard(queue)}</div>`).join("")
+                : '<div class="empty-display"><i class="fas fa-user-doctor"></i><strong>No doctor queue is configured.</strong><span>Add doctors to begin the live serial display.</span></div>';
+            announceQueueChanges(queues);
+        }
+
+        async function refreshQueues() {
+            try {
+                const doctorId = displayDoctorSelect ? displayDoctorSelect.value : "";
+                const response = await fetch(`${statusUrl}?doctor_id=${encodeURIComponent(doctorId)}`, {headers: {"Accept": "application/json"}, cache: "no-store"});
+                if (!response.ok) throw new Error("Queue refresh failed");
+                renderQueues(await response.json());
+                document.body.classList.remove("connection-lost");
+            } catch (error) {
+                document.body.classList.add("connection-lost");
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("liveClock").textContent = now.toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true});
+            document.getElementById("liveDate").textContent = now.toLocaleDateString("en-GB", {weekday: "long", day: "2-digit", month: "long", year: "numeric"});
+        }
+
+        document.getElementById("fullscreenToggle").addEventListener("click", async () => {
+            if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+            else await document.exitFullscreen();
+        });
+        document.getElementById("soundToggle").addEventListener("click", event => {
+            soundEnabled = !soundEnabled;
+            event.currentTarget.innerHTML = soundEnabled
+                ? '<i class="fas fa-volume-high"></i> Sound On'
+                : '<i class="fas fa-volume-xmark"></i> Sound Off';
+        });
+        if (displayDoctorSelect) {
+            displayDoctorSelect.addEventListener("change", () => {
+                knownUpdates.clear();
+                firstLoad = true;
+                const nextUrl = new URL(window.location.href);
+                nextUrl.searchParams.set("doctor_id", displayDoctorSelect.value);
+                window.history.replaceState({}, "", nextUrl);
+                refreshQueues();
+            });
+        }
+
+        renderQueues(JSON.parse(document.getElementById("initialQueueData").textContent || "{}"));
+        updateClock();
+        window.setInterval(updateClock, 1000);
+        window.setInterval(refreshQueues, 2000);
+    </script>
+</body>
+</html>

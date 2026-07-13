@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Due Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/due_collection_hub.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+    <main class="due-hub-page">
+        <header class="due-hub-header">
+            <a href="{{ url_for('dashboard') }}" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <div class="header-title">
+                <span>Accounts &amp; Receivables</span>
+                <h1><i class="fas fa-hand-holding-dollar"></i> Due Collection</h1>
+                <p>Select the billing department where you want to collect an outstanding balance.</p>
+            </div>
+            <div class="combined-due">
+                <span>Total Outstanding</span>
+                <strong>Tk {{ '%.2f'|format(test_due_total + discharge_due_total + doctor_due_total) }}</strong>
+            </div>
+        </header>
+
+        <section class="collection-options" aria-label="Due collection departments">
+            <a class="collection-card doctor-card" href="{{ url_for('doctor_fee_due_collection') }}">
+                <div class="card-icon"><i class="fas fa-user-doctor"></i></div>
+                <div class="card-content">
+                    <span>Outpatient Accounts</span>
+                    <h2>Doctor Fee Due Collection</h2>
+                    <p>Collect consultation ticket dues, support partial payments, apply approved discounts and print the updated ticket.</p>
+                    <div class="card-stats">
+                        <div><small>Pending Tickets</small><strong>{{ doctor_due_count }}</strong></div>
+                        <div><small>Outstanding</small><strong>Tk {{ '%.2f'|format(doctor_due_total) }}</strong></div>
+                    </div>
+                </div>
+                <div class="open-action">Open Collection <i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <a class="collection-card discharge-card" href="{{ url_for('discharge_due_collection') }}">
+                <div class="card-icon"><i class="fas fa-bed-pulse"></i></div>
+                <div class="card-content">
+                    <span>Inpatient Accounts</span>
+                    <h2>Discharge Due Collection</h2>
+                    <p>Collect discharge bill dues, apply approved discounts and print the updated bill.</p>
+                    <div class="card-stats">
+                        <div><small>Pending Bills</small><strong>{{ discharge_due_count }}</strong></div>
+                        <div><small>Outstanding</small><strong>Tk {{ '%.2f'|format(discharge_due_total) }}</strong></div>
+                    </div>
+                </div>
+                <div class="open-action">Open Collection <i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <a class="collection-card pathology-card" href="{{ url_for('test_due_collection') }}">
+                <div class="card-icon"><i class="fas fa-vials"></i></div>
+                <div class="card-content">
+                    <span>Pathology Accounts</span>
+                    <h2>Test Due Collection</h2>
+                    <p>Collect pathology invoice dues, provide discounts and print the updated receipt.</p>
+                    <div class="card-stats">
+                        <div><small>Pending Bills</small><strong>{{ test_due_count }}</strong></div>
+                        <div><small>Outstanding</small><strong>Tk {{ '%.2f'|format(test_due_total) }}</strong></div>
+                    </div>
+                </div>
+                <div class="open-action">Open Collection <i class="fas fa-arrow-right"></i></div>
+            </a>
+        </section>
+    </main>
+</body>
+</html>

@@ -69,15 +69,33 @@
                             <td>
                                 <form class="permission-form" method="post" action="{{ url_for('update_user_permissions') }}">
                                     <input type="hidden" name="user_id" value="{{ user[0] }}">
-                                    <div class="permission-list">
-                                        {% for page in page_options %}
-                                        <label>
-                                            <input type="checkbox" name="page_permissions" value="{{ page.key }}" {% if page.key in user_permissions.get(user[0], []) %}checked{% endif %}>
-                                            <span>
-                                                {{ page.label }}
-                                                {% if page.nav is defined and not page.nav %}<small>Detail/print page</small>{% endif %}
-                                            </span>
-                                        </label>
+                                    <div class="permission-toolbar">
+                                        <strong><span class="permission-count">{{ user_permissions.get(user[0], [])|length }}</span> / {{ page_options|length }} pages selected</strong>
+                                        <div>
+                                            <button type="button" class="permission-select-all">Select all</button>
+                                            <button type="button" class="permission-clear-all">Clear all</button>
+                                        </div>
+                                    </div>
+                                    <div class="permission-groups">
+                                        {% for group in permission_groups %}
+                                        <fieldset class="permission-group">
+                                            <legend>
+                                                <span>{{ group.name }}</span>
+                                                <button type="button" class="permission-group-toggle">Select group</button>
+                                            </legend>
+                                            <div class="permission-list">
+                                                {% for page in group.pages %}
+                                                <label>
+                                                    <input type="checkbox" name="page_permissions" value="{{ page.key }}" {% if page.key in user_permissions.get(user[0], []) %}checked{% endif %}>
+                                                    <i class="{{ page.icon }}"></i>
+                                                    <span>
+                                                        {{ page.label }}
+                                                        {% if page.nav is defined and not page.nav %}<small>Detail / print page</small>{% endif %}
+                                                    </span>
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                        </fieldset>
                                         {% endfor %}
                                     </div>
                                     <button class="save-btn" type="submit">Update Permissions</button>
@@ -95,6 +113,40 @@
             </div>
         </section>
     </main>
+
+    <script>
+        document.querySelectorAll(".permission-form").forEach(function (form) {
+            const checkboxes = Array.from(form.querySelectorAll('input[name="page_permissions"]'));
+            const count = form.querySelector(".permission-count");
+
+            function updateCount() {
+                count.textContent = checkboxes.filter(function (checkbox) { return checkbox.checked; }).length;
+            }
+
+            form.querySelector(".permission-select-all").addEventListener("click", function () {
+                checkboxes.forEach(function (checkbox) { checkbox.checked = true; });
+                updateCount();
+            });
+
+            form.querySelector(".permission-clear-all").addEventListener("click", function () {
+                checkboxes.forEach(function (checkbox) { checkbox.checked = false; });
+                updateCount();
+            });
+
+            form.querySelectorAll(".permission-group-toggle").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const groupBoxes = Array.from(button.closest(".permission-group").querySelectorAll('input[name="page_permissions"]'));
+                    const shouldSelect = groupBoxes.some(function (checkbox) { return !checkbox.checked; });
+                    groupBoxes.forEach(function (checkbox) { checkbox.checked = shouldSelect; });
+                    updateCount();
+                });
+            });
+
+            checkboxes.forEach(function (checkbox) {
+                checkbox.addEventListener("change", updateCount);
+            });
+        });
+    </script>
 
 </body>
 </html>

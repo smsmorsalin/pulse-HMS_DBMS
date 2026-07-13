@@ -1,0 +1,666 @@
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:216: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:216: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 04:45:09] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:23] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:23] "GET /static/css/doctors.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:23] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:23] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:24] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:28] "POST /delete-doctor/1 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Jul/2026 04:45:28] "GET /doctors?success=Dr.+Dr.+MD+Shoriful+deleted+from+the+active+Doctors+list.+Historical+records+were+preserved. HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:28] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:37] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:37] "GET /static/css/dashboard.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:37] "GET /assets/logo.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:39] "GET /admin_portal HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:39] "GET /static/css/admin_portal.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:44] "GET /logs HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:45] "GET /static/css/logs.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:53] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:53] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:53] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:45:56] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:45:56] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:01] "POST /delete-doctor/4 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Jul/2026 04:46:01] "GET /doctors?success=Dr.+Dr+Test+deleted+from+the+active+Doctors+list.+Historical+records+were+preserved. HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:01] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:06] "POST /delete-doctor/2 HTTP/1.1" 302 -
+127.0.0.1 - - [14/Jul/2026 04:46:06] "GET /doctors?success=Dr.+Dr.+MD+Babor+deleted+from+the+active+Doctors+list.+Historical+records+were+preserved. HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:06] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:08] "GET /add_doctor HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:08] "GET /static/css/add_doctor.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:10] "GET /doctors HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:10] "GET /static/css/doctors.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:11] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:11] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:11] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:13] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:39] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:39] "GET /static/css/patients_serial.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:39] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:41] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:42] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:42] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:42] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:44] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:46] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:48] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:50] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:52] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:54] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:55] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:55] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:55] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:56] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:46:58] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:00] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:02] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:02] "GET /hospital-advertisement HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:02] "GET /static/css/hospital_advertisement.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:02] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:02] "GET /assets/advertisements/20260712205806299641-ChatGPT_Image_Jul_8_2026_01_25_58_AM.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:04] "GET /patients-serial HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:04] "GET /static/css/patients_serial.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:04] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:05] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:05] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:05] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:05] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:06] "GET /patients-registration HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:06] "GET /static/css/patients_registration.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:06] "GET /assets/logo.png HTTP/1.1" 304 -
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 04:47:07] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:09] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:11] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:13] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:14] "GET /dashboard HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 1974, in dashboard
+    return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name, nav_pages=nav_pages)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\dashboard.html", line 56, in top-level template code
+    <a class="nav-link" href="{{ url_for('patient_reports') }}">
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\werkzeug\routing\map.py", line 901, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'patient_reports'. Did you mean 'patient_prescribed_tests' instead?
+127.0.0.1 - - [14/Jul/2026 04:47:14] "GET /dashboard?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:14] "GET /dashboard?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:14] "GET /dashboard?__debugger__=yes&cmd=resource&f=console.png&s=XPb2WPeZAPdpfUX1jz5i HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:14] "GET /dashboard?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:15] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:17] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:18] "GET /dashboard HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 1974, in dashboard
+    return render_template("dashboard.html", admin=True, patient_count=patient_count, doctor_count=doctor_count, active_admission_count=active_admission_count, profile_name=profile_name, nav_pages=nav_pages)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\dashboard.html", line 56, in top-level template code
+    <a class="nav-link" href="{{ url_for('patient_reports') }}">
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\werkzeug\routing\map.py", line 901, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'patient_reports'. Did you mean 'patient_prescribed_tests' instead?
+127.0.0.1 - - [14/Jul/2026 04:47:19] "GET /dashboard?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:19] "GET /dashboard?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:19] "GET /dashboard?__debugger__=yes&cmd=resource&f=console.png&s=XPb2WPeZAPdpfUX1jz5i HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:47:19] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:21] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:23] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:25] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:27] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:29] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:31] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:33] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 04:47:35] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:37] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:39] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:41] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:43] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:45] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:47] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:49] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:51] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:53] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:55] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:57] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:47:59] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:01] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:17] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:17] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:48:17] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:48:19] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:19] "GET /static/css/pathology_dashboard.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:22] "GET /pathology/report/51?selected_date=2026-07-14&result_value=10&result_note= HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:22] "GET /static/css/pathology_result_print.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:22] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:48:35] "GET /pathology_dashboard?date=2026-07-14 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:35] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:48:48] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:48:48] "GET /static/css/patient_reports.css HTTP/1.1" 404 -
+127.0.0.1 - - [14/Jul/2026 04:49:03] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:03] "GET /static/css/patient_reports.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:04] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:04] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:05] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:05] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:06] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:06] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:07] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:07] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:07] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:07] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:08] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:08] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:09] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:09] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:09] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:09] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:10] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:10] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:11] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:11] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:12] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:12] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:12] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:12] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:40] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:40] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:40] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:44] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:44] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:51] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:51] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:49:55] "GET /reports?from_date=2026-07-14&to_date=2026-07-14&keyword=45&doctor=&patient_status=all&payment_status=all HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:49:55] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:50:07] "GET /reports?from_date=2026-07-14&to_date=2026-07-14&keyword=45&doctor=Dr.+Jannatul+Fardous&patient_status=old&payment_status=paid HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:50:08] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:50:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:50:18] "GET /reports?from_date=2026-07-14&to_date=2026-07-14&keyword=Khadiza&doctor=Dr.+Jannatul+Fardous&patient_status=old&payment_status=paid HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:50:18] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:50:40] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:50:40] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:50:40] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:50:42] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:50:42] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:51:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:52:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:53:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 04:54:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:02] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:02] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:03] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:03] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:06] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:06] "GET /static/css/patient_reports.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:07] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:07] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:08] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:08] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:08] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:08] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:32] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:32] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:32] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:33] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:33] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:55:40] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:55:40] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:56:02] "GET /pathology_dashboard?date=2026-07-14&item=50 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:02] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:56:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:43] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:43] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:56:43] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:56:47] "GET /test-billing HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:47] "GET /static/css/test_billing.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:53] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:56:53] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:56:53] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:57:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:58:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:58:40] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 04:58:40] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 04:59:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:00:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:01:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:01:31] "GET /pathology_dashboard HTTP/1.1" 302 -
+127.0.0.1 - - [14/Jul/2026 05:01:31] "GET /reports HTTP/1.1" 302 -
+127.0.0.1 - - [14/Jul/2026 05:02:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:03:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:03:45] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:03:45] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:03:46] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:03:46] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:03:53] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:03:53] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:03:53] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:04:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:18] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:18] "GET /static/css/pathology_dashboard.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:32] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:32] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:33] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:04:54] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:04:54] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:05:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:06:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:06:17] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:06:17] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:06:17] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:06:20] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:06:20] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:24] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:25] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:27] "GET /due-collection HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:27] "GET /static/css/due_collection_hub.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:29] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:07:29] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:07:29] "GET /assets/logo.png HTTP/1.1" 304 -
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 05:08:03] "GET /reports HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 2192, in patient_reports
+    return render_template(
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\patient_reports.html", line 21, in top-level template code
+    <a class="print-btn" target="_blank" href="{{ url_for('patient_reports_print', from_date=filters.from_date, to_date=filters.to_date, keyword=filters.keyword, doctor=filters.doctor, patient_status=filters.patient_status, payment_status=filters.payment_status) }}">
+    ^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'filters' is undefined
+127.0.0.1 - - [14/Jul/2026 05:08:03] "GET /reports?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:08:03] "GET /reports?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:08:03] "GET /reports?__debugger__=yes&cmd=resource&f=console.png&s=rTWWOam6I34ebdm3fuHS HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:08:03] "GET /reports?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:08:04] "GET /reports HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 2192, in patient_reports
+    return render_template(
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\patient_reports.html", line 21, in top-level template code
+    <a class="print-btn" target="_blank" href="{{ url_for('patient_reports_print', from_date=filters.from_date, to_date=filters.to_date, keyword=filters.keyword, doctor=filters.doctor, patient_status=filters.patient_status, payment_status=filters.payment_status) }}">
+    ^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'filters' is undefined
+127.0.0.1 - - [14/Jul/2026 05:08:04] "GET /reports?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:04] "GET /reports?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:04] "GET /reports?__debugger__=yes&cmd=resource&f=console.png&s=rTWWOam6I34ebdm3fuHS HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:04] "GET /reports?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:08:20] "GET /reports HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 2192, in patient_reports
+    return render_template(
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\patient_reports.html", line 21, in top-level template code
+    <a class="print-btn" target="_blank" href="{{ url_for('patient_reports_print', from_date=filters.from_date, to_date=filters.to_date, keyword=filters.keyword, doctor=filters.doctor, patient_status=filters.patient_status, payment_status=filters.payment_status) }}">
+    ^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'filters' is undefined
+127.0.0.1 - - [14/Jul/2026 05:08:20] "GET /reports?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:20] "GET /reports?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:20] "GET /reports?__debugger__=yes&cmd=resource&f=console.png&s=rTWWOam6I34ebdm3fuHS HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:20] "GET /reports?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:21] "GET /reports HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py", line 2192, in patient_reports
+    return render_template(
+    
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\templates\patient_reports.html", line 21, in top-level template code
+    <a class="print-btn" target="_blank" href="{{ url_for('patient_reports_print', from_date=filters.from_date, to_date=filters.to_date, keyword=filters.keyword, doctor=filters.doctor, patient_status=filters.patient_status, payment_status=filters.payment_status) }}">
+    ^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\.venv\Lib\site-packages\jinja2\environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'filters' is undefined
+127.0.0.1 - - [14/Jul/2026 05:08:21] "GET /reports?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:21] "GET /reports?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:21] "GET /reports?__debugger__=yes&cmd=resource&f=console.png&s=rTWWOam6I34ebdm3fuHS HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:08:21] "GET /reports?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:20] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:20] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:20] "GET /static/css/patient_reports.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:25] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:25] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:25] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:37] "GET /pathology/report/51 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:37] "GET /static/css/pathology_result_print.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:37] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:09:40] "GET /pathology_dashboard?date=2026-07-14 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:09:40] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:10:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:10:22] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:10:22] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:10:22] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:11:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:12:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:13:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:14:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:15:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:16:49] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:16:54] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:16:54] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:16:54] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:16:55] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:17:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:17:26] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:17:26] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:17:26] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:18:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:19:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:00] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:00] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:00] "GET /static/css/patient_reports.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:12] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:16] "GET /pathology/report/50 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:16] "GET /static/css/pathology_result_print.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:16] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:22] "GET /pathology_dashboard?date=2026-07-14 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:22] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:29] "GET /pathology_dashboard?date=2026-07-14 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:29] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:34] "GET /patients-serial/status?doctor_id=3 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:47] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:47] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:47] "GET /static/css/patient_reports.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:51] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:51] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:51] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:52] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:20:52] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:20:52] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:21:09] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:21:09] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:22:00] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:22:00] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:22:00] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:22:48] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:22:48] "GET /static/css/pathology_dashboard.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:23:04] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:23:04] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:23:10] "GET /patients-registration HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:23:10] "GET /static/css/patients_registration.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:23:10] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:25:28] "GET /patients-registration/search?keyword=18 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:25:34] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:25:34] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:25:34] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:25:39] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:25:39] "GET /static/css/patient_reports.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:25:39] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+ * Detected change in 'C:\\Users\\Lenovo\\Desktop\\pulse-HMS_DBMS\\pulse-HMS_DBMS v1\\pulse-HMS_DBMS\\app.py', reloading
+ * Restarting with stat
+C:\Users\Lenovo\Desktop\pulse-HMS_DBMS\pulse-HMS_DBMS v1\pulse-HMS_DBMS\app.py:219: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  return datetime.utcnow() + APP_TIME_OFFSET
+ * Debugger is active!
+ * Debugger PIN: 132-685-343
+127.0.0.1 - - [14/Jul/2026 05:26:10] "GET /pathology_dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:26:10] "GET /static/css/pathology_dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:26:35] "GET /patients-registration HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:26:35] "GET /static/css/patients_registration.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:26:35] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:26:37] "GET /patients-registration/search?keyword=18 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:26:40] "GET /patients-registration/search?keyword=32 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:26:52] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:26:52] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:26:52] "GET /assets/logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:27:01] "GET /due-collection HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:27:01] "GET /static/css/due_collection_hub.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:27:03] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jul/2026 05:27:03] "GET /static/css/dashboard.css HTTP/1.1" 304 -
+127.0.0.1 - - [14/Jul/2026 05:27:03] "GET /assets/logo.png HTTP/1.1" 304 -

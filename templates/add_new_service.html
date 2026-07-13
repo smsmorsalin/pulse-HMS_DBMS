@@ -18,19 +18,38 @@
                     <a href="{{ url_for('services') }}" class="back-btn" aria-label="Back to services">
                         <i class="fas fa-arrow-left"></i>
                     </a>
-                    <h2>Add Service</h2>
+                    <h2>Add New Service</h2>
                 </div>
             </div>
 
             <form method="POST" class="service-form">
-                <label for="name">Service Name</label>
+                <label for="name" id="nameLabel">Service Name</label>
                 <input type="text" id="name" name="name" placeholder="Service Name" required>
 
                 <label for="type">Type</label>
                 <select id="type" name="type" required>
-                    <option value="doctor">Doctor</option>
                     <option value="test">Test</option>
+                    <option value="doctor">Doctor</option>
                 </select>
+
+                <div class="test-fields" id="testFields">
+                    <div class="field-group">
+                        <label for="sample_type">Sample Type</label>
+                        <input type="text" id="sample_type" name="sample_type" placeholder="e.g. Blood, Serum, Urine">
+                    </div>
+                    <div class="field-group">
+                        <label for="test_category">Test Category</label>
+                        <input type="text" id="test_category" name="test_category" placeholder="e.g. Hematology">
+                    </div>
+                    <div class="field-group">
+                        <label for="unit">Unit</label>
+                        <input type="text" id="unit" name="unit" placeholder="e.g. g/dL, mg/dL">
+                    </div>
+                    <div class="field-group full-width">
+                        <label for="reference_ranges">Reference Ranges</label>
+                        <textarea id="reference_ranges" name="reference_ranges" rows="3" placeholder="e.g. Male: 13–17 g/dL; Female: 12–15 g/dL"></textarea>
+                    </div>
+                </div>
 
                 <label for="price">Price</label>
                 <input type="text" id="price" name="price" placeholder="Price" required>
@@ -45,5 +64,19 @@
             {% endif %}
         </section>
     </main>
+    <script>
+    const typeSelect = document.getElementById('type');
+    const testFields = document.getElementById('testFields');
+    const testInputs = [...testFields.querySelectorAll('input, textarea')];
+    function updateServiceFields() {
+        const isTest = typeSelect.value === 'test';
+        testFields.hidden = !isTest;
+        testInputs.forEach(input => input.required = isTest);
+        document.getElementById('nameLabel').textContent = isTest ? 'Test Name' : 'Service Name';
+        document.getElementById('name').placeholder = isTest ? 'Test Name' : 'Service Name';
+    }
+    typeSelect.addEventListener('change', updateServiceFields);
+    updateServiceFields();
+    </script>
 </body>
 </html>

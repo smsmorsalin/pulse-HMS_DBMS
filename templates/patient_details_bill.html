@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Details Bill | UHID {{ patient.id }}</title>
+    <title>Details Bill | UHID {{ format_uhid(patient.id) }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_details_bill.css') }}">
 </head>
 
@@ -36,7 +36,7 @@
 
             <section class="bill-top">
                 <div class="bill-left">
-                    <p><strong>Patient UHID</strong><span>:</span> {{ patient.id }}</p>
+                    <p><strong>Patient UHID</strong><span>:</span> {{ format_uhid(patient.id) }}</p>
                     <p><strong>Ticket No</strong><span>:</span> {{ patient.daily_patient_id or '-' }}</p>
                     <p class="bill-highlight"><strong>Patient</strong><span>:</span> {{ patient.name or '-' }}</p>
                     <p><strong>Contact No</strong><span>:</span> {{ patient.phone or '-' }}</p>
@@ -195,15 +195,15 @@
             const pad = function (value) {
                 return String(value).padStart(2, "0");
             };
-            const value = [
-                pad(now.getDate()),
-                pad(now.getMonth() + 1),
-                now.getFullYear()
-            ].join("-") + " " + [
-                pad(now.getHours()),
-                pad(now.getMinutes()),
-                pad(now.getSeconds())
-            ].join(":");
+            const value = now.toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }) + " " + now.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true
+            });
 
             const timestampElement = document.getElementById("printedTimestamp");
             const footerTimestampElement = document.getElementById("footerPrintedTimestamp");

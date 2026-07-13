@@ -71,15 +71,15 @@
                                     type="button"
                                     class="patient-row"
                                     data-id="{{ patient[0] }}"
-                                    data-uhid="{{ patient[7] }}"
+                                    data-uhid="{{ format_uhid(patient[7]) }}"
                                     data-name="{{ patient[1] }}"
                                     data-phone="{{ patient[5] }}"
-                                    data-search="{{ patient[7] }} {{ patient[0] }} {{ patient[1] }} {{ patient[5] }}"
+                                    data-search="{{ format_uhid(patient[7]) }} {{ patient[7] }} {{ patient[0] }} {{ patient[1] }} {{ patient[5] }}"
                                 >
                                     <span class="patient-avatar">{{ patient[1][0]|upper }}</span>
                                     <span class="patient-info">
                                         <strong>{{ patient[1] }}</strong>
-                                        <small>UHID {{ patient[7] }} | {{ patient[4] }} | {{ patient[2] }} {{ patient[3] or 'Y' }}</small>
+                                        <small>UHID {{ format_uhid(patient[7]) }} | {{ patient[4] }} | {{ patient[2] }} {{ patient[3] or 'Y' }}</small>
                                     </span>
                                     <span class="patient-phone">{{ patient[5] }}</span>
                                 </button>
@@ -125,10 +125,11 @@
                         <input type="hidden" name="patient_id" id="selectedPatientId" required>
 
                         <div class="form-grid">
-                            <div class="input-group">
+                            <div class="input-group date-input-group">
                                 <i class="fas fa-calendar-day"></i>
-                                <input type="date" id="admissionDate" name="admission_date" required>
-                                <label for="admissionDate">Admission Date</label>
+                                <input type="hidden" id="admissionDate" name="admission_date" value="{{ default_admission_date }}">
+                                <input type="text" id="admissionDateDisplay" value="{{ format_invoice_date(default_admission_date) }}" readonly>
+                                <label for="admissionDateDisplay">Admission Date</label>
                             </div>
 
                             <div class="input-group">
@@ -166,7 +167,7 @@
                                 </select>
                                 <label for="guardianRelation">Relation with Guardian</label>
                             </div>
-                                                        <div class="input-group">
+                            <div class="input-group">
                                 <i class="fas fa-door-open"></i>
                                 <select id="roomNumber" name="room_number" required>
                                     <option value="" disabled selected></option>
@@ -182,6 +183,12 @@
                                     {% endfor %}
                                 </select>
                                 <label for="roomNumber">Bed No</label>
+                            </div>
+
+                            <div class="input-group">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <input type="number" id="admissionFee" name="admission_fee" min="0" step="0.01" inputmode="decimal" required>
+                                <label for="admissionFee">Admission Fee</label>
                             </div>
 
                             <div class="input-group full-width">
@@ -244,7 +251,7 @@
             <div class="records-header">
                 <div>
                     <h2><i class="fas fa-clipboard-list"></i> Admission Records</h2>
-                    <p>Showing records created on {{ format_date_display(selected_date) }}.</p>
+                    <p>Showing admission records for {{ format_date_display(selected_date) }}.</p>
                 </div>
 
                 <form class="date-filter-bar" method="GET" action="{{ url_for('admissions') }}">
@@ -278,10 +285,12 @@
                             <th>Patient</th>
                             <th>Phone</th>
                             <th>Bed No</th>
+                            <th>Admission Fee</th>
                             <th>Guardian</th>
                             <th>Doctor</th>
                             <th>Reason</th>
                             <th>Status</th>
+                            <th class="served-col">Served By</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -293,6 +302,7 @@
                                     <td>{{ admission[2] }}</td>
                                     <td>{{ admission[3] }}</td>
                                     <td>{{ admission[9] or '-' }}</td>
+                                    <td>&#2547;{{ "%.2f"|format(admission[17] or 0) }}</td>
                                     <td>{{ admission[11] or '-' }}{% if admission[12] %} ({{ admission[12] }}){% endif %}</td>
                                     <td>{{ admission[13] }}</td>
                                     <td>{{ admission[14] }}</td>
@@ -301,24 +311,22 @@
                                             {{ admission[15] }}
                                         </span>
                                     </td>
+                                    <td class="served-col"><span class="served-by-badge">{{ admission[18] or 'Admin' }}</span></td>
                                     <td>
-                                        {% if admission[15] == 'Admitted' %}
-                                            <a class="table-action print" href="{{ url_for('concern_paper', admission_id=admission[0]) }}" target="_blank" rel="noopener">
-                                                <i class="fas fa-print"></i>
-                                                Print
-                                            </a>
-                                        {% else %}
-                                            <a class="table-action print" href="{{ url_for('concern_paper', admission_id=admission[0]) }}" target="_blank" rel="noopener">
-                                                <i class="fas fa-print"></i>
-                                                Print
-                                            </a>
-                                        {% endif %}
+                                        <button
+                                            type="button"
+                                            class="table-action admission-details-btn"
+                                            data-details-url="{{ url_for('admission_details', admission_id=admission[0]) }}"
+                                        >
+                                            <i class="fas fa-eye"></i>
+                                            View Details
+                                        </button>
                                     </td>
                                 </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="9">No admission records found.</td>
+                                <td colspan="11">No admission records found.</td>
                             </tr>
                         {% endif %}
                     </tbody>
@@ -326,6 +334,24 @@
             </div>
         </section>
     </main>
+
+    <div class="admission-details-modal" id="admissionDetailsModal" hidden aria-hidden="true">
+        <div class="admission-details-backdrop" data-close-admission-details></div>
+        <section class="admission-details-dialog" role="dialog" aria-modal="true" aria-labelledby="admissionDetailsTitle">
+            <header class="admission-details-header">
+                <div>
+                    <span>Admission Record</span>
+                    <h2 id="admissionDetailsTitle">Patient Admission Details</h2>
+                </div>
+                <button type="button" class="admission-details-close" data-close-admission-details aria-label="Close admission details">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </header>
+            <div class="admission-details-content" id="admissionDetailsContent">
+                <div class="admission-details-loading"><i class="fas fa-spinner fa-spin"></i> Loading admission details...</div>
+            </div>
+        </section>
+    </div>
 
     <footer class="dashboard-footer">
         <span>Copyright</span>
@@ -356,10 +382,13 @@
         const selectedPatientName = document.getElementById("selectedPatientName");
         const selectedPatientCard = document.getElementById("selectedPatientCard");
         const admissionDate = document.getElementById("admissionDate");
+        const admissionDateDisplay = document.getElementById("admissionDateDisplay");
+        const defaultAdmissionDate = "{{ default_admission_date }}";
         const doctorId = document.getElementById("doctorId");
         const guardianName = document.getElementById("guardianName");
         const guardianRelation = document.getElementById("guardianRelation");
         const roomNumber = document.getElementById("roomNumber");
+        const admissionFee = document.getElementById("admissionFee");
         const reason = document.getElementById("reason");
         const notes = document.getElementById("notes");
         const admitForm = document.querySelector(".admit-form");
@@ -370,11 +399,95 @@
         const recordsTableBody = document.getElementById("recordsTableBody");
         const activeAdmissionData = document.getElementById("activeAdmissionData");
         const activeAdmission = activeAdmissionData ? JSON.parse(activeAdmissionData.textContent) : null;
+        const admissionDetailsModal = document.getElementById("admissionDetailsModal");
+        const admissionDetailsContent = document.getElementById("admissionDetailsContent");
+        const admissionDetailsClose = admissionDetailsModal.querySelector(".admission-details-close");
         let oldAdmissionSearchTimer;
         let oldAdmissionSearchRequestId = 0;
 
+        function admissionMoney(value) {
+            return Number(value || 0).toFixed(2);
+        }
+
+        function closeAdmissionDetails() {
+            admissionDetailsModal.hidden = true;
+            admissionDetailsModal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("admission-modal-open");
+        }
+
+        function renderAdmissionDetails(data) {
+            const admission = data.admission;
+            admissionDetailsContent.innerHTML = `
+                <div class="admission-details-patient">
+                    <div><span>Patient</span><strong>${escapeHtml(admission.patient_name)}</strong></div>
+                    <div><span>UHID</span><strong>${escapeHtml(formatUHID(admission.registration_no))}</strong></div>
+                    <div><span>Phone</span><strong>${escapeHtml(admission.phone)}</strong></div>
+                    <div><span>Age / Gender</span><strong>${escapeHtml(admission.age)} ${escapeHtml(admission.age_unit)} / ${escapeHtml(admission.gender)}</strong></div>
+                    <div><span>Admission ID</span><strong>#${escapeHtml(admission.id)}</strong></div>
+                    <div><span>Served By</span><strong>${escapeHtml(admission.served_by)}</strong></div>
+                </div>
+                <div class="admission-details-grid">
+                    <div><span>Admission Date</span><strong>${escapeHtml(admission.admission_date)}</strong></div>
+                    <div><span>Admission Time</span><strong>${escapeHtml(admission.admission_time)}</strong></div>
+                    <div><span>Ward</span><strong>${escapeHtml(admission.ward)}</strong></div>
+                    <div><span>Bed / Cabin</span><strong>${escapeHtml(admission.bed_number)}</strong></div>
+                    <div><span>Doctor</span><strong>${escapeHtml(admission.doctor_name)}</strong></div>
+                    <div><span>Status</span><strong class="admission-modal-status">${escapeHtml(admission.status)}</strong></div>
+                    <div><span>Guardian</span><strong>${escapeHtml(admission.guardian_name)}</strong></div>
+                    <div><span>Relation</span><strong>${escapeHtml(admission.guardian_relation)}</strong></div>
+                    <div><span>Referrer</span><strong>${escapeHtml(admission.referer_name)}</strong></div>
+                    <div><span>Reason / Disease</span><strong>${escapeHtml(admission.reason)}</strong></div>
+                    <div class="wide"><span>Address</span><strong>${escapeHtml(admission.address)}</strong></div>
+                    <div class="wide"><span>Initial Notes</span><strong>${escapeHtml(admission.notes)}</strong></div>
+                </div>
+                <div class="admission-details-footer">
+                    <div><span>Admission Fee</span><strong>&#2547;${admissionMoney(admission.admission_fee)}</strong></div>
+                    <a class="admission-modal-print" href="${escapeHtml(admission.print_url)}" target="_blank" rel="noopener">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </a>
+                </div>
+            `;
+        }
+
+        function openAdmissionDetails(url) {
+            admissionDetailsModal.hidden = false;
+            admissionDetailsModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("admission-modal-open");
+            admissionDetailsContent.innerHTML = '<div class="admission-details-loading"><i class="fas fa-spinner fa-spin"></i> Loading admission details...</div>';
+            admissionDetailsClose.focus();
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(result => {
+                    if (!result.ok || !result.data.success) throw new Error(result.data.error || "Unable to load admission details.");
+                    renderAdmissionDetails(result.data);
+                })
+                .catch(error => {
+                    admissionDetailsContent.innerHTML = `<div class="admission-details-error"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(error.message)}</div>`;
+                });
+        }
+
         function todayIsoDate() {
-            return new Date().toISOString().slice(0, 10);
+            return defaultAdmissionDate;
+        }
+
+        function formatAdmissionDate(value) {
+            const parts = String(value || "").split("-");
+            if (parts.length !== 3) return value || "-";
+            const months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            const monthIndex = Number(parts[1]) - 1;
+            if (!months[monthIndex]) return value || "-";
+            return `${Number(parts[2])} ${months[monthIndex]} ${parts[0]}`;
+        }
+
+        function setAdmissionDate(value) {
+            const dateValue = value || defaultAdmissionDate;
+            admissionDate.value = dateValue;
+            admissionDateDisplay.value = formatAdmissionDate(dateValue);
         }
 
         function setFieldValue(field, value) {
@@ -409,9 +522,10 @@
             setFieldValue(guardianName, "");
             setSelectValue(guardianRelation, "");
             setSelectValue(roomNumber, "");
+            setFieldValue(admissionFee, "");
             setSelectValue(reason, "");
             setFieldValue(notes, "");
-            setFieldValue(admissionDate, todayIsoDate());
+            setAdmissionDate(todayIsoDate());
         }
 
         function updateBedOptions(patientId) {
@@ -490,7 +604,7 @@
 
         function loadActiveAdmission(admission) {
             if (!admission) {
-                setFieldValue(admissionDate, todayIsoDate());
+                setAdmissionDate(todayIsoDate());
                 updateBedOptions("");
                 return;
             }
@@ -500,11 +614,12 @@
                 selectPatient(selectedRow, false);
             }
 
-            setFieldValue(admissionDate, admission.admission_date || todayIsoDate());
+            setAdmissionDate(admission.admission_date || todayIsoDate());
             setFieldValue(doctorId, admission.doctor_id);
             setFieldValue(guardianName, admission.guardian_name);
             setSelectValue(guardianRelation, admission.guardian_relation);
             setSelectValue(roomNumber, admission.room_number);
+            setFieldValue(admissionFee, admission.admission_fee);
             setSelectValue(reason, admission.reason);
             setFieldValue(notes, admission.notes);
         }
@@ -519,7 +634,7 @@
             row.classList.add("selected");
             selectPatient(patientRow, true, true);
             selectedPatientName.textContent = `${row.dataset.name} (UHID ${row.dataset.uhid}) - ready to admit again`;
-            setFieldValue(admissionDate, todayIsoDate());
+            setAdmissionDate(todayIsoDate());
             setFieldValue(guardianName, row.dataset.guardianName);
             setSelectValue(guardianRelation, row.dataset.guardianRelation);
             setFieldValue(doctorId, row.dataset.doctorId);
@@ -540,6 +655,12 @@
             });
         }
 
+        function formatUHID(value) {
+            const text = String(value || "").trim();
+            if (!text) return "-";
+            return text.toUpperCase().startsWith("AJH") ? `AJH${text.slice(3).trim()}` : `AJH${text}`;
+        }
+
         function renderOldAdmissionResults(patients) {
             if (!patients.length) {
                 oldAdmissionList.innerHTML = '<p class="empty-state">No discharged old admitted patient found.</p>';
@@ -549,7 +670,7 @@
             oldAdmissionList.innerHTML = patients.map(function (patient) {
                 return '<button type="button" class="old-admission-row" ' +
                     'data-patient-id="' + escapeHtml(patient.patient_id) + '" ' +
-                    'data-uhid="' + escapeHtml(patient.patient_uhid) + '" ' +
+                    'data-uhid="' + escapeHtml(formatUHID(patient.patient_uhid)) + '" ' +
                     'data-name="' + escapeHtml(patient.name) + '" ' +
                     'data-phone="' + escapeHtml(patient.phone) + '" ' +
                     'data-guardian-name="' + escapeHtml(patient.guardian_name) + '" ' +
@@ -560,7 +681,7 @@
                         '<span class="old-admission-icon"><i class="fas fa-user-clock"></i></span>' +
                         '<span class="old-admission-info">' +
                             '<strong>' + escapeHtml(patient.name) + '</strong>' +
-                            '<small>UHID ' + escapeHtml(patient.patient_uhid) + ' | Last bed ' + escapeHtml(patient.room_number || '-') + ' | ' + escapeHtml(patient.phone || '-') + '</small>' +
+                            '<small>UHID ' + escapeHtml(formatUHID(patient.patient_uhid)) + ' | Last bed ' + escapeHtml(patient.room_number || '-') + ' | ' + escapeHtml(patient.phone || '-') + '</small>' +
                             '<small>Last admission: ' + escapeHtml(patient.admission_date || '-') + ' | Discharged: ' + escapeHtml(patient.discharged_at || '-') + '</small>' +
                         '</span>' +
                         '<span class="old-admission-badge">Admit Again</span>' +
@@ -680,6 +801,24 @@
         recordSearchClearBtn.addEventListener("click", function () {
             recordSearchInput.value = "";
             recordsTableBody.querySelectorAll("tr").forEach(row => row.style.display = "");
+        });
+
+        document.addEventListener("click", function (event) {
+            const detailsButton = event.target.closest(".admission-details-btn");
+            if (detailsButton) {
+                openAdmissionDetails(detailsButton.dataset.detailsUrl);
+                return;
+            }
+
+            if (event.target.closest("[data-close-admission-details]")) {
+                closeAdmissionDetails();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !admissionDetailsModal.hidden) {
+                closeAdmissionDetails();
+            }
         });
 
         document.querySelectorAll(".input-group").forEach(group => {

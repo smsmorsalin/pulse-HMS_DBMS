@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Transation Print | AL-JUMIRA HOSPITAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all_transation_print.css') }}">
+</head>
+<body>
+    <div class="print-toolbar no-print">
+        <a href="{{ url_for('all_transation', date=selected_date) }}">Back</a>
+        <button type="button" onclick="printReport()">Print</button>
+    </div>
+
+    <main class="report-sheet">
+        <header class="report-header">
+            <div class="hospital-brand">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo">
+                <div>
+                    <h1>AL-JUMIRA HOSPITAL</h1>
+                    <p>Milk Vita Road, Dewla, Near ASA Office, Tangail</p>
+                    <p>Phone: 017767617979 | Email: aljumirahospital@gmail.com</p>
+                </div>
+            </div>
+            <div class="report-title">
+                <strong>DAY-WISE ACCOUNT REPORT</strong>
+                <span>All Transation Bill</span>
+            </div>
+        </header>
+
+        <section class="report-meta">
+            <div><span>Report Date</span><strong>{{ format_date_display(selected_date) }}</strong></div>
+            <div><span>Report Month</span><strong>{{ format_month_display(selected_month) }}</strong></div>
+            <div><span>Prepared By</span><strong>{{ printed_by or 'Admin' }}</strong></div>
+            <div><span>Printed At</span><strong id="printedTimestamp">--</strong></div>
+        </section>
+
+        <section class="summary-strip">
+            <div>
+                <span>Total Billing</span>
+                <strong>Tk {{ '%.2f'|format(total_billing) }}</strong>
+            </div>
+            <div>
+                <span>Total Due</span>
+                <strong>Tk {{ '%.2f'|format(total_due) }}</strong>
+            </div>
+        </section>
+
+        <section class="account-table-section">
+            <h2>Account Head Summary</h2>
+            <table class="account-table">
+                <colgroup>
+                    <col class="col-sl">
+                    <col class="col-head">
+                    <col class="col-records">
+                    <col class="col-remarks">
+                    <col class="col-amount">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Account Head</th>
+                        <th>Records</th>
+                        <th>Remarks</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in section_cards %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ card.label }}</td>
+                        <td>{{ card.count }}</td>
+                        <td>{{ card.meta }}</td>
+                        <td class="amount">Tk {{ '%.2f'|format(card.value) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        {% if return_records %}
+        <section class="ledger-section">
+            <h2>Visit &amp; Pathology Return Adjustments</h2>
+            <table class="ledger-table">
+                <colgroup>
+                    <col class="ledger-sl">
+                    <col class="ledger-time">
+                    <col class="ledger-head">
+                    <col class="ledger-party">
+                    <col class="ledger-detail">
+                    <col class="ledger-status">
+                    <col class="ledger-amount">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Date &amp; Time</th>
+                        <th>Return Type</th>
+                        <th>Patient / Reference</th>
+                        <th>Details</th>
+                        <th>Refund</th>
+                        <th>Billing Adjustment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in return_records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ format_date_display(row.created_at) }}</td>
+                        <td><strong>{{ row.type }}</strong></td>
+                        <td><strong>{{ row.patient }}</strong><span>{{ row.ref }}</span></td>
+                        <td>{{ row.detail }}</td>
+                        <td class="amount outflow">Tk {{ '%.2f'|format(row.refund) }}</td>
+                        <td class="amount outflow">- Tk {{ '%.2f'|format(row.billing_adjustment) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        <section class="ledger-section">
+            <h2>Daily Expences Record</h2>
+            <table class="ledger-table">
+                <colgroup>
+                    <col class="ledger-sl">
+                    <col class="ledger-time">
+                    <col class="ledger-head">
+                    <col class="ledger-party">
+                    <col class="ledger-detail">
+                    <col class="ledger-status">
+                    <col class="ledger-amount">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>SL</th>
+                        <th>Date & Time</th>
+                        <th>Category</th>
+                        <th>Description / Vendor</th>
+                        <th>Payment</th>
+                        <th>Note / Recorded By</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in expense_records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ format_date_display(row.created_at) }}</td>
+                        <td>
+                            <strong>{{ row.category }}</strong>
+                        </td>
+                        <td>
+                            <strong>{{ row.description or '-' }}</strong>
+                            <span>{{ row.vendor }}</span>
+                        </td>
+                        <td>{{ row.payment }}</td>
+                        <td>
+                            <strong>{{ row.note }}</strong>
+                            <span>By {{ row.created_by }}</span>
+                        </td>
+                        <td class="amount outflow">Tk {{ '%.2f'|format(row.amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-cell">No daily expences found for {{ format_date_display(selected_date) }}.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <footer class="report-footer">
+            <div>
+                <span>Prepared By</span>
+                <strong>{{ printed_by or 'Admin' }}</strong>
+            </div>
+            <div>
+                <span>Accounts Checked By</span>
+                <strong>____________________</strong>
+            </div>
+            <div>
+                <span>Authorized Signature</span>
+                <strong>____________________</strong>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        function updatePrintedTimestamp() {
+            const target = document.getElementById("printedTimestamp");
+            if (!target) return;
+            const now = new Date();
+            target.textContent = now.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            }).replace(",", "");
+        }
+
+        function printReport() {
+            updatePrintedTimestamp();
+            window.print();
+        }
+
+        updatePrintedTimestamp();
+        window.addEventListener("beforeprint", updatePrintedTimestamp);
+
+        {% if auto_print %}
+        window.setTimeout(printReport, 500);
+        {% endif %}
+    </script>
+</body>
+</html>

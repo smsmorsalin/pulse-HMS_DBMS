@@ -21,17 +21,27 @@
                 <h1><i class="fas fa-file-invoice-dollar"></i> Discharge Bill</h1>
                 <p>Prepare final inpatient billing from active admission records.</p>
             </div>
-            <button
-                type="button"
-                class="print-btn"
-                onclick="printDischargeBill()"
-                {% if selected_admission %}data-print-url="{{ url_for('discharge_bill_print', admission_id=selected_admission[0]) }}"{% endif %}
-                {% if not selected_admission %}disabled{% endif %}
-            >
-                <i class="fas fa-print"></i>
-                Print Bill
-            </button>
+            <div class="header-bill-actions">
+                <a class="due-collection-btn" href="{{ url_for('discharge_due_collection') }}">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    Discharge Due Collection
+                </a>
+                <button
+                    type="button"
+                    class="print-btn"
+                    onclick="printDischargeBill()"
+                    {% if selected_admission %}data-print-url="{{ url_for('discharge_bill_print', admission_id=selected_admission[0]) }}"{% endif %}
+                    {% if not selected_admission %}disabled{% endif %}
+                >
+                    <i class="fas fa-print"></i>
+                    Print Bill
+                </button>
+            </div>
         </section>
+
+        {% if message %}
+            <p class="bill-message"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+        {% endif %}
 
         <section class="discharge-workspace no-print">
             <aside class="admission-list-panel">
@@ -54,7 +64,7 @@
                                 data-search="{{ admission[14] }} {{ admission[1] }} {{ admission[2] }} {{ admission[8] }} {{ admission[0] }}"
                             >
                                 <strong>{{ admission[1] }}</strong>
-                                <span>UHID {{ admission[14] or '-' }} | Admission #{{ admission[0] }} | Bed {{ admission[8] or '-' }}</span>
+                                <span>UHID {{ format_uhid(admission[14]) }} | Admission #{{ admission[0] }} | Bed {{ admission[8] or '-' }}</span>
                                 <small>{{ admission[2] or '-' }} | {{ admission[11] or 'Not assigned' }}</small>
                             </a>
                         {% endfor %}
@@ -70,7 +80,7 @@
                         <div>
                             <span>Selected Patient</span>
                             <h2>{{ selected_admission[3] }}</h2>
-                            <p>UHID {{ selected_admission[14] or '-' }} | Admission #{{ selected_admission[0] }}</p>
+                            <p>UHID {{ format_uhid(selected_admission[14]) }} | Admission #{{ selected_admission[0] }}</p>
                         </div>
                         <div class="summary-badge">
                             <span>Bed</span>
@@ -90,35 +100,35 @@
                             </label>
                             <label>
                                 <span>Bed Charge / Day</span>
-                                <input type="number" class="money-input" id="bedCharge" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="bedCharge" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Doctor Fee</span>
-                                <input type="number" class="money-input" id="doctorFee" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="doctorFee" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Medicine Charge</span>
-                                <input type="number" class="money-input" id="medicineCharge" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="medicineCharge" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Pathology Charge</span>
-                                <input type="number" class="money-input" id="pathologyCharge" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="pathologyCharge" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Service Charge</span>
-                                <input type="number" class="money-input" id="serviceCharge" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="serviceCharge" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Other Charge</span>
-                                <input type="number" class="money-input" id="otherCharge" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="otherCharge" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Discount</span>
-                                <input type="number" class="money-input" id="discountAmount" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="discountAmount" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label>
                                 <span>Paid Amount</span>
-                                <input type="number" class="money-input" id="paidAmount" value="0" min="0" step="0.01">
+                                <input type="number" class="money-input" id="paidAmount" placeholder="0.00" min="0" step="0.01">
                             </label>
                             <label class="full-width">
                                 <span>Remarks</span>
@@ -169,7 +179,7 @@
                     <div>
                         <p><span>Bill No</span><strong>DB-{{ selected_admission[0] }}</strong></p>
                         <p><span>Admission ID</span><strong>#{{ selected_admission[0] }}</strong></p>
-                        <p><span>Patient UHID</span><strong>{{ selected_admission[2] }}</strong></p>
+                        <p><span>Patient UHID</span><strong>{{ format_uhid(selected_admission[2]) }}</strong></p>
                         <p><span>Patient Name</span><strong>{{ selected_admission[3] }}</strong></p>
                         <p><span>Age/Gender</span><strong>{{ selected_admission[5] }} {{ selected_admission[6] }} / {{ selected_admission[7] }}</strong></p>
                         <p><span>Contact</span><strong>{{ selected_admission[4] or '-' }}</strong></p>
@@ -311,6 +321,26 @@
         function printDischargeBill() {
             updateBill();
             if (!printButton || !printButton.dataset.printUrl) return;
+
+            const dischargeDate = document.getElementById("dischargeDate");
+            if (!dischargeDate.value) {
+                alert("Please select the discharge date before printing.");
+                dischargeDate.focus();
+                return;
+            }
+
+            const stayDays = Math.max(1, readNumber("stayDays"));
+            const totalCharges = (readNumber("bedCharge") * stayDays)
+                + readNumber("doctorFee")
+                + readNumber("medicineCharge")
+                + readNumber("pathologyCharge")
+                + readNumber("serviceCharge")
+                + readNumber("otherCharge");
+            if (totalCharges <= 0) {
+                alert("Please enter at least one bill charge before printing the discharge bill.");
+                document.getElementById("bedCharge").focus();
+                return;
+            }
 
             const params = new URLSearchParams({
                 discharge_date: document.getElementById("dischargeDate").value || "",

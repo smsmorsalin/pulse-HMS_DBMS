@@ -671,6 +671,14 @@ td {
 	font-weight: 800;
 }
 
+.movement-head-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
 .movement-column-head strong {
 	display: inline-grid;
 	place-items: center;
@@ -680,6 +688,25 @@ td {
 	background: rgba(255, 255, 255, 0.12);
 	color: #fff;
 	font-size: 14px;
+}
+
+.movement-column-head a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 800;
+	transition: 0.25s ease;
+}
+
+.movement-column-head a:hover {
+	background: rgba(255, 255, 255, 0.2);
+	transform: translateY(-1px);
 }
 
 .activity-item,
@@ -839,6 +866,133 @@ td {
 	margin-bottom: 8px;
 }
 
+.movement-detail-header {
+	align-items: center;
+}
+
+.movement-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 22px;
+}
+
+.movement-tabs a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	min-height: 44px;
+	padding: 10px 16px;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	color: rgba(255, 255, 255, 0.82);
+	font-weight: 800;
+	transition: 0.25s ease;
+}
+
+.movement-tabs a:hover,
+.movement-tabs a.active {
+	background: linear-gradient(135deg, #1e3cfa, #ff1e56);
+	color: #fff;
+	transform: translateY(-2px);
+}
+
+.movement-detail-stats .card h3 {
+	font-size: 24px;
+	word-break: break-word;
+}
+
+.movement-detail-panel {
+	margin-top: 4px;
+}
+
+.movement-detail-tools {
+	align-items: center;
+}
+
+.movement-filter-form {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.movement-filter-form input {
+	min-height: 42px;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	background: rgba(10, 16, 40, 0.45);
+	color: #fff;
+	border-radius: 14px;
+	padding: 10px 12px;
+	outline: none;
+}
+
+.movement-filter-form button,
+.movement-filter-form a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 42px;
+	border: 0;
+	border-radius: 14px;
+	padding: 10px 14px;
+	background: linear-gradient(135deg, #1f9d55, #38c172);
+	color: #fff;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.movement-filter-form a {
+	width: 42px;
+	padding: 0;
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.quantity-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 64px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	font-weight: 800;
+}
+
+.quantity-pill.in,
+.quantity-pill.return {
+	background: rgba(56, 193, 114, 0.16);
+	color: #9af0bb;
+}
+
+.quantity-pill.out {
+	background: rgba(255, 138, 76, 0.16);
+	color: #ffcbad;
+}
+
+.movement-note-cell {
+	min-width: 220px;
+	color: rgba(255, 255, 255, 0.78);
+}
+
+.movement-table-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 310px;
+}
+
+.activity-edit-form.compact {
+	grid-template-columns: 90px 110px auto;
+}
+
+.activity-edit-form.compact input {
+	width: 100%;
+}
+
 @media (max-width: 1100px) {
 	.field-grid,
 	.stock-overview,
@@ -891,5 +1045,24 @@ td {
 
 	.danger-btn {
 		width: 100%;
+	}
+
+	.movement-detail-tools,
+	.movement-filter-form {
+		align-items: stretch;
+	}
+
+	.movement-filter-form,
+	.movement-filter-form input,
+	.movement-filter-form button {
+		width: 100%;
+	}
+
+	.movement-table-actions {
+		min-width: 240px;
+	}
+
+	.activity-edit-form.compact {
+		grid-template-columns: 1fr;
 	}
 }

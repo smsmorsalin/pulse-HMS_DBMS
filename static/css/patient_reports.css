@@ -1,0 +1,126 @@
+/* Reports uses the Pathology visual system, with Step 3 intentionally omitted. */
+.reports-pathology-page .reports-heading { min-width:0; flex:1; }
+.reports-pathology-page .reports-workbench {
+    grid-template-columns:minmax(270px,.68fr) minmax(540px,1.72fr);
+}
+.reports-pathology-page .reports-back-btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:42px;
+    padding:0 16px;
+    border:1px solid rgba(191,219,254,.78);
+    border-radius:12px;
+    color:#fff;
+    background:linear-gradient(135deg,#2563eb,#db2777);
+    box-shadow:0 8px 22px rgba(37,99,235,.34),0 0 0 3px rgba(96,165,250,.1);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.02em;
+    transition:transform .2s,filter .2s,box-shadow .2s;
+}
+.reports-pathology-page .reports-back-btn:hover {
+    transform:translateY(-2px);
+    filter:brightness(1.14);
+    box-shadow:0 11px 28px rgba(219,39,119,.36),0 0 0 4px rgba(147,197,253,.14);
+}
+.reports-pathology-page .reports-back-btn:focus-visible {
+    outline:3px solid #fef08a;
+    outline-offset:3px;
+}
+.reports-pathology-page .details-column .reports-test-list {
+    height:430px;
+}
+.reports-pathology-page .details-column .panel-heading small {
+    font-size:14px;
+}
+.reports-pathology-page .details-column .panel-heading h2 {
+    font-size:23px;
+}
+.reports-pathology-page .details-column .panel-heading > span {
+    min-width:38px;
+    height:32px;
+    font-size:14px;
+}
+.reports-pathology-page .details-column .patient-overview strong {
+    font-size:18px;
+}
+.reports-pathology-page .details-column .patient-overview p {
+    font-size:13px;
+    line-height:1.5;
+}
+.reports-pathology-page .details-column .patient-test-details div {
+    min-height:58px;
+    padding:9px 11px;
+}
+.reports-pathology-page .details-column .patient-test-details span {
+    font-size:12px;
+}
+.reports-pathology-page .details-column .patient-test-details strong {
+    font-size:15px;
+    line-height:1.4;
+}
+.reports-pathology-page .details-column .test-number {
+    width:36px;
+    height:36px;
+    font-size:15px;
+}
+.reports-pathology-page .details-column .test-copy strong {
+    font-size:17px;
+}
+.reports-pathology-page .details-column .test-copy small {
+    margin-top:4px;
+    font-size:13px;
+}
+.reports-pathology-page .details-column .result-badge {
+    padding:6px 10px;
+    font-size:13px;
+}
+.reports-pathology-page .report-test-row {
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    padding:10px;
+}
+.reports-pathology-page .report-test-copy {
+    cursor:default;
+}
+.reports-pathology-page .report-print-btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    min-height:38px;
+    padding:0 12px;
+    border:1px solid transparent;
+    border-radius:10px;
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    white-space:nowrap;
+    transition:.2s;
+}
+.reports-pathology-page .report-print-btn.ready {
+    border-color:rgba(134,239,172,.48);
+    color:#dcfce7;
+    background:rgba(22,163,74,.24);
+}
+.reports-pathology-page .report-print-btn.pending {
+    border-color:rgba(251,191,36,.43);
+    color:#fef3c7;
+    background:rgba(217,119,6,.2);
+}
+.reports-pathology-page .report-print-btn:hover {
+    transform:translateY(-1px);
+    filter:brightness(1.15);
+}
+
+@media(max-width:950px) {
+    .reports-pathology-page .reports-workbench { grid-template-columns:1fr; }
+    .reports-pathology-page .details-column .reports-test-list { height:auto; max-height:520px; }
+}
+@media(max-width:650px) {
+    .reports-pathology-page .report-test-row { grid-template-columns:1fr; }
+    .reports-pathology-page .report-print-btn { width:100%; }
+}

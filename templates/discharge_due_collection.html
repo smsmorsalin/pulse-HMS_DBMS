@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discharge Due Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test_due-collection.css') }}">
+</head>
+<body>
+    <div class="background-blobs"></div>
+
+    <main class="due-page">
+        {% if message %}
+            <p class="flash-message"><i class="fas fa-triangle-exclamation"></i> {{ message }}</p>
+        {% endif %}
+
+        <section class="panel due-hero">
+            <div class="hero-title">
+                <p class="panel-kicker">Inpatient Accounts</p>
+                <h1><i class="fas fa-hand-holding-dollar"></i> Discharge Due Collection</h1>
+                <p>Find outstanding discharge bills and collect full or partial payments.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="soft-link" href="{{ url_for('discharge_bill') }}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Discharge Bill
+                </a>
+                <a class="back-btn" href="{{ url_for('admissions') }}">
+                    <i class="fas fa-arrow-left"></i>
+                    Admission
+                </a>
+            </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Discharge due summary">
+            <div class="stat-card">
+                <span><i class="fas fa-receipt"></i> Pending Bills</span>
+                <strong>{{ summary.pending_count }}</strong>
+            </div>
+            <div class="stat-card urgent">
+                <span><i class="fas fa-sack-dollar"></i> Total Due</span>
+                <strong>Tk {{ '%.2f'|format(summary.total_due) }}</strong>
+            </div>
+            <div class="stat-card">
+                <span><i class="fas fa-calendar-day"></i> Today's Due</span>
+                <strong>Tk {{ '%.2f'|format(summary.today_due) }}</strong>
+            </div>
+            <div class="stat-card">
+                <span><i class="fas fa-clock"></i> Oldest Due</span>
+                <strong>{{ format_date_display(summary.oldest_due_date) if summary.oldest_due_date else 'None' }}</strong>
+            </div>
+        </section>
+
+        <section class="panel collection-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Collection Desk</p>
+                    <h2>Pending Discharge Bills</h2>
+                </div>
+                <form class="due-search" method="GET" action="{{ url_for('discharge_due_collection') }}">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="Bill, UHID, patient, phone, bed">
+                    <select name="sort" aria-label="Sort due bills">
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                        <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest due</option>
+                        <option value="patient" {% if sort == 'patient' %}selected{% endif %}>Patient name</option>
+                    </select>
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+
+            <div class="quick-filter">
+                <i class="fas fa-filter"></i>
+                <input type="text" id="quickFilterInput" placeholder="Filter visible rows on this page">
+                <a href="{{ url_for('discharge_due_collection') }}">Reset</a>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Bill</th>
+                            <th>Admission / Bed</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Due</th>
+                            <th>Discharge Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dueTableBody">
+                        {% if due_bills %}
+                            {% for bill in due_bills %}
+                                <tr data-search="{{ (format_uhid(bill.patient_uhid) ~ ' ' ~ bill.patient_uhid ~ ' ' ~ bill.patient_name ~ ' ' ~ bill.phone ~ ' ' ~ bill.bill_no ~ ' ' ~ bill.admission_id ~ ' ' ~ bill.bed_number)|lower }}">
+                                    <td>
+                                        <div class="patient-cell">
+                                            <strong>{{ bill.patient_name }}</strong>
+                                            <span>UHID {{ format_uhid(bill.patient_uhid) }} | {{ bill.phone or 'No phone' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a class="invoice-link" href="{{ url_for('saved_discharge_bill_print', bill_id=bill.id) }}">
+                                            {{ bill.bill_no }}
+                                        </a>
+                                    </td>
+                                    <td>Admission #{{ bill.admission_id }}<br><small>Bed {{ bill.bed_number }}</small></td>
+                                    <td>Tk {{ '%.2f'|format(bill.total_amount) }}</td>
+                                    <td>Tk {{ '%.2f'|format(bill.paid_amount) }}</td>
+                                    <td><strong class="due-amount">Tk {{ '%.2f'|format(bill.due_amount) }}</strong></td>
+                                    <td>{{ format_date_display(bill.discharge_date) }}</td>
+                                    <td>
+                                        <button type="button" class="select-due-btn" data-details-url="{{ url_for('discharge_due_details', bill_id=bill.id) }}">
+                                            <i class="fas fa-arrow-pointer"></i> Select
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="empty-row">
+                                <td colspan="8">
+                                    <i class="fas fa-circle-check"></i>
+                                    No pending discharge due found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="due-modal" id="dueCollectionModal" hidden aria-hidden="true">
+        <div class="due-modal-backdrop" data-close-due-modal></div>
+        <section class="due-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dueModalTitle">
+            <header class="due-modal-header">
+                <div>
+                    <p>Discharge Due Settlement</p>
+                    <h2 id="dueModalTitle">Collect Discharge Due</h2>
+                </div>
+                <button type="button" class="due-modal-close" data-close-due-modal aria-label="Close due collection"><i class="fas fa-xmark"></i></button>
+            </header>
+            <div class="due-modal-body" id="dueModalBody">
+                <div class="due-modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading discharge bill...</div>
+            </div>
+        </section>
+    </div>
+
+    <template id="dueSettlementTemplate">
+        <div class="settlement-layout">
+            <section class="settlement-details">
+                <div class="settlement-patient" id="modalPatientDetails"></div>
+                <div class="settlement-tests">
+                    <div class="settlement-section-title">
+                        <span><i class="fas fa-file-invoice-dollar"></i> Charge Breakdown</span>
+                        <strong id="modalItemCount">0 items</strong>
+                    </div>
+                    <div class="settlement-test-list" id="modalItemList"></div>
+                </div>
+                <div class="settlement-bill-summary" id="modalBillSummary"></div>
+            </section>
+
+            <form class="settlement-form" id="dueSettlementForm" method="POST">
+                <div class="settlement-form-heading">
+                    <span><i class="fas fa-cash-register"></i> Settlement</span>
+                    <small>Apply an approved discount, then collect the full or partial balance.</small>
+                </div>
+                <div class="settlement-balance-card">
+                    <span>Current Outstanding Due</span>
+                    <strong id="modalOutstandingDue">Tk 0.00</strong>
+                </div>
+                <label class="settlement-field discount-field">
+                    <span>Due Discount</span>
+                    <div class="money-field"><b>Tk</b><input type="number" id="dueDiscount" name="due_discount" min="0" step="0.01" placeholder="0.00"></div>
+                    <small>Discount is deducted from the current discharge due.</small>
+                </label>
+                <label class="settlement-field">
+                    <span>Collection Amount</span>
+                    <div class="money-field"><b>Tk</b><input type="number" id="collectionAmount" name="collection_amount" min="0" step="0.01" required></div>
+                    <small>Full and partial collections are supported.</small>
+                </label>
+                <label class="settlement-field">
+                    <span>Payment Method</span>
+                    <select id="modalPaymentMethod" name="payment_method">
+                        <option>Cash</option><option>Bkash</option><option>Nagad</option><option>Card</option><option>Bank</option>
+                    </select>
+                </label>
+                <label class="settlement-field">
+                    <span>Discount Note <em>Optional</em></span>
+                    <textarea name="discount_note" rows="2" placeholder="Reason or authorization for discount"></textarea>
+                </label>
+                <div class="settlement-calculation">
+                    <div><span>Outstanding Due</span><strong id="calculationDue">Tk 0.00</strong></div>
+                    <div><span>Discount</span><strong id="calculationDiscount">- Tk 0.00</strong></div>
+                    <div><span>Collect Now</span><strong id="calculationCollect">- Tk 0.00</strong></div>
+                    <div class="remaining-line"><span>Remaining Due</span><strong id="calculationRemaining">Tk 0.00</strong></div>
+                </div>
+                <p class="settlement-error" id="settlementError" hidden></p>
+                <button type="submit" class="confirm-settlement-btn"><i class="fas fa-circle-check"></i> Confirm &amp; Print Bill</button>
+            </form>
+        </div>
+    </template>
+
+    <script>
+        const quickFilterInput = document.getElementById("quickFilterInput");
+        const dueRows = Array.from(document.querySelectorAll("#dueTableBody tr[data-search]"));
+        const dueCollectionModal = document.getElementById("dueCollectionModal");
+        const dueModalBody = document.getElementById("dueModalBody");
+        const dueSettlementTemplate = document.getElementById("dueSettlementTemplate");
+        const selectDueButtons = document.querySelectorAll(".select-due-btn");
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character]);
+        }
+
+        function money(value) { return Number(value || 0).toFixed(2); }
+
+        function closeDueModal() {
+            dueCollectionModal.hidden = true;
+            dueCollectionModal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("due-modal-open");
+        }
+
+        function updateSettlementCalculation(dueAmount) {
+            const discountInput = document.getElementById("dueDiscount");
+            const collectionInput = document.getElementById("collectionAmount");
+            if (!discountInput || !collectionInput) return;
+            let discount = Math.min(Math.max(0, Number(discountInput.value || 0)), dueAmount);
+            if (Number(discountInput.value || 0) > dueAmount) discountInput.value = money(dueAmount);
+            const collectible = Math.max(0, dueAmount - discount);
+            collectionInput.max = money(collectible);
+            let collection = Math.max(0, Number(collectionInput.value || 0));
+            if (collection > collectible) {
+                collection = collectible;
+                collectionInput.value = money(collectible);
+            }
+            document.getElementById("calculationDue").textContent = `Tk ${money(dueAmount)}`;
+            document.getElementById("calculationDiscount").textContent = `- Tk ${money(discount)}`;
+            document.getElementById("calculationCollect").textContent = `- Tk ${money(collection)}`;
+            document.getElementById("calculationRemaining").textContent = `Tk ${money(Math.max(0, collectible - collection))}`;
+        }
+
+        function renderDueSettlement(data) {
+            const bill = data.bill;
+            const items = data.items || [];
+            dueModalBody.innerHTML = "";
+            dueModalBody.appendChild(dueSettlementTemplate.content.cloneNode(true));
+            document.getElementById("modalPatientDetails").innerHTML = `
+                <div><span>Patient</span><strong>${escapeHtml(bill.patient_name)}</strong></div>
+                <div><span>UHID</span><strong>${escapeHtml(bill.patient_uhid)}</strong></div>
+                <div><span>Phone</span><strong>${escapeHtml(bill.phone)}</strong></div>
+                <div><span>Age / Gender</span><strong>${escapeHtml(bill.age)} ${escapeHtml(bill.age_unit)} / ${escapeHtml(bill.gender)}</strong></div>
+                <div><span>Bill / Admission</span><strong>${escapeHtml(bill.bill_no)} / #${escapeHtml(bill.admission_id)}</strong></div>
+                <div><span>Bed</span><strong>${escapeHtml(bill.bed_number)}</strong></div>
+                <div><span>Admission / Discharge</span><strong>${escapeHtml(bill.admission_date)} / ${escapeHtml(bill.discharge_date)}</strong></div>
+                <div><span>Doctor</span><strong>${escapeHtml(bill.doctor_name)}</strong></div>`;
+            document.getElementById("modalItemCount").textContent = `${items.length} item${items.length === 1 ? "" : "s"}`;
+            document.getElementById("modalItemList").innerHTML = items.map((item, index) => `
+                <div><span>${index + 1}. ${escapeHtml(item.name)} <small>${item.qty} × Tk ${money(item.rate)}</small></span><strong>Tk ${money(item.amount)}</strong></div>`
+            ).join("");
+            document.getElementById("modalBillSummary").innerHTML = `
+                <div><span>Total Charges</span><strong>Tk ${money(bill.subtotal)}</strong></div>
+                <div><span>Previous Discount</span><strong>Tk ${money(bill.discount)}</strong></div>
+                <div><span>Net Bill</span><strong>Tk ${money(bill.total)}</strong></div>
+                <div><span>Already Paid</span><strong>Tk ${money(bill.received)}</strong></div>`;
+
+            const form = document.getElementById("dueSettlementForm");
+            const discountInput = document.getElementById("dueDiscount");
+            const collectionInput = document.getElementById("collectionAmount");
+            const paymentMethod = document.getElementById("modalPaymentMethod");
+            form.action = bill.collect_url;
+            discountInput.max = money(bill.due);
+            collectionInput.max = money(bill.due);
+            collectionInput.value = money(bill.due);
+            paymentMethod.value = ["Cash","Bkash","Nagad","Card","Bank"].includes(bill.payment_method) ? bill.payment_method : "Cash";
+            document.getElementById("modalOutstandingDue").textContent = `Tk ${money(bill.due)}`;
+            updateSettlementCalculation(bill.due);
+            discountInput.addEventListener("input", () => {
+                const discount = Math.min(Math.max(0, Number(discountInput.value || 0)), bill.due);
+                collectionInput.value = money(Math.max(0, bill.due - discount));
+                updateSettlementCalculation(bill.due);
+            });
+            collectionInput.addEventListener("input", () => updateSettlementCalculation(bill.due));
+            form.addEventListener("submit", event => {
+                const discount = Math.max(0, Number(discountInput.value || 0));
+                const collection = Math.max(0, Number(collectionInput.value || 0));
+                const error = document.getElementById("settlementError");
+                if (discount <= 0 && collection <= 0) {
+                    event.preventDefault();
+                    error.textContent = "Enter a collection amount or a due discount.";
+                    error.hidden = false;
+                    return;
+                }
+                error.hidden = true;
+                form.querySelector("button[type='submit']").disabled = true;
+            });
+        }
+
+        function openDueModal(url) {
+            dueCollectionModal.hidden = false;
+            dueCollectionModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("due-modal-open");
+            dueModalBody.innerHTML = '<div class="due-modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading discharge bill...</div>';
+            fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+                .then(response => response.json().then(data => ({ok: response.ok, data})))
+                .then(result => {
+                    if (!result.ok || !result.data.success) throw new Error(result.data.error || "Unable to load discharge due details.");
+                    renderDueSettlement(result.data);
+                })
+                .catch(error => dueModalBody.innerHTML = `<div class="due-modal-error"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(error.message)}</div>`);
+        }
+
+        quickFilterInput.addEventListener("input", () => {
+            const query = quickFilterInput.value.trim().toLowerCase();
+            dueRows.forEach(row => {
+                row.hidden = query && !(row.dataset.search || "").includes(query);
+            });
+        });
+        selectDueButtons.forEach(button => button.addEventListener("click", () => openDueModal(button.dataset.detailsUrl)));
+        dueCollectionModal.querySelectorAll("[data-close-due-modal]").forEach(element => element.addEventListener("click", closeDueModal));
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !dueCollectionModal.hidden) closeDueModal();
+        });
+    </script>
+</body>
+</html>

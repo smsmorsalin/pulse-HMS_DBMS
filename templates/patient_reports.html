@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathology Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pathology_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/patient_reports.css') }}">
+</head>
+<body class="reports-pathology-page">
+<div class="background-blobs"></div>
+<div class="dashboard">
+    <main class="main-content">
+        <header class="page-header">
+            <div class="reports-heading">
+                <p>AL-JUMIRA HOSPITAL</p>
+                <div class="page-title-row">
+                    <a class="reports-back-btn" href="{{ url_for('dashboard') }}" aria-label="Go back"
+                        onclick="if (window.history.length > 1) { event.preventDefault(); window.history.back(); }">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                    <h1><i class="fas fa-file-waveform"></i> Pathology Reports</h1>
+                    <div class="search-row title-search">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input id="globalSearch" type="search" placeholder="Search patient, UHID, invoice, phone or test" autocomplete="off">
+                        <span id="visibleCount">{{ pathology_cases|length }} patients</span>
+                    </div>
+                </div>
+            </div>
+            <form class="date-filter" method="GET" action="{{ url_for('patient_reports') }}">
+                <label><i class="fas fa-calendar-day"></i> Date</label>
+                <input name="date" type="date" value="{{ selected_date }}">
+                <button type="submit">Show</button>
+                <a href="{{ url_for('patient_reports') }}">Today</a>
+            </form>
+        </header>
+
+        <section class="pathology-workbench reports-workbench">
+            <aside class="glass-panel patients-column">
+                <div class="panel-heading">
+                    <div><small>STEP 1 · {{ date_label }}</small><h2>Daily Patients</h2></div>
+                    <span id="caseCount">{{ pathology_cases|length }}</span>
+                </div>
+                <div class="patient-list" id="patientList">
+                    {% for case in pathology_cases %}
+                    <button type="button" class="patient-card"
+                        data-invoice="{{ case.invoice_no }}"
+                        data-patient="{{ case.patient_name }}"
+                        data-uhid="{{ format_uhid(case.patient_uhid) }}"
+                        data-phone="{{ case.phone }}"
+                        data-age="{{ case.age }} {{ case.age_unit }}"
+                        data-gender="{{ case.gender }}"
+                        data-status="{{ case.sample_status }}"
+                        data-doctor="{{ case.doctor_name }}"
+                        data-delivery="{{ case.delivery_time }}"
+                        data-search="{{ case.patient_name }} {{ format_uhid(case.patient_uhid) }} {{ case.invoice_no }} {{ case.phone }} {{ case.test_names }}">
+                        <span class="avatar">{{ (case.patient_name or 'P')[0]|upper }}</span>
+                        <span class="patient-copy">
+                            <strong>{{ case.patient_name }}</strong>
+                            <small>UHID {{ format_uhid(case.patient_uhid) }}</small>
+                            <small>{{ case.invoice_no }} · {{ case.phone }}</small>
+                        </span>
+                        <span class="result-count">{{ case.completed_count }}/{{ case.test_count }}</span>
+                    </button>
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-folder-open"></i><span>No pathology patients found for this date.</span></div>
+                    {% endfor %}
+                </div>
+            </aside>
+
+            <section class="glass-panel details-column">
+                <div class="panel-heading">
+                    <div><small>STEP 2</small><h2>Patient Details &amp; Tests</h2></div>
+                    <span id="queueCount">{{ pathology_orders|length }}</span>
+                </div>
+                <div class="patient-overview" id="patientOverview">
+                    <span class="overview-icon"><i class="fas fa-user"></i></span>
+                    <div><strong id="overviewName">Select a patient</strong><p id="overviewMeta">Patient information will appear here.</p></div>
+                </div>
+                <div class="detail-grid patient-test-details">
+                    <div><span>Invoice</span><strong id="selectedInvoice">-</strong></div>
+                    <div><span>Phone</span><strong id="selectedPhone">-</strong></div>
+                    <div><span>Age / Gender</span><strong id="selectedAgeGender">-</strong></div>
+                    <div><span>Sample</span><strong id="selectedSampleStatus">-</strong></div>
+                    <div><span>Doctor</span><strong id="selectedDoctor">-</strong></div>
+                    <div><span>Delivery</span><strong id="selectedDelivery">-</strong></div>
+                </div>
+                <div class="test-list reports-test-list" id="testList">
+                    {% for order in pathology_orders %}
+                    <article class="test-row report-test-row" data-invoice="{{ order.invoice_no }}" data-result-state="{{ 'done' if order.result_value else 'open' }}">
+                        <div class="test-pick report-test-copy">
+                            <span class="test-number">{{ loop.index }}</span>
+                            <span class="test-copy">
+                                <strong>{{ order.test_name }}</strong>
+                                <small>{{ order.invoice_no }} · Dr. {{ order.doctor_name or '-' }}</small>
+                            </span>
+                            <span class="result-badge {{ 'done' if order.result_value else 'open' }}">{{ 'Done' if order.result_value else 'Pending' }}</span>
+                        </div>
+                        <a class="report-print-btn {{ 'ready' if order.result_value else 'pending' }}" target="_blank" href="{{ url_for('pathology_result_print', test_item_id=order.item_id) }}">
+                            <i class="fas fa-print"></i> {{ 'Print Report' if order.result_value else 'Print Pending Report' }}
+                        </a>
+                    </article>
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-flask-vial"></i><span>No tests found.</span></div>
+                    {% endfor %}
+                </div>
+            </section>
+        </section>
+    </main>
+</div>
+
+<script>
+const search = document.getElementById('globalSearch');
+const patientCards = [...document.querySelectorAll('.patient-card')];
+const testRows = [...document.querySelectorAll('.test-row')];
+
+function setText(id, value) {
+    document.getElementById(id).textContent = value || '-';
+}
+
+function clearPatientDetails() {
+    patientCards.forEach(card => card.classList.remove('active'));
+    testRows.forEach(row => { row.hidden = true; });
+    setText('queueCount', '0');
+    setText('overviewName', 'Select a patient');
+    setText('overviewMeta', 'Patient information will appear here.');
+    ['selectedInvoice', 'selectedPhone', 'selectedAgeGender', 'selectedSampleStatus', 'selectedDoctor', 'selectedDelivery']
+        .forEach(id => setText(id, '-'));
+}
+
+function selectPatient(card) {
+    patientCards.forEach(item => item.classList.toggle('active', item === card));
+    const invoice = card.dataset.invoice;
+    let shown = 0;
+    testRows.forEach(row => {
+        row.hidden = row.dataset.invoice !== invoice;
+        if (!row.hidden) shown += 1;
+    });
+    setText('queueCount', shown);
+    setText('overviewName', card.dataset.patient);
+    setText('overviewMeta', `UHID ${card.dataset.uhid} · ${card.dataset.invoice}`);
+    setText('selectedInvoice', card.dataset.invoice);
+    setText('selectedPhone', card.dataset.phone);
+    setText('selectedAgeGender', `${card.dataset.age} / ${card.dataset.gender}`);
+    setText('selectedSampleStatus', card.dataset.status);
+    setText('selectedDoctor', card.dataset.doctor);
+    setText('selectedDelivery', card.dataset.delivery);
+}
+
+patientCards.forEach(card => card.addEventListener('click', () => selectPatient(card)));
+search.addEventListener('input', () => {
+    const query = search.value.trim().toLowerCase();
+    let visible = 0;
+    patientCards.forEach(card => {
+        const matches = !query || card.dataset.search.toLowerCase().includes(query);
+        card.hidden = !matches;
+        if (matches) visible += 1;
+    });
+    setText('caseCount', visible);
+    setText('visibleCount', `${visible} patient${visible === 1 ? '' : 's'}`);
+    const selected = patientCards.find(card => card.classList.contains('active') && !card.hidden);
+    const firstVisible = patientCards.find(card => !card.hidden);
+    if (!selected && firstVisible) selectPatient(firstVisible);
+    if (!firstVisible) clearPatientDetails();
+});
+
+if (patientCards.length) selectPatient(patientCards[0]);
+else clearPatientDetails();
+</script>
+</body>
+</html>

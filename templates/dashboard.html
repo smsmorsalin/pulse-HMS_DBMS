@@ -51,6 +51,33 @@
     </li>
     {% endif %}
 
+    {% if can_access_page('patient_reports') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('patient_reports') }}">
+        <i class="fas fa-chart-column"></i>
+        <span>Reports</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('doctor_prescription') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('doctor_prescription') }}">
+        <i class="fas fa-prescription-bottle-medical"></i>
+        <span>Prescription</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('patients_serial') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('patients_serial') }}">
+        <i class="fas fa-tv"></i>
+        <span>Patients Serial</span>
+      </a>
+    </li>
+    {% endif %}
+
     {% if can_access_page('duty_management') %}
     <li>
       <a class="nav-link" href="{{ url_for('duty_management') }}">
@@ -65,15 +92,6 @@
       <a class="nav-link" href="{{ url_for('admissions') }}">
         <i class="fas fa-file-medical"></i>
         <span>Admission</span>
-      </a>
-    </li>
-    {% endif %}
-
-    {% if can_access_page('appointments_info') %}
-    <li>
-      <a class="nav-link" href="{{ url_for('appointments_info') }}">
-        <i class="fa-solid fa-book-medical"></i>
-        <span>Appointments Info</span>
       </a>
     </li>
     {% endif %}
@@ -119,6 +137,24 @@
       <a class="nav-link" href="{{ url_for('daily_expenses') }}">
         <i class="fas fa-wallet"></i>
         <span>Daily Expenses</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('due_collection') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('due_collection_hub') }}">
+        <i class="fas fa-hand-holding-dollar"></i>
+        <span>Due Collection</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% if can_access_page('all_transation') %}
+    <li>
+      <a class="nav-link" href="{{ url_for('all_transation') }}">
+        <i class="fas fa-chart-pie"></i>
+        <span>All Transation</span>
       </a>
     </li>
     {% endif %}

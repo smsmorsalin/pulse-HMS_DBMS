@@ -38,7 +38,7 @@
             <section class="bill-top">
                 <div class="bill-left">
                     <p><strong>Bill No</strong><span>:</span> {{ ticket.bill_no }}</p>
-                    <p><strong>UHID</strong><span>:</span> {{ ticket.uhid }}</p>
+                    <p><strong>UHID</strong><span>:</span> {{ format_uhid(ticket.uhid) }}</p>
                     <p class="bill-highlight"><strong>Ticket No</strong><span>:</span> {{ ticket.ticket_no or '-' }}</p>
                     <p><strong>Serial No</strong><span>:</span> {{ ticket.serial_no or '-' }}</p>
                     <p class="bill-highlight"><strong>Patient</strong><span>:</span> {{ ticket.name or '-' }}</p>
@@ -51,7 +51,7 @@
 
                 <div class="bill-right">
                     <p><strong>Bill Date</strong><span>:</span> {{ format_date_display(ticket.created_at) }}</p>
-                    <p><strong>Payer</strong><span>:</span> CASH</p>
+                    <p><strong>Payer</strong><span>:</span> {{ ('DUE / ' ~ ticket.payment_method) if ticket.due_amount > 0 else ticket.payment_method }}</p>
                     <p class="bill-highlight"><strong>Age/Gender</strong><span>:</span> {{ ticket.age or '-' }} {{ ticket.age_unit or '' }} / {{ ticket.gender or '-' }}</p>
                     <p class="bill-highlight"><strong>Blood Group</strong><span>:</span> {{ ticket.blood_group or '-' }}</p>
                     <p><strong>Doctor</strong><span>:</span> {{ ticket.doctor_name or '-' }}</p>
@@ -84,7 +84,7 @@
                         <tr>
                             <td>1</td>
                             <td>Doctor Consultation Fee{% if ticket.doctor_name %} - {{ ticket.doctor_name }}{% endif %}</td>
-                            <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
+                            <td>{{ "%.2f"|format(ticket.original_doctor_fee or ticket.doctor_fee or 0) }}</td>
                             <td>{{ "%.2f"|format(ticket.doctor_fee or 0) }}</td>
                         </tr>
                     </tbody>
@@ -94,19 +94,19 @@
             <section class="summary-section">
                 <div class="payment-note">
                     <div class="paid-box">
-                        <strong>PAID</strong>
-                        <span>Thank You</span>
+                        <strong>{{ 'DUE' if ticket.due_amount > 0 else 'PAID' }}</strong>
+                        <span>{{ 'Please Pay' if ticket.due_amount > 0 else 'Thank You' }}</span>
                     </div>
-                    <p>Cash: {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p>{{ ticket.payment_method or 'Cash' }}: {{ "%.2f"|format(ticket.paid_amount or 0) }}</p>
                 </div>
 
                 <div class="amount-summary">
-                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
+                    <p><strong>Total Amount</strong><span>:</span> {{ "%.2f"|format(ticket.original_doctor_fee or ticket.doctor_fee or 0) }}</p>
                     <p><strong>Gross Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
-                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(ticket.doctor_fee or 0) }}</p>
-                    <p><strong>Discount</strong><span>:</span> 0.00</p>
+                    <p><strong>Paid Amount</strong><span>:</span> {{ "%.2f"|format(ticket.paid_amount or 0) }}</p>
+                    <p><strong>Discount</strong><span>:</span> {{ "%.2f"|format(ticket.discount_amount or 0) }}</p>
                     <p><strong>Refund Amount</strong><span>:</span> 0.00</p>
-                    <p><strong>Balance</strong><span>:</span> 0.00</p>
+                    <p><strong>Due Amount</strong><span>:</span> {{ "%.2f"|format(ticket.due_amount or 0) }}</p>
                 </div>
             </section>
 
@@ -173,15 +173,15 @@
             const pad = function (value) {
                 return String(value).padStart(2, "0");
             };
-            timestampElement.textContent = [
-                pad(now.getDate()),
-                pad(now.getMonth() + 1),
-                now.getFullYear()
-            ].join("-") + " " + [
-                pad(now.getHours()),
-                pad(now.getMinutes()),
-                pad(now.getSeconds())
-            ].join(":");
+            timestampElement.textContent = now.toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }) + " " + now.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true
+            });
         }
 
         function getCode128Codes(value) {

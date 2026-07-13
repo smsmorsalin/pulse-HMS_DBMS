@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription | {{ doctor.name|default('Doctor') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor_prescription_print.css') }}">
+</head>
+<body>
+    <div class="print-toolbar no-print">
+        <button type="button" onclick="window.close()">Close</button>
+        <button type="button" class="primary" onclick="window.print()">Print Prescription</button>
+    </div>
+
+    <main class="prescription-pad">
+        <header class="pad-header">
+            <section class="hospital-identity">
+                <img src="{{ url_for('assets', filename='logo.png') }}" alt="AL-JUMIRA HOSPITAL logo">
+                <div>
+                    <h1>আল-জুমিরা হাসপাতাল</h1>
+                    <h2>AL-JUMIRA HOSPITAL</h2>
+                    <p>একটি মা-শিশু এবং বন্ধ্যাত্ব স্বাস্থ্যসেবা কেন্দ্র</p>
+                    <strong>২৪ ঘণ্টা চিকিৎসা সেবায় নিয়োজিত</strong>
+                </div>
+            </section>
+
+            <section class="doctor-identity">
+                <h1>{{ doctor.name|default('Doctor Name') }}</h1>
+                <p>
+                    {% if doctor.designation %}{{ doctor.designation }}{% endif %}
+                    {% if doctor.specialization %}{% if doctor.designation %}, {% endif %}{{ doctor.specialization }}{% endif %}
+                </p>
+                {% if doctor.department %}<p>{{ doctor.department }}</p>{% endif %}
+                {% if doctor.license_number %}<p>Registration No: {{ doctor.license_number }}</p>{% endif %}
+                <strong>
+                    {% if doctor.room_number %}Room: {{ doctor.room_number }} · {% endif %}AL-JUMIRA HOSPITAL
+                </strong>
+            </section>
+        </header>
+
+        <section class="patient-band">
+            <div class="patient-name"><span>Patient Name:</span><strong>{{ patient.name|default('') }}</strong></div>
+            <div><span>Age:</span><strong>{{ patient.age|default('') }} {{ patient.age_unit|default('') }}</strong></div>
+            <div><span>Sex:</span><strong>{{ patient.gender|default('') }}</strong></div>
+            <div><span>Date:</span><strong>{{ format_date_display(prescription_date|default(today|default(''))) }}</strong></div>
+        </section>
+
+        <section class="reference-row">
+            <span>UHID: <strong>{{ format_uhid(patient.id|default(None)) }}</strong></span>
+            <span>Ticket: <strong>{{ patient.daily_patient_id|default('-') }}</strong></span>
+            <span>Phone: <strong>{{ patient.phone|default('-') }}</strong></span>
+            <span>Prescription: <strong>{{ prescription_no|default('-') }}</strong></span>
+        </section>
+
+        <section class="pad-body">
+            <aside class="clinical-column">
+                <div class="clinical-block complaints-block">
+                    <h3>C/C</h3>
+                    <p>{{ clinical.complaints|default('') }}</p>
+                </div>
+
+                <div class="clinical-block history-block">
+                    <h3>O/H</h3>
+                    <div class="history-lines">
+                        <span>MF -</span><span>Para -</span><span>Gravida -</span>
+                        <span>M. R/Abortion -</span><span>ALC -</span><span>MOD -</span>
+                    </div>
+                </div>
+
+                <div class="clinical-block menstrual-block">
+                    <h3>M/H -</h3>
+                    <div class="history-lines compact">
+                        <span>MC</span><span>MP</span><span>MF</span><span>LMP</span><span>EDD</span>
+                    </div>
+                </div>
+
+                <div class="clinical-block examination-block">
+                    <h3>O/E</h3>
+                    <div class="history-lines compact">
+                        <span>Anemia -</span><span>Jaundice -</span>
+                        <span>Pulse - {{ vitals.pulse|default('') }}</span>
+                        <span>BP - {{ vitals.bp|default('') }}</span>
+                        <span>Temp - {{ vitals.temperature|default('') }}</span>
+                        <span>Weight - {{ vitals.weight|default('') }}</span>
+                        <span>CVS -</span><span>Lungs -</span><span>HTN -</span><span>DM -</span>
+                    </div>
+                    {% if clinical.findings %}<p class="entered-notes">{{ clinical.findings }}</p>{% endif %}
+                </div>
+
+                {% if clinical.diagnosis %}
+                <div class="clinical-block diagnosis-block">
+                    <h3>Diagnosis</h3>
+                    <p>{{ clinical.diagnosis }}</p>
+                </div>
+                {% endif %}
+
+                {% if clinical.investigations %}
+                <div class="clinical-block investigation-block">
+                    <h3>Investigation</h3>
+                    <p>{{ clinical.investigations }}</p>
+                </div>
+                {% endif %}
+
+                <div class="clinical-block advice-block">
+                    <h3>Advice</h3>
+                    <p>{{ clinical.advice|default('') }}</p>
+                    {% if clinical.followup %}<strong>Follow-up: {{ clinical.followup }}</strong>{% endif %}
+                </div>
+            </aside>
+
+            <section class="medicine-column">
+                <img class="watermark" src="{{ url_for('assets', filename='logo.png') }}" alt="">
+                <div class="rx-symbol">Rx</div>
+                <ol class="medicine-list">
+                    {% for medicine in medicines %}
+                    <li>
+                        <strong>{{ medicine.name }}</strong>
+                        <div class="medicine-direction">
+                            <span>{{ medicine.dose or '' }}</span>
+                            <span>{{ medicine.duration or '' }}</span>
+                            <span>{{ medicine.instruction or '' }}</span>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="blank-medicine"><strong></strong><div></div></li>
+                    {% endfor %}
+                </ol>
+                <div class="doctor-signature">
+                    <span>Doctor's Signature</span>
+                    <strong>{{ doctor.name|default('') }}</strong>
+                </div>
+            </section>
+        </section>
+
+        <footer class="pad-footer">
+            <div class="address-line">● নতুন বাস টার্মিনাল, মিল্ক ভিটা রোড, দেওলা, টাঙ্গাইল</div>
+            <div class="contact-line">☎ 01719-866977, 01623-142929</div>
+            <div class="footer-stripe"><span>✚</span></div>
+        </footer>
+    </main>
+
+    <script>
+        window.addEventListener("load", function () {
+            if (new URLSearchParams(window.location.search).get("auto_print") === "1") {
+                window.setTimeout(function () { window.print(); }, 350);
+            }
+        });
+    </script>
+</body>
+</html>

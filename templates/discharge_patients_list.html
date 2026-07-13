@@ -6,7 +6,7 @@
     <title>Discharge Patients List</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_patients_list.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_patients_list.css') }}?v=2">
 </head>
 <body>
     <div class="background-blobs"></div>
@@ -65,65 +65,87 @@
                     {% for record in records %}
                         <article
                             class="record-card"
-                            data-search="{{ (record.patient_uhid ~ ' ' ~ record.name ~ ' ' ~ record.phone ~ ' ' ~ record.bed_no ~ ' ' ~ record.bill_no ~ ' ' ~ record.doctor_name ~ ' ' ~ record.guardian_name)|lower }}"
+                            data-search="{{ (format_uhid(record.patient_uhid) ~ ' ' ~ record.patient_uhid ~ ' ' ~ record.name ~ ' ' ~ record.phone ~ ' ' ~ record.bed_no ~ ' ' ~ record.bill_no ~ ' ' ~ record.doctor_name ~ ' ' ~ record.guardian_name)|lower }}"
                         >
                             <div class="record-main">
                                 <div>
-                                    <span class="eyebrow">UHID {{ record.patient_uhid or '-' }} | Admission #{{ record.admission_id }}</span>
+                                    <span class="eyebrow">UHID {{ format_uhid(record.patient_uhid) }} | Admission #{{ record.admission_id }}</span>
                                     <h2>{{ record.name }}</h2>
                                     <p>{{ record.phone or '-' }} | {{ record.age or '-' }} {{ record.age_unit or '' }} | {{ record.gender or '-' }}</p>
                                 </div>
 
                                 <div class="record-actions">
                                     <span class="status-pill">Discharged</span>
+                                    <button
+                                        type="button"
+                                        class="view-details-btn"
+                                        data-details-template="discharge-details-{{ record.admission_id }}"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+
+                            <template id="discharge-details-{{ record.admission_id }}">
+                                <div class="modal-patient-summary">
+                                    <div><span>Patient</span><strong>{{ record.name }}</strong></div>
+                                    <div><span>UHID</span><strong>{{ format_uhid(record.patient_uhid) }}</strong></div>
+                                    <div><span>Admission ID</span><strong>#{{ record.admission_id }}</strong></div>
+                                    <div><span>Phone</span><strong>{{ record.phone or '-' }}</strong></div>
+                                    <div><span>Age / Gender</span><strong>{{ record.age or '-' }} {{ record.age_unit or '' }} / {{ record.gender or '-' }}</strong></div>
+                                    <div><span>Status</span><strong class="discharged-text">Discharged</strong></div>
+                                </div>
+
+                                <div class="detail-grid">
+                                    <div><span>Admission Date</span><strong>{{ format_date_display(record.admission_date) }}</strong></div>
+                                    <div><span>Discharged At</span><strong>{{ format_date_display(record.discharged_at) }}</strong></div>
+                                    <div><span>Bed No</span><strong>{{ record.bed_no or '-' }}</strong></div>
+                                    <div><span>Doctor</span><strong>{{ record.doctor_name or '-' }}</strong></div>
+                                    <div><span>Guardian</span><strong>{{ record.guardian_name or '-' }}{% if record.guardian_relation %} ({{ record.guardian_relation }}){% endif %}</strong></div>
+                                    <div><span>Reason</span><strong>{{ record.reason or '-' }}</strong></div>
+                                    <div class="wide"><span>Address</span><strong>{{ record.address or '-' }}</strong></div>
+                                    <div class="wide"><span>Notes</span><strong>{{ record.notes or '-' }}</strong></div>
+                                </div>
+
+                                <section class="bill-card">
+                                    <div class="bill-title">
+                                        <div>
+                                            <span>Bill Information</span>
+                                            <strong>{{ record.bill_no or 'Not saved yet' }}</strong>
+                                        </div>
+                                        <small>Last saved: {{ format_date_display(record.bill_updated_at) if record.bill_updated_at else '-' }}</small>
+                                    </div>
+
+                                    <div class="charges-grid">
+                                        <div><span>Stay Days</span><strong>{{ record.stay_days or '-' }}</strong></div>
+                                        <div><span>Bed</span><strong>{{ "%.2f"|format(record.bed_charge or 0) }}</strong></div>
+                                        <div><span>Doctor</span><strong>{{ "%.2f"|format(record.doctor_fee or 0) }}</strong></div>
+                                        <div><span>Medicine</span><strong>{{ "%.2f"|format(record.medicine_charge or 0) }}</strong></div>
+                                        <div><span>Pathology</span><strong>{{ "%.2f"|format(record.pathology_charge or 0) }}</strong></div>
+                                        <div><span>Service</span><strong>{{ "%.2f"|format(record.service_charge or 0) }}</strong></div>
+                                        <div><span>Other</span><strong>{{ "%.2f"|format(record.other_charge or 0) }}</strong></div>
+                                        <div><span>Total</span><strong>{{ "%.2f"|format(record.total_amount or 0) }}</strong></div>
+                                        <div><span>Discount</span><strong>{{ "%.2f"|format(record.discount or 0) }}</strong></div>
+                                        <div><span>Gross</span><strong>{{ "%.2f"|format(record.gross_amount or 0) }}</strong></div>
+                                        <div><span>Paid</span><strong>{{ "%.2f"|format(record.paid_amount or 0) }}</strong></div>
+                                        <div><span>Due</span><strong>{{ "%.2f"|format(record.due_amount or 0) }}</strong></div>
+                                    </div>
+
+                                    <p class="remarks"><strong>Remarks:</strong> {{ record.remarks or '-' }}</p>
+                                </section>
+
+                                <div class="modal-footer-actions">
                                     {% if record.print_url %}
                                         <a class="print-link" href="{{ record.print_url }}" target="_blank" rel="noopener">
                                             <i class="fas fa-print"></i>
                                             Print Bill
                                         </a>
                                     {% else %}
-                                        <span class="missing-bill">No bill saved</span>
+                                        <span class="missing-bill"><i class="fas fa-circle-info"></i> No bill saved</span>
                                     {% endif %}
                                 </div>
-                            </div>
-
-                            <div class="detail-grid">
-                                <div><span>Admission Date</span><strong>{{ format_date_display(record.admission_date) }}</strong></div>
-                                <div><span>Discharged At</span><strong>{{ format_date_display(record.discharged_at) }}</strong></div>
-                                <div><span>Bed No</span><strong>{{ record.bed_no or '-' }}</strong></div>
-                                <div><span>Doctor</span><strong>{{ record.doctor_name or '-' }}</strong></div>
-                                <div><span>Guardian</span><strong>{{ record.guardian_name or '-' }}{% if record.guardian_relation %} ({{ record.guardian_relation }}){% endif %}</strong></div>
-                                <div><span>Reason</span><strong>{{ record.reason or '-' }}</strong></div>
-                                <div class="wide"><span>Address</span><strong>{{ record.address or '-' }}</strong></div>
-                                <div class="wide"><span>Notes</span><strong>{{ record.notes or '-' }}</strong></div>
-                            </div>
-
-                            <section class="bill-card">
-                                <div class="bill-title">
-                                    <div>
-                                        <span>Bill Information</span>
-                                        <strong>{{ record.bill_no or 'Not saved yet' }}</strong>
-                                    </div>
-                                    <small>Last saved: {{ format_date_display(record.bill_updated_at) if record.bill_updated_at else '-' }}</small>
-                                </div>
-
-                                <div class="charges-grid">
-                                    <div><span>Stay Days</span><strong>{{ record.stay_days or '-' }}</strong></div>
-                                    <div><span>Bed</span><strong>{{ "%.2f"|format(record.bed_charge or 0) }}</strong></div>
-                                    <div><span>Doctor</span><strong>{{ "%.2f"|format(record.doctor_fee or 0) }}</strong></div>
-                                    <div><span>Medicine</span><strong>{{ "%.2f"|format(record.medicine_charge or 0) }}</strong></div>
-                                    <div><span>Pathology</span><strong>{{ "%.2f"|format(record.pathology_charge or 0) }}</strong></div>
-                                    <div><span>Service</span><strong>{{ "%.2f"|format(record.service_charge or 0) }}</strong></div>
-                                    <div><span>Other</span><strong>{{ "%.2f"|format(record.other_charge or 0) }}</strong></div>
-                                    <div><span>Total</span><strong>{{ "%.2f"|format(record.total_amount or 0) }}</strong></div>
-                                    <div><span>Discount</span><strong>{{ "%.2f"|format(record.discount or 0) }}</strong></div>
-                                    <div><span>Gross</span><strong>{{ "%.2f"|format(record.gross_amount or 0) }}</strong></div>
-                                    <div><span>Paid</span><strong>{{ "%.2f"|format(record.paid_amount or 0) }}</strong></div>
-                                    <div><span>Due</span><strong>{{ "%.2f"|format(record.due_amount or 0) }}</strong></div>
-                                </div>
-
-                                <p class="remarks"><strong>Remarks:</strong> {{ record.remarks or '-' }}</p>
-                            </section>
+                            </template>
                         </article>
                     {% endfor %}
                 {% else %}
@@ -133,9 +155,46 @@
         </section>
     </main>
 
+    <div class="discharge-details-modal" id="dischargeDetailsModal" hidden aria-hidden="true">
+        <div class="discharge-details-backdrop" data-close-discharge-details></div>
+        <section class="discharge-details-dialog" role="dialog" aria-modal="true" aria-labelledby="dischargeDetailsTitle">
+            <header class="discharge-details-header">
+                <div>
+                    <span>Discharge Record</span>
+                    <h2 id="dischargeDetailsTitle">Patient Discharge Details</h2>
+                </div>
+                <button type="button" class="discharge-details-close" data-close-discharge-details aria-label="Close discharge details">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </header>
+            <div class="discharge-details-content" id="dischargeDetailsContent"></div>
+        </section>
+    </div>
+
     <script>
         const dischargeSearch = document.getElementById("dischargeSearch");
         const recordCards = document.querySelectorAll(".record-card");
+        const dischargeDetailsModal = document.getElementById("dischargeDetailsModal");
+        const dischargeDetailsContent = document.getElementById("dischargeDetailsContent");
+        const dischargeDetailsClose = dischargeDetailsModal.querySelector(".discharge-details-close");
+
+        function openDischargeDetails(templateId) {
+            const detailsTemplate = document.getElementById(templateId);
+            if (!detailsTemplate) return;
+
+            dischargeDetailsContent.replaceChildren(detailsTemplate.content.cloneNode(true));
+            dischargeDetailsModal.hidden = false;
+            dischargeDetailsModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("discharge-modal-open");
+            dischargeDetailsClose.focus();
+        }
+
+        function closeDischargeDetails() {
+            dischargeDetailsModal.hidden = true;
+            dischargeDetailsModal.setAttribute("aria-hidden", "true");
+            dischargeDetailsContent.replaceChildren();
+            document.body.classList.remove("discharge-modal-open");
+        }
 
         if (dischargeSearch) {
             dischargeSearch.addEventListener("input", function () {
@@ -145,6 +204,24 @@
                 });
             });
         }
+
+        document.addEventListener("click", function (event) {
+            const detailsButton = event.target.closest(".view-details-btn");
+            if (detailsButton) {
+                openDischargeDetails(detailsButton.dataset.detailsTemplate);
+                return;
+            }
+
+            if (event.target.closest("[data-close-discharge-details]")) {
+                closeDischargeDetails();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !dischargeDetailsModal.hidden) {
+                closeDischargeDetails();
+            }
+        });
     </script>
 </body>
 </html>

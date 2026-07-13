@@ -118,6 +118,42 @@ body {
     background: linear-gradient(135deg, #0f766e, #22c55e);
 }
 
+.header-bill-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.due-collection-btn {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 1px solid rgba(250, 204, 21, 0.42);
+    border-radius: 14px;
+    color: #fef9c3;
+    background: rgba(202, 138, 4, 0.2);
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bill-message {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: -10px 0 18px;
+    padding: 12px 15px;
+    border: 1px solid rgba(248, 113, 113, 0.38);
+    border-radius: 14px;
+    color: #fecdd3;
+    background: rgba(190, 24, 93, 0.18);
+}
+
 .back-link:hover,
 .print-btn:hover {
     transform: translateY(-1px);
@@ -296,6 +332,11 @@ body {
     background: rgba(255, 255, 255, 0.08);
     font-size: 14px;
     transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.money-input::placeholder {
+    color: rgba(255, 255, 255, 0.38);
+    opacity: 1;
 }
 
 .form-grid textarea {
@@ -528,7 +569,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     .back-link,
     .print-btn,
-    .bill-panel-print-btn {
+    .bill-panel-print-btn,
+    .due-collection-btn,
+    .header-bill-actions {
         width: 100%;
     }
 

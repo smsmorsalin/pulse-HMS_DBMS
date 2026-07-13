@@ -379,6 +379,115 @@ body {
 	display: block;
 }
 
+body.patient-modal-open {
+	overflow: hidden;
+}
+
+.patient-details-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: grid;
+	place-items: center;
+	padding: 18px;
+}
+
+.patient-details-modal[hidden] {
+	display: none;
+}
+
+.patient-details-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(3, 7, 25, 0.8);
+	backdrop-filter: blur(8px);
+}
+
+.patient-details-dialog {
+	position: relative;
+	width: min(1180px, 97vw);
+	max-height: 92vh;
+	overflow: auto;
+	border: 1px solid rgba(118, 201, 255, 0.34);
+	border-radius: 22px;
+	background: linear-gradient(145deg, #101943, #192a68 58%, #321b4d);
+	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
+}
+
+.patient-details-modal-header {
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 18px 22px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(16, 25, 67, 0.97);
+}
+
+.patient-details-modal-header span {
+	color: #9af0bb;
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.patient-details-modal-header h2 {
+	margin-top: 3px;
+	font-size: 22px;
+}
+
+.patient-details-close {
+	flex: 0 0 auto;
+	width: 42px;
+	height: 42px;
+	border: 1px solid rgba(255, 91, 128, 0.45);
+	border-radius: 50%;
+	color: #fff;
+	background: rgba(255, 30, 86, 0.18);
+	font: inherit;
+	font-size: 20px;
+	cursor: pointer;
+	transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.patient-details-close:hover {
+	background: #ff1e56;
+	transform: rotate(90deg);
+}
+
+.patient-details-modal-content {
+	padding: 18px 20px 24px;
+}
+
+.patient-details-modal-content .details-summary {
+	grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+}
+
+@media (max-width: 760px) {
+	.patient-details-modal {
+		padding: 8px;
+	}
+
+	.patient-details-dialog {
+		width: 100%;
+		max-height: 96vh;
+		border-radius: 16px;
+	}
+
+	.patient-details-modal-header,
+	.patient-details-modal-content {
+		padding-left: 14px;
+		padding-right: 14px;
+	}
+
+	.patient-details-modal-content .details-summary {
+		grid-template-columns: 1fr;
+	}
+}
+
 .details-summary {
 	display: grid;
 	grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);

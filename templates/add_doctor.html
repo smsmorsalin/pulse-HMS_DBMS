@@ -94,6 +94,11 @@
                         <input type="text" id="designation" name="designation" value="{{ (doctor[5] or '') if doctor else '' }}" required placeholder=" ">
                         <label for="designation">Designation</label>
                     </div>
+                    <div class="input-group">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <input type="number" id="consultation_fee" name="consultation_fee" value="{{ doctor[11] if doctor else '' }}" required min="0" step="0.01" placeholder=" ">
+                        <label for="consultation_fee">Doctor Fee (Tk)</label>
+                    </div>
                 </div>
 
                 <button type="submit" class="submit-btn">{{ 'Update Doctor' if mode == 'edit' else 'Add Doctor' }}</button>

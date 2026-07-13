@@ -94,11 +94,11 @@
                             data-has-due="{{ 'true' if record.due_total > 0 else 'false' }}"
                             data-has-bill="{{ 'true' if record.bill_count > 0 else 'false' }}"
                             data-has-service="{{ 'true' if record.service_names else 'false' }}"
-                            data-search="{{ (patient.id ~ ' ' ~ patient.daily_patient_id ~ ' ' ~ patient.name ~ ' ' ~ patient.phone ~ ' ' ~ patient.address ~ ' ' ~ patient.blood_group ~ ' ' ~ patient.gender ~ ' ' ~ record.service_names|join(' ') ~ ' ' ~ record.last_service_name)|lower }}"
+                            data-search="{{ (format_uhid(patient.id) ~ ' ' ~ patient.id ~ ' ' ~ patient.daily_patient_id ~ ' ' ~ patient.name ~ ' ' ~ patient.phone ~ ' ' ~ patient.address ~ ' ' ~ patient.blood_group ~ ' ' ~ patient.gender ~ ' ' ~ record.service_names|join(' ') ~ ' ' ~ record.last_service_name)|lower }}"
                         >
                             <div class="patient-main">
                                 <div class="patient-identity">
-                                    <span class="uhid">UHID {{ patient.id }}</span>
+                                    <span class="uhid">UHID {{ format_uhid(patient.id) }}</span>
                                     <h3>{{ patient.name }}</h3>
                                     <p>{{ patient.age }} {{ patient.age_unit }} | {{ patient.gender }} | {{ patient.phone }}</p>
                                 </div>
@@ -128,7 +128,7 @@
                                         <span>Test Bill</span>
                                     </a>
                                     <button type="button" class="details-toggle" aria-expanded="false">
-                                        <i class="fas fa-chevron-down"></i>
+                                        <i class="fas fa-eye"></i>
                                         <span>View Details</span>
                                     </button>
                                 </div>
@@ -145,7 +145,7 @@
                                             <div class="info-group">
                                                 <h5>Identity</h5>
                                                 <div class="info-grid">
-                                                    <div><span>UHID</span><strong>{{ patient.id }}</strong></div>
+                                                    <div><span>UHID</span><strong>{{ format_uhid(patient.id) }}</strong></div>
                                                     <div><span>Ticket No</span><strong>{{ patient.daily_patient_id or '-' }}</strong></div>
                                                     <div><span>Status</span><strong>{{ patient.patient_status or '-' }}</strong></div>
                                                     <div><span>Registered</span><strong>{{ format_date_display(patient.created_at) }}</strong></div>
@@ -363,12 +363,52 @@
         </section>
     </main>
 
+    <div class="patient-details-modal" id="patientDetailsModal" hidden aria-hidden="true">
+        <div class="patient-details-backdrop" data-close-patient-details></div>
+        <section class="patient-details-dialog" role="dialog" aria-modal="true" aria-labelledby="patientDetailsTitle">
+            <header class="patient-details-modal-header">
+                <div>
+                    <span>Patient Information</span>
+                    <h2 id="patientDetailsTitle">Patient Details</h2>
+                </div>
+                <button type="button" class="patient-details-close" data-close-patient-details aria-label="Close patient details">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </header>
+            <div class="patient-details-modal-content" id="patientDetailsModalContent"></div>
+        </section>
+    </div>
+
     <script>
         const patientInfoSearchInput = document.getElementById("patientInfoSearchInput");
         const patientInfoRecords = document.getElementById("patientInfoRecords");
         const visiblePatientCount = document.getElementById("visiblePatientCount");
         const filterButtons = document.querySelectorAll(".filter-chip");
+        const patientDetailsModal = document.getElementById("patientDetailsModal");
+        const patientDetailsModalContent = document.getElementById("patientDetailsModalContent");
+        const patientDetailsTitle = document.getElementById("patientDetailsTitle");
+        const patientDetailsClose = patientDetailsModal.querySelector(".patient-details-close");
         let activeFilter = "all";
+
+        function closePatientDetails() {
+            patientDetailsModal.hidden = true;
+            patientDetailsModal.setAttribute("aria-hidden", "true");
+            patientDetailsModalContent.innerHTML = "";
+            document.body.classList.remove("patient-modal-open");
+        }
+
+        function openPatientDetails(card) {
+            const source = card.querySelector(".patient-details");
+            const patientName = card.querySelector(".patient-identity h3");
+            if (!source) return;
+
+            patientDetailsTitle.textContent = patientName ? `${patientName.textContent.trim()} · Details` : "Patient Details";
+            patientDetailsModalContent.innerHTML = source.innerHTML;
+            patientDetailsModal.hidden = false;
+            patientDetailsModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("patient-modal-open");
+            patientDetailsClose.focus();
+        }
 
         function patientMatchesFilter(card) {
             if (activeFilter === "due") return card.dataset.hasDue === "true";
@@ -405,10 +445,20 @@
         patientInfoRecords.querySelectorAll(".details-toggle").forEach(function (button) {
             button.addEventListener("click", function () {
                 const card = button.closest(".patient-card");
-                const isOpen = card.classList.toggle("details-open");
-                button.setAttribute("aria-expanded", isOpen ? "true" : "false");
-                button.querySelector("span").textContent = isOpen ? "Hide Details" : "View Details";
+                openPatientDetails(card);
             });
+        });
+
+        patientDetailsModal.addEventListener("click", function (event) {
+            if (event.target.closest("[data-close-patient-details]")) {
+                closePatientDetails();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !patientDetailsModal.hidden) {
+                closePatientDetails();
+            }
         });
 
         if (patientInfoSearchInput) {
