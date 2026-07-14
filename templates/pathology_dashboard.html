@@ -40,14 +40,17 @@
                 </div>
                 <div class="patient-list" id="patientList">
                     {% for case in patient_cases %}
-                    <button type="button" class="patient-card" data-invoice="{{ case.invoice_no }}" data-status="{{ case.sample_status }}">
-                        <span class="avatar">{{ (case.patient_name or 'P')[0]|upper }}</span>
+                    <button type="button" class="patient-card" data-invoice="{{ case.invoice_no }}" data-status="{{ case.sample_status }}"
+                        data-search="{{ case.patient_name }} {{ format_uhid(case.patient_uhid) }} {{ case.invoice_no }} {{ case.phone }} {{ case.test_names }}">
+                        <span class="avatar patient-serial" title="Daily patient serial">{{ case.daily_serial }}</span>
                         <span class="patient-copy">
                             <strong>{{ case.patient_name }}</strong>
-                            <small>UHID {{ format_uhid(case.patient_uhid) }}</small>
-                            <small>{{ case.invoice_no }} · {{ case.phone }}</small>
                         </span>
-                        <span class="result-count">{{ case.completed_count }}/{{ case.test_count }}</span>
+                        {% set report_ready = case.test_count > 0 and case.completed_count >= case.test_count %}
+                        <span class="patient-report-status {{ 'ready' if report_ready else 'pending' }}">
+                            <i class="fas {{ 'fa-check' if report_ready else 'fa-clock' }}"></i>
+                            {{ 'Ready' if report_ready else 'Pending' }}
+                        </span>
                     </button>
                     {% else %}
                     <div class="empty-state"><i class="fas fa-folder-open"></i><span>No pathology patients found.</span></div>
@@ -74,7 +77,8 @@
                 </div>
                 <div class="test-list" id="testList">
                     {% for order in pathology_orders %}
-                    <article class="test-row" data-invoice="{{ order.invoice_no }}" data-status="{{ order.sample_status }}" data-result-state="{{ 'done' if order.result_value else 'open' }}">
+                    <article class="test-row" data-invoice="{{ order.invoice_no }}" data-status="{{ order.sample_status }}" data-result-state="{{ 'done' if order.result_value else 'open' }}"
+                        data-search="{{ order.patient_name }} {{ format_uhid(order.patient_uhid) }} {{ order.invoice_no }} {{ order.phone }} {{ order.doctor_name }} {{ order.test_name }}">
                         <button type="button" class="test-pick"
                             data-item-id="{{ order.item_id }}" data-action="/pathology_dashboard/result/{{ order.item_id }}"
                             data-patient="{{ order.patient_name }}" data-phone="{{ order.phone }}"
@@ -85,8 +89,8 @@
                             data-result="{{ order.result_value }}" data-note="{{ order.result_note }}"
                             data-updated-at="{{ format_date_display(order.result_updated_at) if order.result_updated_at else '' }}"
                             data-updated-by="{{ order.result_updated_by }}">
-                            <span class="test-number">{{ loop.index }}</span>
-                            <span class="test-copy"><strong>{{ order.test_name }}</strong><small>{{ order.invoice_no }} · Dr. {{ order.doctor_name or '-' }}</small></span>
+                            <span class="test-number">{{ order.patient_test_serial }}</span>
+                            <span class="test-copy"><strong>{{ order.test_name }}</strong></span>
                             <span class="result-badge {{ 'done' if order.result_value else 'open' }}">{{ 'Done' if order.result_value else 'Enter' }}</span>
                         </button>
                     </article>
@@ -168,7 +172,7 @@ function selectPatient(card) {
     text('queueCount', shown);
     const copy = card.querySelector('.patient-copy');
     text('overviewName', copy.querySelector('strong').textContent);
-    text('overviewMeta', `${copy.querySelectorAll('small')[0].textContent} · ${copy.querySelectorAll('small')[1].textContent}`);
+    text('overviewMeta', `${shown} test${shown === 1 ? '' : 's'} selected for this patient.`);
     const first = testRows.find(row => !row.hidden)?.querySelector('.test-pick');
     if (first) selectTest(first, false);
 }
@@ -176,8 +180,8 @@ patientCards.forEach(card => card.addEventListener('click', () => selectPatient(
 testButtons.forEach(button => button.addEventListener('click', () => selectTest(button)));
 search.addEventListener('input', () => {
     const query = search.value.trim().toLowerCase(); let visible = 0;
-    patientCards.forEach(card => { const show = card.textContent.toLowerCase().includes(query); card.hidden = !show; if (show) visible++; });
-    testRows.forEach(row => row.hidden = query ? !row.textContent.toLowerCase().includes(query) : false);
+    patientCards.forEach(card => { const show = (card.dataset.search || card.textContent).toLowerCase().includes(query); card.hidden = !show; if (show) visible++; });
+    testRows.forEach(row => row.hidden = query ? !(row.dataset.search || row.textContent).toLowerCase().includes(query) : false);
     text('caseCount', visible); text('visibleCount', `${visible} patients`);
 });
 resultValue.addEventListener('input', updateResultState);

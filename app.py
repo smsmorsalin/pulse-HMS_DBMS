@@ -3056,21 +3056,21 @@ def pathology_dashboard():
             tbi.result_value,
             tbi.result_note,
             tbi.result_updated_at,
-            tbi.result_updated_by
+            tbi.result_updated_by,
+            (
+                SELECT COUNT(*)
+                FROM test_bill_items earlier_item
+                WHERE earlier_item.test_bill_id = tbi.test_bill_id
+                  AND earlier_item.id <= tbi.id
+            ) AS patient_test_serial
         FROM test_bills tb
         JOIN patients p ON p.id = tb.patient_id
         JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
         {date_where}
         ORDER BY
-            CASE WHEN NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NULL THEN 1 ELSE 2 END,
-            CASE tb.sample_status
-                WHEN 'Pending' THEN 1
-                WHEN 'Collected' THEN 2
-                WHEN 'Delivered' THEN 3
-                ELSE 4
-            END,
-            datetime(tb.created_at) DESC,
-            tb.id DESC,
+            datetime(tb.created_at) ASC,
+            tb.id ASC,
+            patient_test_serial ASC,
             tbi.id ASC
         '''.format(date_where=date_where),
         query_params
@@ -3096,21 +3096,28 @@ def pathology_dashboard():
             tb.referred_by,
             COUNT(tbi.id) AS test_count,
             SUM(CASE WHEN NULLIF(TRIM(COALESCE(tbi.result_value, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS completed_count,
-            GROUP_CONCAT(tbi.test_name, ', ') AS test_names
+            GROUP_CONCAT(tbi.test_name, ', ') AS test_names,
+            (
+                SELECT COUNT(*)
+                FROM test_bills earlier_tb
+                WHERE date(earlier_tb.created_at) = date(tb.created_at)
+                  AND (
+                      datetime(earlier_tb.created_at) < datetime(tb.created_at)
+                      OR (
+                          datetime(earlier_tb.created_at) = datetime(tb.created_at)
+                          AND earlier_tb.id <= tb.id
+                      )
+                  )
+            ) AS daily_serial
         FROM test_bills tb
         JOIN patients p ON p.id = tb.patient_id
         JOIN test_bill_items tbi ON tbi.test_bill_id = tb.id
         {date_where}
         GROUP BY tb.id
         ORDER BY
-            CASE tb.sample_status
-                WHEN 'Pending' THEN 1
-                WHEN 'Collected' THEN 2
-                WHEN 'Delivered' THEN 3
-                ELSE 4
-            END,
-            datetime(tb.created_at) DESC,
-            tb.id DESC
+            daily_serial ASC,
+            datetime(tb.created_at) ASC,
+            tb.id ASC
         '''.format(date_where=date_where),
         query_params
     ).fetchall()
@@ -3134,6 +3141,7 @@ def pathology_dashboard():
             'test_count': int(row[15] or 0),
             'completed_count': int(row[16] or 0),
             'test_names': row[17] or '',
+            'daily_serial': row[18],
         }
         for row in patient_cases
     ]
@@ -3273,6 +3281,7 @@ def pathology_dashboard():
             'result_note': row[19] or '',
             'result_updated_at': row[20] or '',
             'result_updated_by': row[21] or '',
+            'patient_test_serial': row[22],
         }
         for row in pathology_orders
     ]
@@ -8812,7 +8821,19 @@ def generate_test_invoice_no():
 def get_recent_test_bills(bill_date, keyword=''):
     recent_query = '''
         SELECT tb.id, tb.invoice_no, p.name, p.phone, tb.total_amount, tb.due_amount, tb.created_at,
-               COALESCE(p.source_patient_id, p.id) AS patient_uhid, p.daily_patient_id,
+               COALESCE(p.source_patient_id, p.id) AS patient_uhid,
+               (
+                   SELECT COUNT(*)
+                   FROM test_bills earlier_tb
+                   WHERE date(earlier_tb.created_at) = date(tb.created_at)
+                     AND (
+                         datetime(earlier_tb.created_at) < datetime(tb.created_at)
+                         OR (
+                             datetime(earlier_tb.created_at) = datetime(tb.created_at)
+                             AND earlier_tb.id <= tb.id
+                         )
+                     )
+               ) AS daily_serial,
                tbr.return_no,
                CASE
                    WHEN tb.created_by = 'root_admin' THEN 'admin'
@@ -8844,7 +8865,7 @@ def get_recent_test_bills(bill_date, keyword=''):
         recent_params.extend([f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%', f'%{keyword}%'])
 
     recent_query += '''
-        ORDER BY datetime(tb.created_at) DESC, tb.id DESC
+        ORDER BY daily_serial ASC, datetime(tb.created_at) ASC, tb.id ASC
     '''
 
     return db.execute(recent_query, recent_params).fetchall()

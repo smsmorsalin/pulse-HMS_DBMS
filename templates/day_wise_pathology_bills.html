@@ -26,6 +26,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Serial</th>
                     <th>Invoice</th>
                     <th>Patient</th>
                     <th>Phone</th>
@@ -41,6 +42,7 @@
                 {% if recent_bills %}
                     {% for bill in recent_bills %}
                         <tr>
+                            <td><span class="daily-serial-badge">{{ bill[8] or '-' }}</span></td>
                             <td>{{ bill[1] }}</td>
                             <td>{{ bill[2] }}</td>
                             <td>{{ bill[3] }}</td>
@@ -60,12 +62,6 @@
                             </td>
                             <td>
                                 <div class="bill-row-actions">
-                                    {% if bill[5] and bill[5] > 0 %}
-                                        <form class="quick-due-form" method="POST" action="{{ url_for('collect_test_due', test_bill_id=bill[0]) }}">
-                                            <input type="hidden" name="collection_amount" value="{{ '%.2f'|format(bill[5] or 0) }}">
-                                            <button type="submit" class="due-link">Due</button>
-                                        </form>
-                                    {% endif %}
                                     <a class="print-link" href="{{ url_for('test_bill_print', test_bill_id=bill[0]) }}">
                                         <i class="fas fa-print"></i>
                                         Print
@@ -87,7 +83,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="9" class="empty-cell">No pathology bills found.</td>
+                        <td colspan="10" class="empty-cell">No pathology bills found.</td>
                     </tr>
                 {% endif %}
             </tbody>

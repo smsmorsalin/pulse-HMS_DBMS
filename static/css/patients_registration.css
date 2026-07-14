@@ -111,7 +111,7 @@ body {
 ========================= */
 .form-container{
     width: 100%;
-    max-width: 1040px;
+    max-width: 1180px;
     margin: 0 auto;
     position: relative;
     z-index: 1;
@@ -121,7 +121,7 @@ body {
     backdrop-filter: blur(22px);
     background: rgba(255, 255, 255, 0.07);
     border-radius: 24px;
-    padding: 40px;
+    padding: clamp(24px, 2.5vw, 34px);
     box-shadow: 0 10px 40px rgba(0,0,0,0.4);
     border: 1px solid rgba(255,255,255,0.12);
 }
@@ -131,7 +131,7 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .patient-title-actions {
@@ -345,13 +345,13 @@ body {
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 22px 28px;
+    gap: 18px 24px;
 }
 
 .form-column {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 18px;
     min-width: 0;
 }
 
@@ -723,7 +723,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: grid;
     grid-template-columns: minmax(150px, 0.8fr) minmax(130px, 0.7fr) minmax(190px, 0.9fr);
     gap: 14px;
-    margin-bottom: 25px;
+    margin-bottom: 18px;
 }
 
 .patient-id-card {
@@ -939,7 +939,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .main-content{
     flex: 1;
-    padding: 0 30px 30px 30px;
+    min-width: 0;
+    padding: 0 24px 30px;
     display: flex;
     justify-content: center;
     align-items: flex-start;

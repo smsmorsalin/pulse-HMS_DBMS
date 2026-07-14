@@ -19,17 +19,25 @@
         <section class="panel due-hero">
             <div class="hero-title">
                 <p class="panel-kicker">Pathology Accounts</p>
-                <h1><i class="fas fa-hand-holding-dollar"></i> Test Due Collection</h1>
+                <div class="hero-heading-row">
+                    <button
+                        type="button"
+                        class="back-btn title-back-btn"
+                        id="historyBackButton"
+                        data-fallback-url="{{ url_for('tests') }}"
+                        aria-label="Go back to the previous page"
+                    >
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <h1><i class="fas fa-hand-holding-dollar"></i> Test Due Collection</h1>
+                </div>
                 <p>Collect pending pathology dues with quick patient lookup and receipt printing.</p>
             </div>
             <div class="hero-actions">
                 <a class="soft-link" href="{{ url_for('test_billing') }}">
                     <i class="fas fa-file-medical-alt"></i>
                     New Test Bill
-                </a>
-                <a class="back-btn" href="{{ url_for('tests') }}">
-                    <i class="fas fa-arrow-left"></i>
-                    Tests
                 </a>
             </div>
         </section>
@@ -238,6 +246,15 @@
         const dueModalBody = document.getElementById("dueModalBody");
         const dueSettlementTemplate = document.getElementById("dueSettlementTemplate");
         const selectDueButtons = document.querySelectorAll(".select-due-btn");
+        const historyBackButton = document.getElementById("historyBackButton");
+
+        historyBackButton.addEventListener("click", () => {
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+            window.location.href = historyBackButton.dataset.fallbackUrl;
+        });
 
         function escapeHtml(value) {
             return String(value ?? "").replace(/[&<>"']/g, character => ({

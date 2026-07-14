@@ -95,3 +95,64 @@
 }
 @media(max-width:850px) { .page-title-row .title-search { width:100%; max-width:none; flex-basis:100%; } .patient-test-details { grid-template-columns:repeat(2,minmax(0,1fr)); } .details-column .test-list { height:auto; max-height:420px; } }
 @media(max-width:520px) { .page-title-row { align-items:flex-start; flex-direction:column; } .patient-test-details { grid-template-columns:1fr; } }
+
+.patient-serial {
+    border:1px solid #60a5fa;
+    color:#fff;
+    background:#2563eb;
+    box-shadow:0 4px 12px rgba(37,99,235,.35);
+    font-size:14px;
+    letter-spacing:0;
+}
+
+/* Compact pathology queue rows so more daily patients remain visible. */
+.patients-column .patient-list {
+    padding:6px;
+}
+
+.patients-column .patient-card {
+    grid-template-columns:34px minmax(0,1fr) auto;
+    gap:8px;
+    min-height:44px;
+    margin-bottom:4px;
+    padding:6px 8px;
+    border-radius:10px;
+}
+
+.patients-column .patient-serial {
+    width:32px;
+    height:32px;
+    border-radius:8px;
+    font-size:13px;
+}
+
+.patients-column .patient-copy strong {
+    font-size:14px;
+}
+
+.patient-report-status {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-width:66px;
+    min-height:26px;
+    padding:3px 7px;
+    border:1px solid transparent;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:800;
+    white-space:nowrap;
+}
+
+.patient-report-status.ready {
+    border-color:rgba(134,239,172,.65);
+    color:#052e16;
+    background:#86efac;
+}
+
+.patient-report-status.pending {
+    border-color:rgba(253,230,138,.55);
+    color:#422006;
+    background:#fde68a;
+}
