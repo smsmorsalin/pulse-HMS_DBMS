@@ -1047,3 +1047,213 @@ tbody tr:last-child td {
 		width: 100%;
 	}
 }
+
+/* Patient Information modal: calm, high-contrast reading palette. */
+.patient-details-dialog {
+	width: min(1320px, 97vw);
+	border-color: #475569;
+	background: #0f172a;
+	color: #f8fafc;
+}
+
+.patient-details-modal-header {
+	padding: 20px 24px;
+	border-bottom-color: #334155;
+	background: #111827;
+}
+
+.patient-details-modal-header span {
+	color: #93c5fd;
+	font-size: 14px;
+	letter-spacing: 0.05em;
+}
+
+.patient-details-modal-header h2 {
+	font-size: 28px;
+	line-height: 1.25;
+}
+
+.patient-details-modal-content {
+	padding: 22px 24px 28px;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+.patient-details-modal-content .details-summary {
+	grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.75fr);
+	gap: 16px;
+}
+
+.patient-details-modal-content .detail-panel,
+.patient-details-modal-content .history-box,
+.patient-details-modal-content .profile-panel,
+.patient-details-modal-content .billing-panel,
+.patient-details-modal-content .history-box.visits-history,
+.patient-details-modal-content .history-box.pathology-history,
+.patient-details-modal-content .history-box.service-history {
+	border-color: #334155;
+	background: #172033;
+	box-shadow: none;
+}
+
+.patient-details-modal-content .detail-panel,
+.patient-details-modal-content .history-box {
+	padding: 16px;
+}
+
+.patient-details-modal-content .detail-panel-head,
+.patient-details-modal-content .profile-panel .detail-panel-head,
+.patient-details-modal-content .billing-panel .detail-panel-head,
+.patient-details-modal-content .visits-history .detail-panel-head,
+.patient-details-modal-content .pathology-history .detail-panel-head,
+.patient-details-modal-content .service-history .detail-panel-head {
+	padding: 11px 13px;
+	border-color: #475569;
+	background: #1e293b;
+}
+
+.patient-details-modal-content .detail-panel-head i,
+.patient-details-modal-content .profile-panel .detail-panel-head i,
+.patient-details-modal-content .billing-panel .detail-panel-head i,
+.patient-details-modal-content .visits-history .detail-panel-head i,
+.patient-details-modal-content .pathology-history .detail-panel-head i,
+.patient-details-modal-content .service-history .detail-panel-head i {
+	width: 34px;
+	height: 34px;
+	color: #fff;
+	background: #2563eb;
+}
+
+.patient-details-modal-content .detail-panel-head h4,
+.patient-details-modal-content .profile-panel .detail-panel-head h4,
+.patient-details-modal-content .billing-panel .detail-panel-head h4,
+.patient-details-modal-content .visits-history .detail-panel-head h4,
+.patient-details-modal-content .pathology-history .detail-panel-head h4,
+.patient-details-modal-content .service-history .detail-panel-head h4 {
+	color: #f8fafc;
+	font-size: 18px;
+}
+
+.patient-details-modal-content .detail-panel-head span {
+	color: #cbd5e1;
+	font-size: 14px;
+}
+
+.patient-details-modal-content .info-group h5 {
+	margin-bottom: 10px;
+	color: #93c5fd;
+	font-size: 14px;
+	letter-spacing: 0.04em;
+}
+
+.patient-details-modal-content .info-group + .info-group {
+	border-top-color: #334155;
+}
+
+.patient-details-modal-content .info-grid {
+	gap: 10px;
+}
+
+.patient-details-modal-content .info-grid div,
+.patient-details-modal-content .billing-summary-grid div,
+.patient-details-modal-content .history-field {
+	border: 1px solid #334155;
+	background: #0b1220;
+}
+
+.patient-details-modal-content .info-grid div {
+	min-height: 74px;
+	padding: 12px;
+}
+
+.patient-details-modal-content .info-grid span,
+.patient-details-modal-content .billing-summary-grid span,
+.patient-details-modal-content .history-field span {
+	color: #cbd5e1;
+	font-size: 13px;
+	letter-spacing: 0.025em;
+}
+
+.patient-details-modal-content .info-grid strong,
+.patient-details-modal-content .history-field strong {
+	margin-top: 6px;
+	color: #fff;
+	font-size: 16px;
+	line-height: 1.45;
+}
+
+.patient-details-modal-content .billing-summary-grid {
+	gap: 10px;
+}
+
+.patient-details-modal-content .billing-summary-grid div {
+	min-height: 76px;
+	padding: 12px;
+}
+
+.patient-details-modal-content .billing-summary-grid strong {
+	color: #fff;
+	font-size: 19px;
+}
+
+.patient-details-modal-content .billing-summary-grid .due-summary,
+.patient-details-modal-content .due-amount {
+	border-color: #f59e0b;
+	background: #422006;
+}
+
+.patient-details-modal-content .history-columns {
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.patient-details-modal-content .history-list {
+	gap: 10px;
+}
+
+.patient-details-modal-content .history-row {
+	padding: 11px;
+	border-color: #334155;
+	background: #111827;
+}
+
+.patient-details-modal-content .edit-profile-action {
+	border-color: #475569;
+	background: #0b1220;
+}
+
+.patient-details-modal-content .edit-profile-btn,
+.patient-details-modal-content .details-bill-btn,
+.patient-details-modal-content .section-print-btn,
+.patient-details-modal-content .print-link {
+	color: #fff;
+	background: #2563eb;
+	font-size: 14px;
+}
+
+.patient-details-modal-content .no-history {
+	border-color: #475569;
+	background: #111827;
+	color: #cbd5e1;
+	font-size: 15px;
+}
+
+@media (max-width: 780px) {
+	.patient-details-modal-header h2 {
+		font-size: 23px;
+	}
+
+	.patient-details-modal-content {
+		padding: 16px 14px 20px;
+	}
+
+	.patient-details-modal-content .details-summary,
+	.patient-details-modal-content .info-grid,
+	.patient-details-modal-content .medical-grid,
+	.patient-details-modal-content .contact-grid,
+	.patient-details-modal-content .history-row,
+	.patient-details-modal-content .history-row.bill-row,
+	.patient-details-modal-content .history-box:not(.pathology-history) .history-row.bill-row {
+		grid-template-columns: 1fr;
+	}
+}
