@@ -514,6 +514,11 @@ textarea {
 	box-shadow: 0 0 0 3px rgba(30, 60, 250, 0.18);
 }
 
+.stock-form input::placeholder {
+	color: rgba(255, 255, 255, 0.3);
+	opacity: 1;
+}
+
 .stock-form select option {
 	color: #0b1a3a;
 }

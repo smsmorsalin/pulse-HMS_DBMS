@@ -165,7 +165,11 @@
 					</label>
 					<label>
 						Box Quantity
-						<input type="number" name="box_quantity" id="boxQuantity" min="1" placeholder="10" required>
+						<input type="number" name="box_quantity" id="boxQuantity" min="0" placeholder="0">
+					</label>
+					<label>
+						Strip Quantity
+						<input type="number" name="strip_quantity" id="stripQuantity" min="0" placeholder="0">
 					</label>
 					<label>
 						Strips per Box
@@ -288,17 +292,19 @@ const chevron = document.querySelector('.chevron');
 const medicineToggle = document.getElementById('medicineToggle');
 const medicineMenu = document.getElementById('medicineMenu');
 const boxQuantity = document.getElementById('boxQuantity');
+const stripQuantity = document.getElementById('stripQuantity');
 const stripsPerBox = document.getElementById('stripsPerBox');
 const totalStrips = document.getElementById('totalStrips');
 
 function updateTotalStrips() {
 	if (!totalStrips) return;
 	const boxes = Math.max(parseInt(boxQuantity && boxQuantity.value, 10) || 0, 0);
-	const strips = Math.max(parseInt(stripsPerBox && stripsPerBox.value, 10) || 0, 0);
-	totalStrips.value = boxes * strips;
+	const looseStrips = Math.max(parseInt(stripQuantity && stripQuantity.value, 10) || 0, 0);
+	const stripsInBox = Math.max(parseInt(stripsPerBox && stripsPerBox.value, 10) || 0, 0);
+	totalStrips.value = (boxes * stripsInBox) + looseStrips;
 }
 
-[boxQuantity, stripsPerBox].forEach(function (input) {
+[boxQuantity, stripQuantity, stripsPerBox].forEach(function (input) {
 	if (input) input.addEventListener('input', updateTotalStrips);
 });
 updateTotalStrips();

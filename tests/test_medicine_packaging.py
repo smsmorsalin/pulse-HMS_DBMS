@@ -25,6 +25,7 @@ class MedicinePackagingFlowTest(unittest.TestCase):
                 strip_price REAL,
                 box_price REAL,
                 box_quantity INTEGER,
+                strip_quantity INTEGER NOT NULL DEFAULT 0,
                 supplier TEXT,
                 purchase_amount REAL NOT NULL DEFAULT 0,
                 transaction_date TEXT NOT NULL,
@@ -148,11 +149,12 @@ class MedicinePackagingFlowTest(unittest.TestCase):
         self.add_example_stock()
         row = self.db.execute(
             '''
-            SELECT unit_type, quantity, strips_per_box, strip_price, box_price, box_quantity, supplier
+            SELECT unit_type, quantity, strips_per_box, strip_price, box_price,
+                   box_quantity, strip_quantity, supplier
             FROM medicine_transactions
             '''
         ).fetchone()
-        self.assertEqual(row, ('strip', 30, 3, 580.0, 1700.0, 10, 'Example Supplier'))
+        self.assertEqual(row, ('strip', 30, 3, 580.0, 1700.0, 10, 0, 'Example Supplier'))
 
     def test_stock_and_sales_pages_render_packaging_controls(self):
         self.add_example_stock()
@@ -160,6 +162,7 @@ class MedicinePackagingFlowTest(unittest.TestCase):
         sales_page = self.client.get('/medicine_sales')
         self.assertEqual(stock_page.status_code, 200)
         self.assertIn(b'Total Strips (Auto)', stock_page.data)
+        self.assertIn(b'name="strip_quantity"', stock_page.data)
         self.assertIn(b'type="search"', stock_page.data)
         self.assertIn(b'list="medicineNameOptions"', stock_page.data)
         self.assertIn(b'list="supplierOptions"', stock_page.data)
@@ -174,6 +177,31 @@ class MedicinePackagingFlowTest(unittest.TestCase):
         self.assertNotIn(b'smart-qty-empty', sales_page.data)
         self.assertLess(sales_page.data.find(b'0 Strip'), sales_page.data.find(b'0 Box'))
         self.assertIn(b'data-box-price="1700.00"', sales_page.data)
+
+    def test_box_and_loose_strip_quantities_are_combined_in_stock(self):
+        response = self.client.post(
+            '/medicine_stock_dashboard',
+            data={
+                'medicine_name': 'Mixed Stock Medicine',
+                'supplier': 'Example Supplier',
+                'batch_no': 'MIX-1',
+                'transaction_type': 'in',
+                'box_quantity': '2',
+                'strip_quantity': '4',
+                'strips_per_box': '3',
+                'strip_price': '100',
+                'box_price': '280',
+                'purchase_amount': '700',
+                'transaction_date': '2026-07-18',
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        row = self.db.execute(
+            'SELECT quantity, box_quantity, strip_quantity, strips_per_box '
+            'FROM medicine_transactions WHERE medicine_name = ?',
+            ('Mixed Stock Medicine',),
+        ).fetchone()
+        self.assertEqual(row, (10, 2, 4, 3))
 
     def test_stock_in_medicine_button_shows_only_that_medicine_history(self):
         self.add_example_stock()

@@ -134,21 +134,21 @@
 		<div class="payment-panel-head"><div><p>Purchase Register</p><h3>Medicine Buy History</h3></div><span>{{ purchase_history|length }} records</span></div>
 		<div class="payment-table-wrap">
 			<table>
-				<thead><tr><th>Date</th><th>Supplier</th><th>Medicine</th><th>Batch</th><th>Boxes</th><th>Strips / Box</th><th>Total Buy Amount</th><th>Action</th></tr></thead>
+				<thead><tr><th>Date</th><th>Supplier</th><th>Medicine</th><th>Batch</th><th>Boxes</th><th>Loose Strips</th><th>Strips / Box</th><th>Total Buy Amount</th><th>Action</th></tr></thead>
 				<tbody>
 				{% for item in purchase_history %}
 					<tr>
-						<td>{{ format_date_display(item.transaction_date) }}</td><td><strong>{{ item.supplier }}</strong></td><td>{{ item.medicine_name }}</td><td>{{ item.batch_no }}</td><td>{{ item.box_quantity }}</td><td>{{ item.strips_per_box }}</td><td><strong>Tk {{ '%.2f'|format(item.purchase_amount) }}</strong></td>
+						<td>{{ format_date_display(item.transaction_date) }}</td><td><strong>{{ item.supplier }}</strong></td><td>{{ item.medicine_name }}</td><td>{{ item.batch_no }}</td><td>{{ item.box_quantity }}</td><td>{{ item.strip_quantity }}</td><td>{{ item.strips_per_box }}</td><td><strong>Tk {{ '%.2f'|format(item.purchase_amount) }}</strong></td>
 						<td><button type="button" class="history-edit-btn purchase-edit-btn"
 							data-id="{{ item.id }}" data-medicine="{{ item.medicine_name }}"
 							data-supplier="{{ item.supplier }}" data-batch="{{ item.batch_no }}"
-							data-boxes="{{ item.box_quantity }}" data-strips="{{ item.strips_per_box }}"
+							data-boxes="{{ item.box_quantity }}" data-loose-strips="{{ item.strip_quantity }}" data-strips="{{ item.strips_per_box }}"
 							data-strip-price="{{ '%.2f'|format(item.strip_price) }}"
 							data-box-price="{{ '%.2f'|format(item.box_price) }}"
 							data-purchase="{{ '%.2f'|format(item.purchase_amount) }}"
 							data-date="{{ item.transaction_date }}"><i class="fas fa-pen"></i> Edit</button></td>
 					</tr>
-				{% else %}<tr><td colspan="8" class="empty-state">No purchase amounts recorded.</td></tr>{% endfor %}
+				{% else %}<tr><td colspan="9" class="empty-state">No purchase amounts recorded.</td></tr>{% endfor %}
 				</tbody>
 			</table>
 		</div>
@@ -199,7 +199,10 @@
 					<input type="date" name="transaction_date" id="editPurchaseDate" required>
 				</label>
 				<label>Box Quantity
-					<input type="number" name="box_quantity" id="editPurchaseBoxes" min="1" step="1" required>
+					<input type="number" name="box_quantity" id="editPurchaseBoxes" min="0" step="1" required>
+				</label>
+				<label>Strip Quantity
+					<input type="number" name="strip_quantity" id="editPurchaseLooseStrips" min="0" step="1" required>
 				</label>
 				<label>Strips Per Box
 					<input type="number" name="strips_per_box" id="editPurchaseStrips" min="1" step="1" required>
@@ -331,6 +334,7 @@ document.querySelectorAll('.purchase-edit-btn').forEach(function (button) {
 		document.getElementById('editPurchaseSupplier').value = button.dataset.supplier;
 		document.getElementById('editPurchaseBatch').value = button.dataset.batch;
 		document.getElementById('editPurchaseBoxes').value = button.dataset.boxes;
+		document.getElementById('editPurchaseLooseStrips').value = button.dataset.looseStrips;
 		document.getElementById('editPurchaseStrips').value = button.dataset.strips;
 		document.getElementById('editPurchaseStripPrice').value = button.dataset.stripPrice;
 		document.getElementById('editPurchaseBoxPrice').value = button.dataset.boxPrice;

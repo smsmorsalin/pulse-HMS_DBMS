@@ -961,6 +961,7 @@ def init_db():
                 strip_price REAL,
                 box_price REAL,
                 box_quantity INTEGER,
+                strip_quantity INTEGER NOT NULL DEFAULT 0,
                 supplier TEXT,
                 purchase_amount REAL NOT NULL DEFAULT 0,
                 transaction_date TEXT NOT NULL,
@@ -983,6 +984,11 @@ def init_db():
             cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN box_price REAL")
         if 'box_quantity' not in medicine_transactions_columns:
             cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN box_quantity INTEGER")
+        if 'strip_quantity' not in medicine_transactions_columns:
+            cursor.execute(
+                "ALTER TABLE medicine_transactions "
+                "ADD COLUMN strip_quantity INTEGER NOT NULL DEFAULT 0"
+            )
         if 'supplier' not in medicine_transactions_columns:
             cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN supplier TEXT")
         if 'purchase_amount' not in medicine_transactions_columns:
@@ -3567,6 +3573,7 @@ def medicine_stock_dashboard():
         batch_no = request.form.get('batch_no', '').strip()
         transaction_type = request.form.get('transaction_type', '').strip()
         box_quantity = request.form.get('box_quantity', '').strip()
+        strip_quantity = request.form.get('strip_quantity', '').strip()
         strips_per_box = request.form.get('strips_per_box', '').strip()
         strip_price = request.form.get('strip_price', '').strip()
         box_price = request.form.get('box_price', '').strip()
@@ -3575,14 +3582,16 @@ def medicine_stock_dashboard():
         note = request.form.get('note', '').strip()
 
         try:
-            box_quantity_value = int(box_quantity)
+            box_quantity_value = int(box_quantity or 0)
+            strip_quantity_value = int(strip_quantity or 0)
             strips_per_box_value = int(strips_per_box)
             strip_price_value = float(strip_price)
             box_price_value = float(box_price)
             purchase_amount_value = float(purchase_amount)
-            total_strips = box_quantity_value * strips_per_box_value
+            total_strips = (box_quantity_value * strips_per_box_value) + strip_quantity_value
             if (
-                not medicine_name or not supplier or transaction_type != 'in' or box_quantity_value <= 0
+                not medicine_name or not supplier or transaction_type != 'in'
+                or box_quantity_value < 0 or strip_quantity_value < 0 or total_strips <= 0
                 or strips_per_box_value <= 0 or strip_price_value <= 0 or box_price_value <= 0
                 or purchase_amount_value <= 0
             ):
@@ -3592,9 +3601,10 @@ def medicine_stock_dashboard():
                 '''
                 INSERT INTO medicine_transactions (
                     medicine_name, batch_no, unit_type, transaction_type, quantity, price,
-                    strips_per_box, strip_price, box_price, box_quantity, supplier, purchase_amount,
+                    strips_per_box, strip_price, box_price, box_quantity, strip_quantity,
+                    supplier, purchase_amount,
                     transaction_date, note, created_by, created_at
-                ) VALUES (?, ?, 'strip', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, 'strip', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     medicine_name,
@@ -3606,6 +3616,7 @@ def medicine_stock_dashboard():
                     strip_price_value,
                     box_price_value,
                     box_quantity_value,
+                    strip_quantity_value,
                     supplier,
                     purchase_amount_value,
                     transaction_date,
@@ -3618,7 +3629,10 @@ def medicine_stock_dashboard():
             return redirect(url_for('medicine_stock_dashboard'))
         except (ValueError, TypeError):
             if not error:
-                error = 'Please enter the medicine, supplier, box details, selling prices, and total buy amount.'
+                error = (
+                    'Please enter the medicine, supplier, packaging details, at least one box '
+                    'or loose strip, selling prices, and total buy amount.'
+                )
 
     summary_rows = get_medicine_balance_rows()
     existing_medicine_names = [
@@ -3966,14 +3980,15 @@ def medicine_payments():
     purchase_history = [
         {
             'id': row[0], 'medicine_name': row[1], 'supplier': row[2],
-            'box_quantity': int(row[3] or 0), 'strips_per_box': int(row[4] or 1),
-            'strip_price': float(row[5] or 0), 'box_price': float(row[6] or 0),
-            'purchase_amount': float(row[7] or 0), 'transaction_date': row[8],
-            'batch_no': row[9] or 'General',
+            'box_quantity': int(row[3] or 0), 'strip_quantity': int(row[4] or 0),
+            'strips_per_box': int(row[5] or 1),
+            'strip_price': float(row[6] or 0), 'box_price': float(row[7] or 0),
+            'purchase_amount': float(row[8] or 0), 'transaction_date': row[9],
+            'batch_no': row[10] or 'General',
         }
         for row in db.execute(
             '''
-            SELECT id, medicine_name, supplier, box_quantity, strips_per_box,
+            SELECT id, medicine_name, supplier, box_quantity, strip_quantity, strips_per_box,
                    strip_price, box_price, purchase_amount, transaction_date, batch_no
             FROM medicine_transactions
             WHERE transaction_type = 'in'
@@ -4026,7 +4041,8 @@ def edit_medicine_purchase(transaction_id):
     batch_no = request.form.get('batch_no', '').strip() or 'General'
     transaction_date = request.form.get('transaction_date', '').strip()
     try:
-        box_quantity = int(request.form.get('box_quantity', '').strip())
+        box_quantity = int(request.form.get('box_quantity', '').strip() or 0)
+        strip_quantity = int(request.form.get('strip_quantity', '').strip() or 0)
         strips_per_box = int(request.form.get('strips_per_box', '').strip())
         strip_price = float(request.form.get('strip_price', '').strip())
         box_price = float(request.form.get('box_price', '').strip())
@@ -4036,12 +4052,13 @@ def edit_medicine_purchase(transaction_id):
 
     if (
         not medicine_name or not supplier or not transaction_date
-        or box_quantity <= 0 or strips_per_box <= 0
+        or box_quantity < 0 or strip_quantity < 0 or strips_per_box <= 0
+        or (box_quantity * strips_per_box) + strip_quantity <= 0
         or strip_price <= 0 or box_price <= 0 or purchase_amount <= 0
     ):
         return redirect(url_for('medicine_payments', message='Complete every purchase field with a valid value.'))
 
-    new_quantity = box_quantity * strips_per_box
+    new_quantity = (box_quantity * strips_per_box) + strip_quantity
     old_medicine, old_batch, old_quantity, old_supplier, old_purchase_amount = purchase
 
     def stock_balance(name, batch):
@@ -4114,12 +4131,12 @@ def edit_medicine_purchase(transaction_id):
         UPDATE medicine_transactions
         SET medicine_name = ?, batch_no = ?, unit_type = 'strip', quantity = ?, price = ?,
             strips_per_box = ?, strip_price = ?, box_price = ?, box_quantity = ?,
-            supplier = ?, purchase_amount = ?, transaction_date = ?
+            strip_quantity = ?, supplier = ?, purchase_amount = ?, transaction_date = ?
         WHERE id = ?
         ''',
         (
             medicine_name, batch_no, new_quantity, strip_price, strips_per_box,
-            strip_price, box_price, box_quantity, supplier, purchase_amount,
+            strip_price, box_price, box_quantity, strip_quantity, supplier, purchase_amount,
             transaction_date, transaction_id
         )
     )
