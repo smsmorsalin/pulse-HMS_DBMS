@@ -5,15 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Sales</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=27">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
 </head>
-<body data-cart-column-count="{{ 7 if admin else 6 }}">
+<body data-cart-column-count="{{ 8 if admin else 7 }}">
 <aside class="sidebar">
 	<div class="brand">
 		<a href="{{ url_for('dashboard') }}" class="brand-link">
 			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
-			<span class="brand-text">AJH</span>
+			<span class="brand-text" aria-label="AL-JUMIRA HOSPITAL">
+				<span>AL-JUMIRA</span>
+				<span>HOSPITAL</span>
+			</span>
 		</a>
 	</div>
 
@@ -42,6 +46,9 @@
 				{% endif %}
 				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				{% endif %}
+				{% if can_access_page('medicine_payments') or can_access_page('medicine_sales') or can_access_page('medicine_stock_dashboard') %}
+				<a class="sub-link" href="{{ url_for('medicine_payments') }}"><i class="fas fa-money-check-dollar"></i> Payments</a>
 				{% endif %}
 			</div>
 		</li>
@@ -137,54 +144,82 @@
 
 			<div class="table-wrap">
 				<table id="cartTable">
+					<colgroup>
+						<col class="cart-col-medicine">
+						<col class="cart-col-stock">
+						<col class="cart-col-unit">
+						<col class="cart-col-qty">
+						<col class="cart-col-price">
+						<col class="cart-col-line-total">
+						{% if admin %}<col class="cart-col-action">{% endif %}
+						<col class="cart-col-discount">
+					</colgroup>
 					<thead>
 						<tr>
 							<th>Medicine</th>
 							<th>Stock</th>
+							<th>Sale Unit</th>
 							<th>Qty</th>
 							<th>Unit Price</th>
-							<th>Discount</th>
 							<th>Line Total</th>
 							{% if admin %}
 							<th>Action</th>
 							{% endif %}
+							<th class="discount-column">Discount</th>
 						</tr>
 					</thead>
 					<tbody>
 						{% for item in cart_items %}
-						<tr class="cart-row" data-product="{{ item.product }}" data-batch="{{ item.batch }}" data-unit="{{ item.unit|lower }}" data-available="{{ item.available }}" data-price="{{ '%.2f'|format(item.price) }}">
+						<tr class="cart-row" data-product="{{ item.product }}" data-batch="{{ item.batch }}" data-unit="{{ item.unit|lower }}" data-available="{{ item.available }}" data-price="{{ '%.2f'|format(item.price) }}" data-strip-price="{{ '%.2f'|format(item.strip_price) }}" data-box-price="{{ '%.2f'|format(item.box_price) }}" data-strips-per-box="{{ item.strips_per_box }}" data-can-sell-strip="{{ '1' if item.can_sell_strip else '0' }}" data-can-sell-box="{{ '1' if item.can_sell_box else '0' }}" data-strip-qty="0" data-box-qty="0">
 							<td>
 								<span class="product-name"><i class="fas fa-capsules"></i>{{ item.product }}</span>
-								<span class="product-meta">Pharmacy sale item</span>
+								<span class="product-meta">Batch {{ item.batch }}</span>
 							</td>
 							<td>
 								<span class="stock-pill {% if item.available <= 0 %}out{% elif item.available <= 10 %}low{% endif %}">
 									<i class="fas fa-boxes-stacked"></i>
-									{{ item.available }} left
+									{{ item.available }} strips
+									{% if item.can_sell_box %}<small>({{ item.available_boxes }} full boxes)</small>{% endif %}
 								</span>
 							</td>
 							<td>
-								<div class="qty-control">
-									<button class="qty-minus" type="button" aria-label="Decrease quantity">-</button>
-									<input class="qty-input" type="number" min="0" value="{{ item.qty }}">
-									<button class="qty-plus" type="button" aria-label="Increase quantity">+</button>
+								<div class="quick-unit-controls">
+									{% if item.can_sell_strip %}
+									<div class="quick-unit-stepper">
+										<span>Strip</span>
+										<button type="button" data-quick-action="minus" data-sale-unit="strip" aria-label="Remove one strip">−</button>
+										<button type="button" data-quick-action="plus" data-sale-unit="strip" aria-label="Add one strip">+</button>
+									</div>
+									{% endif %}
+									{% if item.can_sell_box %}
+									<div class="quick-unit-stepper box">
+										<span>Box</span>
+										<button type="button" data-quick-action="minus" data-sale-unit="box" aria-label="Remove one box">−</button>
+										<button type="button" data-quick-action="plus" data-sale-unit="box" aria-label="Add one box">+</button>
+									</div>
+									{% endif %}
 								</div>
 							</td>
-							<td class="money">Tk {{ '%.2f'|format(item.price) }}</td>
-							<td><input class="line-discount" type="number" min="0" step="0.01" value="{{ '%.2f'|format(item.discount) }}"></td>
+							<td>
+								<div class="smart-qty-display">
+									{% if item.can_sell_strip %}<span class="smart-strip-qty">0 Strip</span>{% endif %}
+									{% if item.can_sell_box %}<span class="smart-box-qty">0 Box</span>{% endif %}
+								</div>
+							</td>
+							<td class="money unit-price">Tk {{ '%.2f'|format(item.strip_price) }}{% if item.can_sell_box %}<small>Tk {{ '%.2f'|format(item.box_price) }} / box</small>{% endif %}</td>
 							<td class="row-total">Tk {{ '%.2f'|format(item.total) }}</td>
 							{% if admin %}
 							<td>
 								<div class="row-actions">
-									<button class="add-line-btn" type="button" aria-label="Add medicine quantity"><i class="fas fa-plus"></i> Add</button>
 									<button class="remove-btn" type="button" aria-label="Remove item"><i class="fas fa-trash"></i></button>
 								</div>
 							</td>
 							{% endif %}
+							<td class="discount-column"><input class="line-discount" type="number" min="0" step="0.01" value="{{ '%.2f'|format(item.discount) }}"></td>
 						</tr>
 						{% else %}
 						<tr class="empty-row">
-							<td colspan="{{ 7 if admin else 6 }}">
+							<td colspan="{{ 8 if admin else 7 }}">
 								<div class="cart-empty-message">
 									<i class="fas fa-magnifying-glass-plus"></i>
 									<span>No medicines in cart. Search by medicine name or batch number to start a sale.</span>
@@ -232,17 +267,8 @@
 					<input class="summary-input" id="changeAmount" type="text" placeholder="Change" readonly>
 				</div>
 
-				<div class="summary-field full tax-field">
-					<label for="taxType">Tax</label>
-					<div class="split-input">
-						<select class="summary-select" id="taxType">
-							<option value="none" selected>No Tax</option>
-							<option value="flat">Flat Tk</option>
-							<option value="percent">Percent %</option>
-						</select>
-						<input class="summary-input" id="taxValue" type="number" min="0" step="0.01" placeholder="Tax value">
-					</div>
-				</div>
+				<input id="taxType" type="hidden" value="none">
+				<input id="taxValue" type="hidden" value="0">
 
 				<div class="summary-field due-field">
 					<label for="dueAmount">Due Amount</label>
@@ -250,13 +276,18 @@
 				</div>
 
 				<div class="summary-field full discount-field">
-					<label for="discountType">Discount</label>
-					<div class="split-input">
-						<select class="summary-select" id="discountType">
-							<option value="flat" selected>Flat Tk</option>
-							<option value="percent">Percent %</option>
-						</select>
-						<input class="summary-input" id="discountValue" type="number" min="0" step="0.01" placeholder="Discount value">
+					<div class="discount-controls">
+						<label>
+							<span>Discount Type</span>
+							<select class="summary-select" id="discountType">
+								<option value="flat" selected>Flat Tk</option>
+								<option value="percent">Percent %</option>
+							</select>
+						</label>
+						<label>
+							<span>Discount Value</span>
+							<input class="summary-input" id="discountValue" type="number" min="0" step="0.01" placeholder="0.00">
+						</label>
 					</div>
 				</div>
 
@@ -374,6 +405,31 @@ function getRows() {
 	return Array.from(document.querySelectorAll('.cart-row'));
 }
 
+function getSmartRowData(row) {
+	const stripsPerBox = Math.max(parseInt(row.dataset.stripsPerBox, 10) || 1, 1);
+	const canSellStrip = row.dataset.canSellStrip === '1';
+	const canSellBox = row.dataset.canSellBox === '1';
+	const stripQty = Math.max(parseInt(row.dataset.stripQty, 10) || 0, 0);
+	const boxQty = Math.max(parseInt(row.dataset.boxQty, 10) || 0, 0);
+	const availableStrips = Math.max(parseInt(row.dataset.available, 10) || 0, 0);
+	const boxMultiplier = canSellStrip ? stripsPerBox : 1;
+	const stripPrice = parseFloat(row.dataset.stripPrice) || parseFloat(row.dataset.price) || 0;
+	const boxPrice = parseFloat(row.dataset.boxPrice) || (stripPrice * stripsPerBox);
+	return {
+		canSellStrip: canSellStrip,
+		canSellBox: canSellBox,
+		stripQty: stripQty,
+		boxQty: boxQty,
+		stripsPerBox: stripsPerBox,
+		boxMultiplier: boxMultiplier,
+		availableStrips: availableStrips,
+		usedStock: stripQty + (boxQty * boxMultiplier),
+		stripPrice: stripPrice,
+		boxPrice: boxPrice,
+		totalBeforeDiscount: (stripQty * stripPrice) + (boxQty * boxPrice),
+	};
+}
+
 function emptyCartRowHtml() {
 	return `
 		<tr class="empty-row">
@@ -444,7 +500,8 @@ function resetSaleState(options) {
 		showEmptyCartIfNeeded();
 	} else {
 		getRows().forEach(function (row) {
-			row.querySelector('.qty-input').value = '0';
+			row.dataset.stripQty = '0';
+			row.dataset.boxQty = '0';
 			row.querySelector('.line-discount').value = '0.00';
 		});
 	}
@@ -503,25 +560,43 @@ function updateSummary() {
 	const selectedItems = [];
 
 	rows.forEach(function (row) {
-		const price = parseFloat(row.dataset.price) || 0;
-		const qtyInput = row.querySelector('.qty-input');
+		const smartData = getSmartRowData(row);
 		const discountInput = row.querySelector('.line-discount');
 		const rowTotal = row.querySelector('.row-total');
-		const available = Math.max(parseInt(row.dataset.available, 10) || 0, 0);
-		const qty = Math.min(Math.max(parseInt(qtyInput.value, 10) || 0, 0), available);
 		const lineDiscount = numericValue(discountInput);
-		const total = Math.max((price * qty) - lineDiscount, 0);
-
-		qtyInput.value = qty;
+		const total = Math.max(smartData.totalBeforeDiscount - lineDiscount, 0);
+		const packageQuantity = smartData.stripQty + smartData.boxQty;
+		const boxQtyDisplay = row.querySelector('.smart-box-qty');
+		const stripQtyDisplay = row.querySelector('.smart-strip-qty');
+		if (boxQtyDisplay) {
+			boxQtyDisplay.textContent = smartData.boxQty + (smartData.boxQty === 1 ? ' Box' : ' Boxes');
+		}
+		if (stripQtyDisplay) {
+			stripQtyDisplay.textContent = smartData.stripQty + (smartData.stripQty === 1 ? ' Strip' : ' Strips');
+		}
+		const unitPriceCell = row.querySelector('.unit-price');
+		if (unitPriceCell) {
+			if (smartData.boxQty > 0 && smartData.stripQty > 0) {
+				unitPriceCell.innerHTML = `${money(smartData.boxPrice)}<small>${money(smartData.stripPrice)} / strip</small>`;
+			} else if (smartData.boxQty > 0) {
+				unitPriceCell.innerHTML = `${money(smartData.boxPrice)}<small>per box</small>`;
+			} else {
+				unitPriceCell.innerHTML = `${money(smartData.stripPrice)}${smartData.canSellBox ? `<small>${money(smartData.boxPrice)} / box</small>` : ''}`;
+			}
+		}
 		rowTotal.textContent = money(total);
 		subtotal += total;
-		if (qty > 0) {
+		if (packageQuantity > 0) {
 			activeRows += 1;
+			const unitSummary = [
+				smartData.boxQty > 0 ? smartData.boxQty + (smartData.boxQty === 1 ? ' Box' : ' Boxes') : '',
+				smartData.stripQty > 0 ? smartData.stripQty + (smartData.stripQty === 1 ? ' Strip' : ' Strips') : '',
+			].filter(Boolean).join(' + ');
 			selectedItems.push({
 				product: row.dataset.product || '',
 				batch: row.dataset.batch || 'General',
-				unit: row.dataset.unit || '',
-				quantity: qty,
+				unit: unitSummary,
+				quantity: packageQuantity,
 				total: total,
 			});
 		}
@@ -577,18 +652,31 @@ function applyCustomerSelection() {
 }
 
 function collectSalePayload() {
-	const items = getRows().map(function (row) {
-		const qty = Math.max(parseInt(row.querySelector('.qty-input').value, 10) || 0, 0);
-		return {
-			product: row.dataset.product,
-			batch: row.dataset.batch,
-			unit: row.dataset.unit,
-			quantity: qty,
-			price: parseFloat(row.dataset.price) || 0,
-			discount: numericValue(row.querySelector('.line-discount')),
-		};
-	}).filter(function (item) {
-		return item.quantity > 0;
+	const items = getRows().flatMap(function (row) {
+		const smartData = getSmartRowData(row);
+		const rowDiscount = numericValue(row.querySelector('.line-discount'));
+		const rowItems = [];
+		if (smartData.boxQty > 0) {
+			rowItems.push({
+				product: row.dataset.product,
+				batch: row.dataset.batch,
+				unit: 'box',
+				quantity: smartData.boxQty,
+				price: smartData.boxPrice,
+				discount: rowDiscount,
+			});
+		}
+		if (smartData.stripQty > 0) {
+			rowItems.push({
+				product: row.dataset.product,
+				batch: row.dataset.batch,
+				unit: 'strip',
+				quantity: smartData.stripQty,
+				price: smartData.stripPrice,
+				discount: rowItems.length ? 0 : rowDiscount,
+			});
+		}
+		return rowItems;
 	});
 	const customer = collectCustomer();
 
@@ -651,8 +739,9 @@ function receiptHtml(sale) {
 	<html>
 	<head>
 		<title>${sale.invoice_no}</title>
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=5">
-	</head>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=27">
+	    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
+</head>
 	<body class="receipt-print-page">
 		<div class="receipt">
 			<div class="header">
@@ -741,19 +830,19 @@ if (cartTable) {
 		const row = button.closest('.cart-row');
 		if (!row) return;
 
-		const qtyInput = row.querySelector('.qty-input');
-		if (button.classList.contains('qty-plus')) {
-			const available = Math.max(parseInt(row.dataset.available, 10) || 0, 0);
-			qtyInput.value = Math.min((parseInt(qtyInput.value, 10) || 0) + 1, available);
-		}
-
-		if (button.classList.contains('add-line-btn')) {
-			const available = Math.max(parseInt(row.dataset.available, 10) || 0, 0);
-			qtyInput.value = Math.min((parseInt(qtyInput.value, 10) || 0) + 1, available);
-		}
-
-		if (button.classList.contains('qty-minus')) {
-			qtyInput.value = Math.max((parseInt(qtyInput.value, 10) || 0) - 1, 0);
+		const quickAction = button.dataset.quickAction;
+		const saleUnit = button.dataset.saleUnit;
+		if (quickAction && saleUnit) {
+			const smartData = getSmartRowData(row);
+			const quantityKey = saleUnit === 'box' ? 'boxQty' : 'stripQty';
+			const currentQuantity = saleUnit === 'box' ? smartData.boxQty : smartData.stripQty;
+			const stockPerClick = saleUnit === 'box' ? smartData.boxMultiplier : 1;
+			if (quickAction === 'plus' && smartData.usedStock + stockPerClick <= smartData.availableStrips) {
+				row.dataset[quantityKey] = String(currentQuantity + 1);
+			}
+			if (quickAction === 'minus') {
+				row.dataset[quantityKey] = String(Math.max(currentQuantity - 1, 0));
+			}
 		}
 
 		if (button.classList.contains('remove-btn')) {

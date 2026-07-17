@@ -78,7 +78,7 @@ input {
 .brand {
 	display: flex;
 	justify-content: center;
-	margin-bottom: 40px;
+	margin-bottom: 28px;
 }
 
 .brand-link,
@@ -96,8 +96,10 @@ input {
 }
 
 .brand-link {
-	gap: 12px;
-	padding: 8px 12px;
+	justify-content: center;
+	gap: 9px;
+	width: 100%;
+	padding: 5px 0;
 	border-radius: 16px;
 	transition: 0.3s ease;
 }
@@ -107,15 +109,30 @@ input {
 }
 
 .brand-logo {
-	width: 44px;
-	height: 44px;
-	object-fit: cover;
+	flex: 0 0 auto;
+	width: 62px;
+	height: 62px;
+	object-fit: contain;
 }
 
 .brand-text {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	align-items: flex-start;
 	font-size: 22px;
-	font-weight: 700;
-	letter-spacing: 0.12em;
+	font-weight: 800;
+	color: #fff;
+	line-height: 0.95;
+	letter-spacing: 0.035em;
+	text-align: left;
+	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+	white-space: nowrap;
+}
+
+.brand-text span:last-child {
+	margin-top: 5px;
+	letter-spacing: 0.075em;
 }
 
 .nav-list {
@@ -542,6 +559,134 @@ input {
 
 .items-table td {
 	color: rgba(255, 255, 255, 0.92);
+}
+
+.return-item-lines {
+	display: grid;
+	gap: 7px;
+	min-width: 190px;
+}
+
+.return-item-lines > span {
+	display: grid;
+	gap: 2px;
+	padding: 7px 9px;
+	border-radius: 9px;
+	background: rgba(56, 193, 114, 0.1);
+}
+
+.return-item-lines small {
+	color: rgba(255, 255, 255, 0.62);
+	white-space: nowrap;
+}
+
+.compact-list-head {
+	display: flex;
+	grid-template-columns: none;
+	padding-bottom: 14px;
+}
+
+.sales-register-wrap {
+	border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.sales-register-table {
+	width: 100%;
+	min-width: 1480px;
+	border-collapse: collapse;
+}
+
+.sales-register-table th,
+.sales-register-table td {
+	padding: 13px 12px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	text-align: left;
+	vertical-align: top;
+	font-size: 12px;
+}
+
+.sales-register-table th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	color: rgba(255, 255, 255, 0.68);
+	background: #24396f;
+	font-size: 10px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.sales-register-table tbody tr:nth-child(even) {
+	background: rgba(255, 255, 255, 0.025);
+}
+
+.sales-register-table tbody tr:hover {
+	background: rgba(56, 193, 114, 0.07);
+}
+
+.sales-register-table td > strong,
+.sales-register-table td > small {
+	display: block;
+}
+
+.sales-register-table td > small {
+	margin-top: 3px;
+	color: rgba(255, 255, 255, 0.52);
+}
+
+.sale-serial {
+	color: #9af0bb;
+	font-size: 16px !important;
+	font-weight: 900;
+	text-align: center !important;
+}
+
+.sale-medicine-list {
+	display: grid;
+	gap: 7px;
+	min-width: 250px;
+	margin: 0;
+	padding-left: 23px;
+}
+
+.sale-medicine-list li {
+	padding-left: 2px;
+	color: #9af0bb;
+	font-weight: 800;
+}
+
+.sale-medicine-list li strong,
+.sale-medicine-list li small {
+	display: block;
+}
+
+.sale-medicine-list li strong {
+	color: #fff;
+}
+
+.sale-medicine-list li small {
+	margin-top: 2px;
+	color: rgba(255, 255, 255, 0.56);
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.list-due {
+	color: #ffb0c2;
+	font-weight: 800;
+}
+
+.list-actions {
+	display: grid;
+	min-width: 92px;
+}
+
+.list-actions .print-invoice-btn,
+.list-actions .delete-sale-btn {
+	width: 100%;
+	min-height: 34px;
+	padding: 7px 9px;
+	font-size: 11px;
 }
 
 .empty-state {

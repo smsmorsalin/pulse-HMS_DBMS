@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discharge Bill {{ bill_no }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/discharge_bill_print.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
 </head>
 
 <body data-return-url="{{ return_url|default(url_for('discharge_bill', admission_id=admission[0]), true) }}">

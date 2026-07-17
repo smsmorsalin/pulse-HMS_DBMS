@@ -284,6 +284,18 @@ td {
 	margin-bottom: 6px;
 }
 
+.returns-table .w-medicine-detail {
+	width: 28%;
+}
+
+.returns-table .w-reason {
+	width: 15%;
+}
+
+.returns-table .medicine-line {
+	grid-template-columns: minmax(100px, 1fr) 34px 38px 42px;
+}
+
 .empty-row {
 	text-align: center;
 	color: #64748b;

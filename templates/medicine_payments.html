@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Supplier Payments</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales.css') }}?v=27">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_payments.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
+</head>
+<body>
+<aside class="sidebar">
+	<div class="brand">
+		<a href="{{ url_for('dashboard') }}" class="brand-link">
+			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
+			<span class="brand-text" aria-label="AL-JUMIRA HOSPITAL">
+				<span>AL-JUMIRA</span>
+				<span>HOSPITAL</span>
+			</span>
+		</a>
+	</div>
+	<ul class="nav-list">
+		{% if can_access_page('dashboard') %}
+		<li><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+		{% endif %}
+		<li class="medicine-menu open" id="medicineMenu">
+			<button class="medicine-toggle" type="button" id="medicineToggle" aria-expanded="true">
+				<i class="fas fa-pills"></i><span>Medicine</span><i class="fas fa-chevron-down dropdown-icon"></i>
+			</button>
+			<div class="sub-nav">
+				{% if admin %}<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>{% endif %}
+				<a class="sub-link" href="{{ url_for('medicine_sales') }}"><i class="fas fa-cash-register"></i> Sales</a>
+				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
+				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
+				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
+				<a class="sub-link active" href="{{ url_for('medicine_payments') }}"><i class="fas fa-money-check-dollar"></i> Payments</a>
+			</div>
+		</li>
+	</ul>
+</aside>
+
+<main class="content payments-content">
+	<header class="top-header">
+		<div class="title-group">
+			<p class="eyebrow"><i class="fas fa-hand-holding-dollar"></i> Supplier Accounts</p>
+			<h1>Medicine Payments</h1>
+			<h2>Track who supplies your medicine, total purchase cost, payments, and outstanding due.</h2>
+		</div>
+		<div class="profile">
+			<button class="admin-btn" id="adminBtn" type="button">
+				<i class="fas fa-user-circle"></i> {{ profile_name }} <i class="fas fa-chevron-down chevron"></i>
+			</button>
+			<div class="admin-dropdown" id="adminDropdown">
+				<a href="{{ url_for('dashboard') }}"><i class="fas fa-house"></i> Dashboard</a>
+				<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+			</div>
+		</div>
+	</header>
+
+	{% if message %}<div class="payment-alert error"><i class="fas fa-circle-exclamation"></i>{{ message }}</div>{% endif %}
+	{% if success %}<div class="payment-alert success"><i class="fas fa-circle-check"></i>{{ success }}</div>{% endif %}
+
+	<section class="payment-stats">
+		<div><span>Total Medicine Buy</span><strong>Tk {{ '%.2f'|format(total_purchase) }}</strong><small>{{ supplier_accounts|length }} supplier accounts</small></div>
+		<div><span>Total Paid</span><strong>Tk {{ '%.2f'|format(total_paid) }}</strong><small>Payments recorded</small></div>
+		<div class="discount"><span>Total Discount</span><strong>Tk {{ '%.2f'|format(total_discount) }}</strong><small>Supplier adjustments</small></div>
+		<div class="due"><span>Total Supplier Due</span><strong>Tk {{ '%.2f'|format(total_due) }}</strong><small>Outstanding payable</small></div>
+	</section>
+
+	<section class="payment-layout">
+		<div class="payment-panel account-panel">
+			<div class="payment-panel-head">
+				<div><p>Supplier Ledger</p><h3>Supplier Accounts</h3></div>
+				<span>{{ supplier_accounts|length }} suppliers</span>
+			</div>
+			<div class="payment-table-wrap">
+				<table>
+					<thead><tr><th>Supplier</th><th>Medicine Name</th><th>Purchases</th><th>Total Buy</th><th>Paid</th><th>Discount</th><th>Due</th><th>Last Buy</th></tr></thead>
+					<tbody>
+					{% for account in supplier_accounts %}
+						<tr>
+							<td><strong>{{ account.supplier }}</strong><small>{{ account.payment_count }} payments</small></td>
+							<td class="medicine-list">{{ account.medicine_names }}</td>
+							<td>{{ account.purchase_count }}</td>
+							<td>Tk {{ '%.2f'|format(account.purchase_amount) }}</td>
+							<td class="paid">Tk {{ '%.2f'|format(account.paid_amount) }}</td>
+							<td class="discount-amount">Tk {{ '%.2f'|format(account.discount_amount) }}</td>
+							<td class="due-amount">Tk {{ '%.2f'|format(account.due_amount) }}</td>
+							<td>{{ format_date_display(account.last_purchase_date) }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="8" class="empty-state">No supplier purchases yet. Add stock with a Total Buy Amount first.</td></tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="payment-panel record-panel">
+			<div class="payment-panel-head"><div><p>Pay Supplier</p><h3>Record Payment</h3></div><i class="fas fa-money-bill-transfer"></i></div>
+			<form method="POST" class="supplier-payment-form">
+				<label>Supplier
+					<input type="search" name="supplier" list="paymentSupplierOptions" placeholder="Search supplier" required>
+					<datalist id="paymentSupplierOptions">{% for supplier in supplier_names %}<option value="{{ supplier }}">{% endfor %}</datalist>
+				</label>
+				<label>Payment Amount
+					<input type="number" name="amount" id="supplierPaymentAmount" min="0" step="0.01" value="0" placeholder="0.00" required>
+				</label>
+				<label>Discount Amount
+					<input type="number" name="discount_amount" id="supplierDiscountAmount" min="0" step="0.01" value="0" placeholder="0.00" readonly>
+					<small>Automatically calculated as Current Due − Payment Amount.</small>
+				</label>
+				<label class="auto-discount-option">
+					<input type="checkbox" id="autoSupplierDiscount" checked>
+					<span><strong>Auto discount</strong><small>Turn off for a partial payment or to enter the discount manually.</small></span>
+				</label>
+				<div class="payment-live-summary" id="paymentLiveSummary">
+					<div><span>Current Due</span><strong id="selectedSupplierDue">Tk 0.00</strong></div>
+					<div><span>Remaining Due</span><strong id="supplierRemainingDue">Tk 0.00</strong></div>
+				</div>
+				<label>Payment Date
+					<input type="date" name="payment_date" value="{{ today }}" required>
+				</label>
+				<label>Note
+					<textarea name="note" rows="3" placeholder="Cash, bank, mobile payment, reference"></textarea>
+				</label>
+				<button type="submit"><i class="fas fa-floppy-disk"></i> Save Supplier Payment</button>
+			</form>
+		</div>
+	</section>
+
+	<section class="payment-panel history-panel">
+		<div class="payment-panel-head"><div><p>Purchase Register</p><h3>Medicine Buy History</h3></div><span>{{ purchase_history|length }} records</span></div>
+		<div class="payment-table-wrap">
+			<table>
+				<thead><tr><th>Date</th><th>Supplier</th><th>Medicine</th><th>Batch</th><th>Boxes</th><th>Strips / Box</th><th>Total Buy Amount</th><th>Action</th></tr></thead>
+				<tbody>
+				{% for item in purchase_history %}
+					<tr>
+						<td>{{ format_date_display(item.transaction_date) }}</td><td><strong>{{ item.supplier }}</strong></td><td>{{ item.medicine_name }}</td><td>{{ item.batch_no }}</td><td>{{ item.box_quantity }}</td><td>{{ item.strips_per_box }}</td><td><strong>Tk {{ '%.2f'|format(item.purchase_amount) }}</strong></td>
+						<td><button type="button" class="history-edit-btn purchase-edit-btn"
+							data-id="{{ item.id }}" data-medicine="{{ item.medicine_name }}"
+							data-supplier="{{ item.supplier }}" data-batch="{{ item.batch_no }}"
+							data-boxes="{{ item.box_quantity }}" data-strips="{{ item.strips_per_box }}"
+							data-strip-price="{{ '%.2f'|format(item.strip_price) }}"
+							data-box-price="{{ '%.2f'|format(item.box_price) }}"
+							data-purchase="{{ '%.2f'|format(item.purchase_amount) }}"
+							data-date="{{ item.transaction_date }}"><i class="fas fa-pen"></i> Edit</button></td>
+					</tr>
+				{% else %}<tr><td colspan="8" class="empty-state">No purchase amounts recorded.</td></tr>{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</section>
+
+	<section class="payment-panel history-panel">
+		<div class="payment-panel-head"><div><p>Payment Register</p><h3>Supplier Payment History</h3></div><span>{{ payment_history|length }} payments</span></div>
+		<div class="payment-table-wrap">
+			<table>
+				<thead><tr><th>Date</th><th>Supplier</th><th>Paid Amount</th><th>Discount</th><th>Note</th><th>Created By</th><th>Action</th></tr></thead>
+				<tbody>
+				{% for payment in payment_history %}
+					<tr>
+						<td>{{ format_date_display(payment.payment_date) }}</td><td><strong>{{ payment.supplier }}</strong></td><td class="paid"><strong>Tk {{ '%.2f'|format(payment.amount) }}</strong></td><td class="discount-amount"><strong>Tk {{ '%.2f'|format(payment.discount_amount) }}</strong></td><td>{{ payment.note }}</td><td>{{ payment.created_by }}</td>
+						<td><button type="button" class="history-edit-btn payment-edit-btn"
+							data-id="{{ payment.id }}" data-supplier="{{ payment.supplier }}"
+							data-amount="{{ '%.2f'|format(payment.amount) }}"
+							data-discount="{{ '%.2f'|format(payment.discount_amount) }}"
+							data-date="{{ payment.payment_date }}" data-note="{{ payment.note }}"><i class="fas fa-pen"></i> Edit</button></td>
+					</tr>
+				{% else %}<tr><td colspan="7" class="empty-state">No supplier payments recorded.</td></tr>{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</section>
+</main>
+
+<div class="payment-modal" id="purchaseEditModal" hidden>
+	<div class="payment-modal-backdrop" data-close-payment-modal></div>
+	<section class="payment-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="purchaseEditTitle">
+		<div class="payment-modal-head">
+			<div><p>Purchase Register</p><h3 id="purchaseEditTitle">Edit Medicine Purchase</h3></div>
+			<button type="button" data-close-payment-modal aria-label="Close"><i class="fas fa-xmark"></i></button>
+		</div>
+		<form method="POST" class="history-edit-form" id="purchaseEditForm">
+			<div class="edit-form-grid">
+				<label>Medicine Name
+					<input type="search" name="medicine_name" id="editPurchaseMedicine" list="purchaseMedicineOptions" required>
+					<datalist id="purchaseMedicineOptions">{% for item in purchase_history %}<option value="{{ item.medicine_name }}">{% endfor %}</datalist>
+				</label>
+				<label>Supplier
+					<input type="search" name="supplier" id="editPurchaseSupplier" list="paymentSupplierOptions" required>
+				</label>
+				<label>Batch Number
+					<input type="text" name="batch_no" id="editPurchaseBatch" required>
+				</label>
+				<label>Purchase Date
+					<input type="date" name="transaction_date" id="editPurchaseDate" required>
+				</label>
+				<label>Box Quantity
+					<input type="number" name="box_quantity" id="editPurchaseBoxes" min="1" step="1" required>
+				</label>
+				<label>Strips Per Box
+					<input type="number" name="strips_per_box" id="editPurchaseStrips" min="1" step="1" required>
+				</label>
+				<label>Strip Sale Price
+					<input type="number" name="strip_price" id="editPurchaseStripPrice" min="0.01" step="0.01" required>
+				</label>
+				<label>Box Sale Price
+					<input type="number" name="box_price" id="editPurchaseBoxPrice" min="0.01" step="0.01" required>
+				</label>
+				<label class="edit-wide">Total Buy Amount
+					<input type="number" name="purchase_amount" id="editPurchaseAmount" min="0.01" step="0.01" required>
+				</label>
+			</div>
+			<div class="payment-modal-actions">
+				<button type="button" class="modal-cancel" data-close-payment-modal>Cancel</button>
+				<button type="submit" class="modal-save"><i class="fas fa-floppy-disk"></i> Update Purchase</button>
+			</div>
+		</form>
+	</section>
+</div>
+
+<div class="payment-modal" id="paymentEditModal" hidden>
+	<div class="payment-modal-backdrop" data-close-payment-modal></div>
+	<section class="payment-modal-dialog compact-dialog" role="dialog" aria-modal="true" aria-labelledby="paymentEditTitle">
+		<div class="payment-modal-head">
+			<div><p>Payment Register</p><h3 id="paymentEditTitle">Edit Supplier Payment</h3></div>
+			<button type="button" data-close-payment-modal aria-label="Close"><i class="fas fa-xmark"></i></button>
+		</div>
+		<form method="POST" class="history-edit-form" id="paymentEditForm">
+			<div class="edit-form-grid">
+				<label class="edit-wide">Supplier
+					<input type="search" name="supplier" id="editPaymentSupplier" list="paymentSupplierOptions" required>
+				</label>
+				<label>Paid Amount
+					<input type="number" name="amount" id="editPaymentAmount" min="0" step="0.01" required>
+				</label>
+				<label>Discount Amount
+					<input type="number" name="discount_amount" id="editPaymentDiscount" min="0" step="0.01" required>
+				</label>
+				<label class="edit-wide">Payment Date
+					<input type="date" name="payment_date" id="editPaymentDate" required>
+				</label>
+				<label class="edit-wide">Note
+					<textarea name="note" id="editPaymentNote" rows="3"></textarea>
+				</label>
+			</div>
+			<div class="payment-modal-actions">
+				<button type="button" class="modal-cancel" data-close-payment-modal>Cancel</button>
+				<button type="submit" class="modal-save"><i class="fas fa-floppy-disk"></i> Update Payment</button>
+			</div>
+		</form>
+	</section>
+</div>
+
+<script>
+const medicineToggle = document.getElementById('medicineToggle');
+const medicineMenu = document.getElementById('medicineMenu');
+const adminBtn = document.getElementById('adminBtn');
+const adminDropdown = document.getElementById('adminDropdown');
+const chevron = document.querySelector('.chevron');
+if (medicineToggle && medicineMenu) medicineToggle.addEventListener('click', function () {
+	medicineMenu.classList.toggle('open');
+	medicineToggle.setAttribute('aria-expanded', medicineMenu.classList.contains('open'));
+});
+if (adminBtn && adminDropdown) adminBtn.addEventListener('click', function () {
+	adminDropdown.classList.toggle('show');
+	if (chevron) chevron.classList.toggle('rotate');
+});
+
+const purchaseEditModal = document.getElementById('purchaseEditModal');
+const paymentEditModal = document.getElementById('paymentEditModal');
+const purchaseEditForm = document.getElementById('purchaseEditForm');
+const paymentEditForm = document.getElementById('paymentEditForm');
+const purchaseEditUrl = "{{ url_for('edit_medicine_purchase', transaction_id=0) }}";
+const paymentEditUrl = "{{ url_for('edit_supplier_payment', payment_id=0) }}";
+const supplierAccountDues = {{ supplier_accounts | tojson }};
+const paymentSupplierInput = document.querySelector('.supplier-payment-form input[name="supplier"]');
+const supplierPaymentAmount = document.getElementById('supplierPaymentAmount');
+const supplierDiscountAmount = document.getElementById('supplierDiscountAmount');
+const autoSupplierDiscount = document.getElementById('autoSupplierDiscount');
+const selectedSupplierDue = document.getElementById('selectedSupplierDue');
+const supplierRemainingDue = document.getElementById('supplierRemainingDue');
+
+function selectedDueAmount() {
+	const supplierName = paymentSupplierInput.value.trim().toLowerCase();
+	const account = supplierAccountDues.find(function (item) {
+		return String(item.supplier).trim().toLowerCase() === supplierName;
+	});
+	return account ? Number(account.due_amount || 0) : 0;
+}
+
+function updateAutomaticDiscount() {
+	const due = selectedDueAmount();
+	const payment = Math.max(Number(supplierPaymentAmount.value || 0), 0);
+	if (autoSupplierDiscount.checked) {
+		const automaticDiscount = payment > 0 ? Math.max(due - payment, 0) : 0;
+		supplierDiscountAmount.value = automaticDiscount.toFixed(2);
+	}
+	const discount = Math.max(Number(supplierDiscountAmount.value || 0), 0);
+	const remaining = Math.max(due - payment - discount, 0);
+	supplierDiscountAmount.readOnly = autoSupplierDiscount.checked;
+	selectedSupplierDue.textContent = 'Tk ' + due.toFixed(2);
+	supplierRemainingDue.textContent = 'Tk ' + remaining.toFixed(2);
+}
+
+paymentSupplierInput.addEventListener('input', updateAutomaticDiscount);
+paymentSupplierInput.addEventListener('change', updateAutomaticDiscount);
+supplierPaymentAmount.addEventListener('input', updateAutomaticDiscount);
+supplierDiscountAmount.addEventListener('input', updateAutomaticDiscount);
+autoSupplierDiscount.addEventListener('change', updateAutomaticDiscount);
+updateAutomaticDiscount();
+
+function openPaymentModal(modal) {
+	modal.hidden = false;
+	document.body.classList.add('payment-modal-open');
+}
+
+function closePaymentModals() {
+	purchaseEditModal.hidden = true;
+	paymentEditModal.hidden = true;
+	document.body.classList.remove('payment-modal-open');
+}
+
+document.querySelectorAll('.purchase-edit-btn').forEach(function (button) {
+	button.addEventListener('click', function () {
+		purchaseEditForm.action = purchaseEditUrl.replace('/0/edit', '/' + button.dataset.id + '/edit');
+		document.getElementById('editPurchaseMedicine').value = button.dataset.medicine;
+		document.getElementById('editPurchaseSupplier').value = button.dataset.supplier;
+		document.getElementById('editPurchaseBatch').value = button.dataset.batch;
+		document.getElementById('editPurchaseBoxes').value = button.dataset.boxes;
+		document.getElementById('editPurchaseStrips').value = button.dataset.strips;
+		document.getElementById('editPurchaseStripPrice').value = button.dataset.stripPrice;
+		document.getElementById('editPurchaseBoxPrice').value = button.dataset.boxPrice;
+		document.getElementById('editPurchaseAmount').value = button.dataset.purchase;
+		document.getElementById('editPurchaseDate').value = button.dataset.date;
+		openPaymentModal(purchaseEditModal);
+	});
+});
+
+document.querySelectorAll('.payment-edit-btn').forEach(function (button) {
+	button.addEventListener('click', function () {
+		paymentEditForm.action = paymentEditUrl.replace('/0/edit', '/' + button.dataset.id + '/edit');
+		document.getElementById('editPaymentSupplier').value = button.dataset.supplier;
+		document.getElementById('editPaymentAmount').value = button.dataset.amount;
+		document.getElementById('editPaymentDiscount').value = button.dataset.discount;
+		document.getElementById('editPaymentDate').value = button.dataset.date;
+		document.getElementById('editPaymentNote').value = button.dataset.note;
+		openPaymentModal(paymentEditModal);
+	});
+});
+
+document.querySelectorAll('[data-close-payment-modal]').forEach(function (button) {
+	button.addEventListener('click', closePaymentModals);
+});
+
+document.addEventListener('keydown', function (event) {
+	if (event.key === 'Escape') closePaymentModals();
+});
+</script>
+</body>
+</html>

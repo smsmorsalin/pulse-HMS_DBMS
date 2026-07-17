@@ -80,14 +80,16 @@ textarea {
 .brand {
 	display: flex;
 	justify-content: center;
-	margin-bottom: 40px;
+	margin-bottom: 28px;
 }
 
 .brand-link {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 8px 12px;
+	justify-content: center;
+	gap: 9px;
+	width: 100%;
+	padding: 5px 0;
 	border-radius: 16px;
 	transition: 0.3s ease;
 }
@@ -97,15 +99,30 @@ textarea {
 }
 
 .brand-logo {
-	width: 44px;
-	height: 44px;
-	object-fit: cover;
+	flex: 0 0 auto;
+	width: 62px;
+	height: 62px;
+	object-fit: contain;
 }
 
 .brand-text {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	align-items: flex-start;
 	font-size: 22px;
-	font-weight: 700;
-	letter-spacing: 0.12em;
+	font-weight: 800;
+	color: #fff;
+	line-height: 0.95;
+	letter-spacing: 0.035em;
+	text-align: left;
+	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+	white-space: nowrap;
+}
+
+.brand-text span:last-child {
+	margin-top: 5px;
+	letter-spacing: 0.075em;
 }
 
 .nav-list {
@@ -904,8 +921,92 @@ td {
 	word-break: break-word;
 }
 
+.medicine-transaction-picker {
+	margin-bottom: 22px;
+	padding: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 20px;
+	background: rgba(10, 16, 40, 0.48);
+}
+
+.medicine-picker-heading {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.medicine-picker-heading h3 {
+	margin: 3px 0 0;
+}
+
+.medicine-picker-heading > span,
+.selected-medicine-caption {
+	color: rgba(255, 255, 255, 0.62);
+	font-size: 12px;
+}
+
+.medicine-picker-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.medicine-picker-buttons a {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 13px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.86);
+	font-weight: 700;
+	text-decoration: none;
+	transition: 0.2s ease;
+}
+
+.medicine-picker-buttons a:hover,
+.medicine-picker-buttons a.active {
+	border-color: rgba(56, 193, 114, 0.7);
+	background: rgba(56, 193, 114, 0.18);
+	color: #b7f7ce;
+	transform: translateY(-1px);
+}
+
+.medicine-picker-buttons small {
+	display: inline-grid;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	place-items: center;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	font-size: 11px;
+}
+
 .movement-detail-panel {
 	margin-top: 4px;
+	width: 100%;
+	padding: 26px;
+}
+
+.movement-detail-panel table {
+	min-width: 1540px;
+}
+
+.box-quantity-record {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 78px;
+	padding: 7px 10px;
+	border-radius: 999px;
+	background: rgba(30, 60, 250, 0.2);
+	color: #c5d0ff;
+	font-weight: 800;
+	white-space: nowrap;
 }
 
 .movement-detail-tools {

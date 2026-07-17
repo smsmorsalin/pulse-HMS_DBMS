@@ -76,6 +76,7 @@ PAGE_OPTIONS = [
     {'key': 'medicine_sales_list', 'label': 'Medicine Sales List', 'endpoint': 'medicine_sales_list', 'icon': 'fas fa-calendar-days', 'category': 'Medicine'},
     {'key': 'medicine_monthly_report', 'label': 'Medicine Monthly Report', 'endpoint': 'medicine_monthly_report', 'icon': 'fas fa-chart-column', 'category': 'Medicine'},
     {'key': 'medicine_return', 'label': 'Medicine Return', 'endpoint': 'medicine_return', 'icon': 'fas fa-rotate-left', 'category': 'Medicine'},
+    {'key': 'medicine_payments', 'label': 'Medicine Payments', 'endpoint': 'medicine_payments', 'icon': 'fas fa-money-check-dollar', 'category': 'Medicine'},
 
     {'key': 'daily_expenses', 'label': 'Daily Expenses', 'endpoint': 'daily_expenses', 'icon': 'fas fa-wallet', 'category': 'Accounts'},
     {'key': 'daily_expenses_print', 'label': 'Daily Expenses Print', 'endpoint': 'daily_expenses_print', 'icon': 'fas fa-print', 'category': 'Accounts'},
@@ -201,6 +202,7 @@ ENDPOINT_PERMISSIONS = {
     'medicine_sales_list_print': ('medicine_sales_list',),
     'medicine_monthly_report': ('medicine_monthly_report',),
     'medicine_return': ('medicine_return',),
+    'medicine_payments': ('medicine_payments', 'medicine_sales', 'medicine_stock_dashboard'),
     'medicine_stock_movements': ('medicine_stock_dashboard',),
     'delete_medicine_monthly_day_sales': ('medicine_monthly_report',),
     'delete_medicine_monthly_product_sales': ('medicine_monthly_report',),
@@ -955,6 +957,12 @@ def init_db():
                 transaction_type TEXT CHECK(transaction_type IN ('in', 'out')) NOT NULL,
                 quantity INTEGER NOT NULL,
                 price REAL NOT NULL,
+                strips_per_box INTEGER NOT NULL DEFAULT 1,
+                strip_price REAL,
+                box_price REAL,
+                box_quantity INTEGER,
+                supplier TEXT,
+                purchase_amount REAL NOT NULL DEFAULT 0,
                 transaction_date TEXT NOT NULL,
                 note TEXT,
                 created_by TEXT,
@@ -967,6 +975,39 @@ def init_db():
         medicine_transactions_columns = {row[1] for row in cursor.fetchall()}
         if 'unit_type' not in medicine_transactions_columns:
             cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN unit_type TEXT NOT NULL DEFAULT 'strip'")
+        if 'strips_per_box' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN strips_per_box INTEGER NOT NULL DEFAULT 1")
+        if 'strip_price' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN strip_price REAL")
+        if 'box_price' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN box_price REAL")
+        if 'box_quantity' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN box_quantity INTEGER")
+        if 'supplier' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN supplier TEXT")
+        if 'purchase_amount' not in medicine_transactions_columns:
+            cursor.execute("ALTER TABLE medicine_transactions ADD COLUMN purchase_amount REAL NOT NULL DEFAULT 0")
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS medicine_supplier_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            supplier TEXT NOT NULL,
+            amount REAL NOT NULL,
+            discount_amount REAL NOT NULL DEFAULT 0,
+            payment_date TEXT NOT NULL,
+            note TEXT,
+            created_by TEXT,
+            created_at TEXT NOT NULL
+        )
+    ''')
+    medicine_supplier_payment_columns = {
+        row[1] for row in cursor.execute('PRAGMA table_info(medicine_supplier_payments)').fetchall()
+    }
+    if 'discount_amount' not in medicine_supplier_payment_columns:
+        cursor.execute(
+            'ALTER TABLE medicine_supplier_payments '
+            'ADD COLUMN discount_amount REAL NOT NULL DEFAULT 0'
+        )
 
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="medicine_sales"')
     medicine_sales_exists = cursor.fetchone() is not None
@@ -1015,12 +1056,18 @@ def init_db():
                 unit_type TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
                 unit_price REAL NOT NULL,
+                strips_per_unit INTEGER NOT NULL DEFAULT 1,
                 discount REAL NOT NULL DEFAULT 0,
                 line_total REAL NOT NULL DEFAULT 0,
                 FOREIGN KEY (sale_id) REFERENCES medicine_sales(id)
             )
         ''')
         print("Medicine Sale Items table created successfully.")
+    else:
+        cursor.execute('PRAGMA table_info(medicine_sale_items)')
+        medicine_sale_item_columns = {row[1] for row in cursor.fetchall()}
+        if 'strips_per_unit' not in medicine_sale_item_columns:
+            cursor.execute("ALTER TABLE medicine_sale_items ADD COLUMN strips_per_unit INTEGER NOT NULL DEFAULT 1")
 
     cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="medicine_returns"')
     medicine_returns_exists = cursor.fetchone() is not None
@@ -1453,7 +1500,9 @@ def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
     """Return medicine stock balances using one calculation for stock and sales screens."""
     transaction_rows = db.execute(
         '''
-        SELECT id, medicine_name, batch_no, unit_type, transaction_type, quantity, price, transaction_date, note, created_by, created_at
+        SELECT id, medicine_name, batch_no, unit_type, transaction_type, quantity, price,
+               transaction_date, note, created_by, created_at, strips_per_box,
+               strip_price, box_price, box_quantity, supplier
         FROM medicine_transactions
         ORDER BY transaction_date ASC, id ASC
         '''
@@ -1475,6 +1524,11 @@ def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
             'balance': 0,
             'latest_price': row[6],
             'latest_date': row[7],
+            'strips_per_box': max(int(row[11] or 1), 1),
+            'strip_price': float(row[12] if row[12] is not None else row[6] or 0),
+            'box_price': float(row[13] if row[13] is not None else 0),
+            'latest_box_quantity': int(row[14] or 0),
+            'supplier': row[15] or '',
         })
 
         if row[4] == 'in':
@@ -1487,8 +1541,19 @@ def get_medicine_balance_rows(search_query='', positive_only=False, limit=None):
             medicine_summary['stock_out'] += row[5]
             medicine_summary['balance'] -= row[5]
 
-        medicine_summary['latest_price'] = row[6]
-        medicine_summary['latest_date'] = row[7]
+        if row[4] == 'in' and not is_medicine_return_stock_note(row[8]):
+            medicine_summary['latest_price'] = row[6]
+            medicine_summary['latest_date'] = row[7]
+            if int(row[11] or 1) > 1:
+                medicine_summary['strips_per_box'] = int(row[11])
+            if row[12] is not None:
+                medicine_summary['strip_price'] = float(row[12])
+            if row[13] is not None:
+                medicine_summary['box_price'] = float(row[13])
+            if row[14] is not None:
+                medicine_summary['latest_box_quantity'] = int(row[14])
+            if row[15]:
+                medicine_summary['supplier'] = row[15]
 
     summary_rows = list(summary.values())
     if search_query:
@@ -2174,7 +2239,14 @@ def patient_reports():
     if not isadmin() and not isuser():
         return redirect(url_for('login'))
 
-    selected_date = request.args.get('date', '').strip() or current_calendar_date_text()
+    raw_selected_date = request.args.get('date')
+    show_all_dates = request.args.get('all_dates', '').strip() == '1'
+    if show_all_dates:
+        selected_date = ''
+    elif raw_selected_date is None:
+        selected_date = current_calendar_date_text()
+    else:
+        selected_date = raw_selected_date.strip()
     try:
         datetime.strptime(selected_date, '%Y-%m-%d')
     except ValueError:
@@ -3489,34 +3561,53 @@ def medicine_stock_dashboard():
 
     if request.method == 'POST':
         medicine_name = request.form.get('medicine_name', '').strip()
+        if medicine_name == '__new__':
+            medicine_name = request.form.get('new_medicine_name', '').strip()
+        supplier = request.form.get('supplier', '').strip()
         batch_no = request.form.get('batch_no', '').strip()
-        unit_type = request.form.get('unit_type', 'strip').strip().lower()
         transaction_type = request.form.get('transaction_type', '').strip()
-        quantity = request.form.get('quantity', '').strip()
-        price = request.form.get('price', '').strip()
+        box_quantity = request.form.get('box_quantity', '').strip()
+        strips_per_box = request.form.get('strips_per_box', '').strip()
+        strip_price = request.form.get('strip_price', '').strip()
+        box_price = request.form.get('box_price', '').strip()
+        purchase_amount = request.form.get('purchase_amount', '').strip()
         transaction_date = request.form.get('transaction_date', '').strip() or current_calendar_date_text()
         note = request.form.get('note', '').strip()
 
         try:
-            quantity_value = int(quantity)
-            price_value = float(price)
-            if not medicine_name or unit_type not in ('strip', 'box') or transaction_type != 'in' or quantity_value <= 0 or price_value <= 0:
+            box_quantity_value = int(box_quantity)
+            strips_per_box_value = int(strips_per_box)
+            strip_price_value = float(strip_price)
+            box_price_value = float(box_price)
+            purchase_amount_value = float(purchase_amount)
+            total_strips = box_quantity_value * strips_per_box_value
+            if (
+                not medicine_name or not supplier or transaction_type != 'in' or box_quantity_value <= 0
+                or strips_per_box_value <= 0 or strip_price_value <= 0 or box_price_value <= 0
+                or purchase_amount_value <= 0
+            ):
                 raise ValueError
 
             db.execute(
                 '''
                 INSERT INTO medicine_transactions (
                     medicine_name, batch_no, unit_type, transaction_type, quantity, price,
+                    strips_per_box, strip_price, box_price, box_quantity, supplier, purchase_amount,
                     transaction_date, note, created_by, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, 'strip', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     medicine_name,
                     batch_no or 'General',
-                    unit_type,
                     transaction_type,
-                    quantity_value,
-                    price_value,
+                    total_strips,
+                    strip_price_value,
+                    strips_per_box_value,
+                    strip_price_value,
+                    box_price_value,
+                    box_quantity_value,
+                    supplier,
+                    purchase_amount_value,
                     transaction_date,
                     note or 'No remarks added',
                     str(session.get('user_id')),
@@ -3527,9 +3618,24 @@ def medicine_stock_dashboard():
             return redirect(url_for('medicine_stock_dashboard'))
         except (ValueError, TypeError):
             if not error:
-                error = 'Please enter a valid medicine name, unit, quantity, and price.'
+                error = 'Please enter the medicine, supplier, box details, selling prices, and total buy amount.'
 
     summary_rows = get_medicine_balance_rows()
+    existing_medicine_names = [
+        row[0] for row in db.execute(
+            'SELECT DISTINCT medicine_name FROM medicine_transactions ORDER BY medicine_name COLLATE NOCASE'
+        ).fetchall()
+    ]
+    existing_supplier_names = [
+        row[0] for row in db.execute(
+            '''
+            SELECT DISTINCT TRIM(supplier)
+            FROM medicine_transactions
+            WHERE TRIM(COALESCE(supplier, '')) != ''
+            ORDER BY TRIM(supplier) COLLATE NOCASE
+            '''
+        ).fetchall()
+    ]
     total_stock_in = sum(row['stock_in'] for row in summary_rows)
     total_return_in = sum(row['return_in'] for row in summary_rows)
     total_stock_out = sum(row['stock_out'] for row in summary_rows)
@@ -3562,6 +3668,8 @@ def medicine_stock_dashboard():
         active_medicines=active_medicines,
         low_stock_count=low_stock_count,
         inventory_value=inventory_value,
+        existing_medicine_names=existing_medicine_names,
+        existing_supplier_names=existing_supplier_names,
         today=current_calendar_date_text(),
         admin=isadmin(),
     )
@@ -3612,6 +3720,23 @@ def medicine_stock_movements(movement_type):
         except ValueError:
             selected_date = current_calendar_date_text()
     keyword = request.args.get('q', '').strip()
+    selected_medicine = request.args.get('medicine', '').strip()
+
+    medicine_buttons = []
+    if movement_type == 'stock-in':
+        medicine_button_rows = db.execute(
+            f'''
+            SELECT medicine_name, COUNT(*) AS transaction_count
+            FROM medicine_transactions
+            WHERE {movement_config['where']}
+            GROUP BY medicine_name
+            ORDER BY medicine_name COLLATE NOCASE
+            '''
+        ).fetchall()
+        medicine_buttons = [
+            {'name': row[0], 'transaction_count': int(row[1] or 0)}
+            for row in medicine_button_rows
+        ]
 
     where_clauses = [movement_config['where']]
     params = []
@@ -3632,11 +3757,14 @@ def medicine_stock_movements(movement_type):
             '''
         )
         params.extend([like_keyword, like_keyword, like_keyword, like_keyword, like_keyword])
+    if selected_medicine:
+        where_clauses.append('medicine_name = ? COLLATE NOCASE')
+        params.append(selected_medicine)
 
     movement_rows = db.execute(
         f'''
         SELECT id, medicine_name, batch_no, unit_type, transaction_type, quantity, price,
-               transaction_date, note, created_by, created_at
+               transaction_date, note, created_by, created_at, box_quantity, strips_per_box, supplier
         FROM medicine_transactions
         WHERE {' AND '.join(where_clauses)}
         ORDER BY date(transaction_date) DESC, datetime(created_at) DESC, id DESC
@@ -3656,6 +3784,9 @@ def medicine_stock_movements(movement_type):
             'note': row[8] or 'No remarks added',
             'created_by': row[9] or 'Unknown',
             'created_at': row[10],
+            'box_quantity': int(row[11] or 0),
+            'strips_per_box': max(int(row[12] or 1), 1),
+            'supplier': row[13] or '',
         }
         for row in movement_rows
     ]
@@ -3671,12 +3802,401 @@ def medicine_stock_movements(movement_type):
         movements=movements,
         selected_date=selected_date,
         keyword=keyword,
+        selected_medicine=selected_medicine,
+        medicine_buttons=medicine_buttons,
         total_quantity=total_quantity,
         total_value=total_value,
         medicine_count=medicine_count,
         today=current_calendar_date_text(),
         admin=isadmin(),
     )
+
+
+@app.route('/medicine_payments', methods=['GET', 'POST'])
+def medicine_payments():
+    """Supplier purchase accounts and payment ledger for medicine stock."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    admin_checker = db.execute('SELECT * FROM admins WHERE id = ?', (session.get('user_id'),)).fetchone()
+    user_checker = db.execute('SELECT * FROM users WHERE id = ?', (session.get('user_id'),)).fetchone()
+    if session.get('user_id') == 'root_admin':
+        profile_name = root_admin_username
+    elif admin_checker and admin_checker[0] == session.get('user_id'):
+        profile_name = admin_checker[1]
+    else:
+        profile_name = user_checker[1] if user_checker else 'User'
+
+    message = request.args.get('message', '').strip()
+    success = request.args.get('success', '').strip()
+
+    if request.method == 'POST':
+        supplier = request.form.get('supplier', '').strip()
+        payment_date = request.form.get('payment_date', '').strip() or current_calendar_date_text()
+        note = request.form.get('note', '').strip()
+        try:
+            amount = float(request.form.get('amount', '').strip())
+        except (TypeError, ValueError):
+            amount = 0
+        try:
+            discount_amount = float(request.form.get('discount_amount', '').strip() or 0)
+        except (TypeError, ValueError):
+            discount_amount = 0
+
+        purchase_total = db.execute(
+            '''
+            SELECT COALESCE(SUM(purchase_amount), 0)
+            FROM medicine_transactions
+            WHERE supplier = ? COLLATE NOCASE
+              AND transaction_type = 'in'
+              AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+            ''',
+            (supplier,)
+        ).fetchone()[0]
+        settlement_row = db.execute(
+            '''
+            SELECT COALESCE(SUM(amount), 0), COALESCE(SUM(discount_amount), 0)
+            FROM medicine_supplier_payments
+            WHERE supplier = ? COLLATE NOCASE
+            ''',
+            (supplier,)
+        ).fetchone()
+        paid_total = float(settlement_row[0] or 0)
+        discount_total = float(settlement_row[1] or 0)
+        due_amount = max(float(purchase_total or 0) - paid_total - discount_total, 0)
+
+        if not supplier or amount < 0 or discount_amount < 0 or amount + discount_amount <= 0:
+            return redirect(url_for(
+                'medicine_payments',
+                message='Select a supplier and enter a payment amount or discount.'
+            ))
+        if purchase_total <= 0:
+            return redirect(url_for('medicine_payments', message='No medicine purchase account was found for this supplier.'))
+        if amount + discount_amount > due_amount + 0.001:
+            return redirect(url_for(
+                'medicine_payments',
+                message=f'Payment plus discount cannot exceed the current due amount of Tk {due_amount:.2f}.'
+            ))
+
+        db.execute(
+            '''
+            INSERT INTO medicine_supplier_payments (
+                supplier, amount, discount_amount, payment_date, note, created_by, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                supplier, amount, discount_amount, payment_date,
+                note or 'Supplier medicine payment',
+                str(session.get('user_id')), current_timestamp_text()
+            )
+        )
+        db.commit()
+        return redirect(url_for(
+            'medicine_payments',
+            success=(
+                f'Tk {amount:.2f} payment and Tk {discount_amount:.2f} discount '
+                f'saved for {supplier}.'
+            )
+        ))
+
+    purchase_rows = db.execute(
+        '''
+        SELECT supplier, COALESCE(SUM(purchase_amount), 0), COUNT(*), MAX(transaction_date),
+               GROUP_CONCAT(DISTINCT TRIM(medicine_name))
+        FROM medicine_transactions
+        WHERE transaction_type = 'in'
+          AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+          AND TRIM(COALESCE(supplier, '')) != ''
+        GROUP BY supplier COLLATE NOCASE
+        ORDER BY supplier COLLATE NOCASE
+        '''
+    ).fetchall()
+    payment_rows = db.execute(
+        '''
+        SELECT supplier, COALESCE(SUM(amount), 0), COALESCE(SUM(discount_amount), 0),
+               COUNT(*), MAX(payment_date)
+        FROM medicine_supplier_payments
+        GROUP BY supplier COLLATE NOCASE
+        '''
+    ).fetchall()
+    payment_by_supplier = {
+        str(row[0]).strip().lower(): {
+            'paid_amount': float(row[1] or 0),
+            'discount_amount': float(row[2] or 0),
+            'payment_count': int(row[3] or 0),
+            'last_payment_date': row[4] or '',
+        }
+        for row in payment_rows
+    }
+    supplier_accounts = []
+    for row in purchase_rows:
+        supplier = row[0]
+        payment_info = payment_by_supplier.get(str(supplier).strip().lower(), {})
+        purchase_amount = float(row[1] or 0)
+        paid_amount = float(payment_info.get('paid_amount', 0))
+        discount_amount = float(payment_info.get('discount_amount', 0))
+        supplier_accounts.append({
+            'supplier': supplier,
+            'purchase_amount': purchase_amount,
+            'paid_amount': paid_amount,
+            'discount_amount': discount_amount,
+            'due_amount': max(purchase_amount - paid_amount - discount_amount, 0),
+            'purchase_count': int(row[2] or 0),
+            'last_purchase_date': row[3] or '',
+            'medicine_names': row[4] or '',
+            'payment_count': payment_info.get('payment_count', 0),
+            'last_payment_date': payment_info.get('last_payment_date', ''),
+        })
+
+    payment_history = [
+        {
+            'id': row[0], 'supplier': row[1], 'amount': float(row[2] or 0),
+            'discount_amount': float(row[3] or 0), 'payment_date': row[4],
+            'note': row[5] or '', 'created_by': row[6] or '',
+        }
+        for row in db.execute(
+            '''
+            SELECT id, supplier, amount, discount_amount, payment_date, note, created_by
+            FROM medicine_supplier_payments
+            ORDER BY date(payment_date) DESC, id DESC
+            LIMIT 100
+            '''
+        ).fetchall()
+    ]
+    purchase_history = [
+        {
+            'id': row[0], 'medicine_name': row[1], 'supplier': row[2],
+            'box_quantity': int(row[3] or 0), 'strips_per_box': int(row[4] or 1),
+            'strip_price': float(row[5] or 0), 'box_price': float(row[6] or 0),
+            'purchase_amount': float(row[7] or 0), 'transaction_date': row[8],
+            'batch_no': row[9] or 'General',
+        }
+        for row in db.execute(
+            '''
+            SELECT id, medicine_name, supplier, box_quantity, strips_per_box,
+                   strip_price, box_price, purchase_amount, transaction_date, batch_no
+            FROM medicine_transactions
+            WHERE transaction_type = 'in'
+              AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+              AND purchase_amount > 0
+            ORDER BY date(transaction_date) DESC, id DESC
+            LIMIT 100
+            '''
+        ).fetchall()
+    ]
+
+    return render_template(
+        'medicine_payments.html',
+        profile_name=profile_name,
+        supplier_accounts=supplier_accounts,
+        supplier_names=[account['supplier'] for account in supplier_accounts],
+        payment_history=payment_history,
+        purchase_history=purchase_history,
+        total_purchase=sum(account['purchase_amount'] for account in supplier_accounts),
+        total_paid=sum(account['paid_amount'] for account in supplier_accounts),
+        total_discount=sum(account['discount_amount'] for account in supplier_accounts),
+        total_due=sum(account['due_amount'] for account in supplier_accounts),
+        message=message,
+        success=success,
+        today=current_calendar_date_text(),
+        admin=isadmin(),
+    )
+
+
+@app.route('/medicine_payments/purchase/<int:transaction_id>/edit', methods=['POST'])
+def edit_medicine_purchase(transaction_id):
+    """Edit a medicine stock-in purchase while preserving valid stock and supplier balances."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    purchase = db.execute(
+        '''
+        SELECT medicine_name, batch_no, quantity, supplier, purchase_amount
+        FROM medicine_transactions
+        WHERE id = ? AND transaction_type = 'in' AND purchase_amount > 0
+          AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+        ''',
+        (transaction_id,)
+    ).fetchone()
+    if not purchase:
+        return redirect(url_for('medicine_payments', message='Medicine purchase record not found.'))
+
+    medicine_name = request.form.get('medicine_name', '').strip()
+    supplier = request.form.get('supplier', '').strip()
+    batch_no = request.form.get('batch_no', '').strip() or 'General'
+    transaction_date = request.form.get('transaction_date', '').strip()
+    try:
+        box_quantity = int(request.form.get('box_quantity', '').strip())
+        strips_per_box = int(request.form.get('strips_per_box', '').strip())
+        strip_price = float(request.form.get('strip_price', '').strip())
+        box_price = float(request.form.get('box_price', '').strip())
+        purchase_amount = float(request.form.get('purchase_amount', '').strip())
+    except (TypeError, ValueError):
+        return redirect(url_for('medicine_payments', message='Enter valid purchase quantities and amounts.'))
+
+    if (
+        not medicine_name or not supplier or not transaction_date
+        or box_quantity <= 0 or strips_per_box <= 0
+        or strip_price <= 0 or box_price <= 0 or purchase_amount <= 0
+    ):
+        return redirect(url_for('medicine_payments', message='Complete every purchase field with a valid value.'))
+
+    new_quantity = box_quantity * strips_per_box
+    old_medicine, old_batch, old_quantity, old_supplier, old_purchase_amount = purchase
+
+    def stock_balance(name, batch):
+        row = db.execute(
+            '''
+            SELECT COALESCE(SUM(
+                CASE WHEN transaction_type = 'in' THEN quantity ELSE -quantity END
+            ), 0)
+            FROM medicine_transactions
+            WHERE medicine_name = ? COLLATE NOCASE AND batch_no = ? COLLATE NOCASE
+            ''',
+            (name, batch)
+        ).fetchone()
+        return int(row[0] or 0)
+
+    same_stock = (
+        old_medicine.strip().lower() == medicine_name.lower()
+        and old_batch.strip().lower() == batch_no.lower()
+    )
+    if same_stock:
+        projected_old_balance = stock_balance(old_medicine, old_batch) - int(old_quantity) + new_quantity
+    else:
+        projected_old_balance = stock_balance(old_medicine, old_batch) - int(old_quantity)
+    if projected_old_balance < 0:
+        return redirect(url_for(
+            'medicine_payments',
+            message='This purchase cannot be reduced or moved because some of its stock has already been sold.'
+        ))
+
+    def supplier_totals(name):
+        purchase_total = db.execute(
+            '''
+            SELECT COALESCE(SUM(purchase_amount), 0)
+            FROM medicine_transactions
+            WHERE supplier = ? COLLATE NOCASE AND transaction_type = 'in'
+              AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+            ''',
+            (name,)
+        ).fetchone()[0]
+        settlement_total = db.execute(
+            '''
+            SELECT COALESCE(SUM(amount + discount_amount), 0)
+            FROM medicine_supplier_payments
+            WHERE supplier = ? COLLATE NOCASE
+            ''',
+            (name,)
+        ).fetchone()[0]
+        return float(purchase_total or 0), float(settlement_total or 0)
+
+    same_supplier = str(old_supplier or '').strip().lower() == supplier.lower()
+    old_total, old_settled = supplier_totals(old_supplier or '')
+    projected_old_purchase = old_total - float(old_purchase_amount or 0)
+    if same_supplier:
+        projected_old_purchase += purchase_amount
+    if projected_old_purchase + 0.001 < old_settled:
+        return redirect(url_for(
+            'medicine_payments',
+            message='This edit would make the supplier purchase total lower than its payments and discounts.'
+        ))
+    if not same_supplier:
+        new_total, new_settled = supplier_totals(supplier)
+        if new_total + purchase_amount + 0.001 < new_settled:
+            return redirect(url_for(
+                'medicine_payments',
+                message='The selected supplier already has settlements exceeding the edited purchase total.'
+            ))
+
+    db.execute(
+        '''
+        UPDATE medicine_transactions
+        SET medicine_name = ?, batch_no = ?, unit_type = 'strip', quantity = ?, price = ?,
+            strips_per_box = ?, strip_price = ?, box_price = ?, box_quantity = ?,
+            supplier = ?, purchase_amount = ?, transaction_date = ?
+        WHERE id = ?
+        ''',
+        (
+            medicine_name, batch_no, new_quantity, strip_price, strips_per_box,
+            strip_price, box_price, box_quantity, supplier, purchase_amount,
+            transaction_date, transaction_id
+        )
+    )
+    db.commit()
+    add_system_log(f'Medicine purchase updated: #{transaction_id} {medicine_name} from {supplier}')
+    return redirect(url_for('medicine_payments', success='Medicine purchase record updated successfully.'))
+
+
+@app.route('/medicine_payments/payment/<int:payment_id>/edit', methods=['POST'])
+def edit_supplier_payment(payment_id):
+    """Edit a supplier payment and discount without over-settling its account."""
+    if not (isadmin() or isuser()):
+        return redirect(url_for('login'))
+
+    payment = db.execute(
+        'SELECT supplier FROM medicine_supplier_payments WHERE id = ?',
+        (payment_id,)
+    ).fetchone()
+    if not payment:
+        return redirect(url_for('medicine_payments', message='Supplier payment record not found.'))
+
+    supplier = request.form.get('supplier', '').strip()
+    payment_date = request.form.get('payment_date', '').strip()
+    note = request.form.get('note', '').strip()
+    try:
+        amount = float(request.form.get('amount', '').strip() or 0)
+        discount_amount = float(request.form.get('discount_amount', '').strip() or 0)
+    except (TypeError, ValueError):
+        amount = -1
+        discount_amount = -1
+
+    if (
+        not supplier or not payment_date or amount < 0 or discount_amount < 0
+        or amount + discount_amount <= 0
+    ):
+        return redirect(url_for('medicine_payments', message='Enter a valid payment amount or discount.'))
+
+    purchase_total = float(db.execute(
+        '''
+        SELECT COALESCE(SUM(purchase_amount), 0)
+        FROM medicine_transactions
+        WHERE supplier = ? COLLATE NOCASE AND transaction_type = 'in'
+          AND LOWER(TRIM(COALESCE(note, ''))) NOT LIKE 'returned on %'
+        ''',
+        (supplier,)
+    ).fetchone()[0] or 0)
+    other_settlements = float(db.execute(
+        '''
+        SELECT COALESCE(SUM(amount + discount_amount), 0)
+        FROM medicine_supplier_payments
+        WHERE supplier = ? COLLATE NOCASE AND id != ?
+        ''',
+        (supplier, payment_id)
+    ).fetchone()[0] or 0)
+    available_due = max(purchase_total - other_settlements, 0)
+    if purchase_total <= 0:
+        return redirect(url_for('medicine_payments', message='No purchase account was found for this supplier.'))
+    if amount + discount_amount > available_due + 0.001:
+        return redirect(url_for(
+            'medicine_payments',
+            message=f'Edited payment plus discount cannot exceed Tk {available_due:.2f}.'
+        ))
+
+    db.execute(
+        '''
+        UPDATE medicine_supplier_payments
+        SET supplier = ?, amount = ?, discount_amount = ?, payment_date = ?, note = ?
+        WHERE id = ?
+        ''',
+        (
+            supplier, amount, discount_amount, payment_date,
+            note or 'Supplier medicine payment', payment_id
+        )
+    )
+    db.commit()
+    add_system_log(f'Supplier payment updated: #{payment_id} for {supplier}')
+    return redirect(url_for('medicine_payments', success='Supplier payment record updated successfully.'))
 
 
 @app.route('/medicine_sales')
@@ -3724,14 +4244,26 @@ def medicine_sales():
 
     cart_items = []
     for row in medicine_rows:
-        price = float(row['latest_price'] or 0)
+        strip_price = float(row['strip_price'] or row['latest_price'] or 0)
+        strips_per_box = max(int(row['strips_per_box'] or 1), 1)
+        box_price = float(row['box_price'] or (strip_price * strips_per_box))
         cart_items.append({
             'product': row['medicine_name'],
             'batch': row['batch_no'],
-            'unit': row['unit_type'].title(),
+            'unit': 'Strip' if row['unit_type'] == 'strip' else row['unit_type'].title(),
             'available': row['balance'],
+            'strips_per_box': strips_per_box,
+            'available_boxes': (
+                row['balance'] // strips_per_box
+                if row['unit_type'] == 'strip' and strips_per_box > 1
+                else (row['balance'] if row['unit_type'] == 'box' else 0)
+            ),
+            'can_sell_box': (row['unit_type'] == 'strip' and strips_per_box > 1) or row['unit_type'] == 'box',
+            'can_sell_strip': row['unit_type'] == 'strip',
             'qty': 0,
-            'price': price,
+            'price': strip_price,
+            'strip_price': strip_price,
+            'box_price': box_price,
             'discount': 0.00,
             'total': 0.00,
         })
@@ -3783,36 +4315,89 @@ def save_medicine_sale():
         return jsonify({'success': False, 'error': 'Please add at least one item with quantity before saving.'}), 400
 
     cleaned_items = []
+    stock_requirements = {}
     for item in items:
         try:
             medicine_name = str(item.get('product', '')).strip()
             batch_no = str(item.get('batch', '')).strip() or 'General'
             unit_type = str(item.get('unit', 'strip')).strip().lower()
             quantity = int(item.get('quantity', 0))
-            unit_price = float(item.get('price', 0))
             line_discount = max(float(item.get('discount', 0)), 0)
         except (TypeError, ValueError):
             return jsonify({'success': False, 'error': 'One or more sale items are invalid.'}), 400
 
-        if not medicine_name or quantity <= 0 or unit_price < 0:
+        if not medicine_name or quantity <= 0:
             continue
         if unit_type not in ('strip', 'box'):
             unit_type = 'strip'
 
+        stock_unit_type = 'strip'
         available_row = db.execute(
             '''
             SELECT COALESCE(SUM(CASE WHEN transaction_type = 'in' THEN quantity ELSE -quantity END), 0)
             FROM medicine_transactions
-            WHERE medicine_name = ? AND COALESCE(NULLIF(batch_no, ''), 'General') = ? AND unit_type = ?
+            WHERE medicine_name = ? AND COALESCE(NULLIF(batch_no, ''), 'General') = ? AND unit_type = 'strip'
             ''',
-            (medicine_name, batch_no, unit_type)
+            (medicine_name, batch_no)
         ).fetchone()
+        pricing_row = db.execute(
+            '''
+            SELECT price, strips_per_box, strip_price, box_price
+            FROM medicine_transactions
+            WHERE medicine_name = ?
+              AND COALESCE(NULLIF(batch_no, ''), 'General') = ?
+              AND unit_type = 'strip'
+              AND transaction_type = 'in'
+            ORDER BY date(transaction_date) DESC, id DESC
+            LIMIT 1
+            ''',
+            (medicine_name, batch_no)
+        ).fetchone()
+
+        # Preserve support for older stock rows that were stored directly as boxes.
+        if not pricing_row:
+            stock_unit_type = unit_type
+            available_row = db.execute(
+                '''
+                SELECT COALESCE(SUM(CASE WHEN transaction_type = 'in' THEN quantity ELSE -quantity END), 0)
+                FROM medicine_transactions
+                WHERE medicine_name = ? AND COALESCE(NULLIF(batch_no, ''), 'General') = ? AND unit_type = ?
+                ''',
+                (medicine_name, batch_no, stock_unit_type)
+            ).fetchone()
+            pricing_row = db.execute(
+                '''
+                SELECT price, 1, price, price
+                FROM medicine_transactions
+                WHERE medicine_name = ?
+                  AND COALESCE(NULLIF(batch_no, ''), 'General') = ?
+                  AND unit_type = ?
+                  AND transaction_type = 'in'
+                ORDER BY date(transaction_date) DESC, id DESC
+                LIMIT 1
+                ''',
+                (medicine_name, batch_no, stock_unit_type)
+            ).fetchone()
+
+        if not pricing_row:
+            return jsonify({'success': False, 'error': f'No stock record was found for {medicine_name}.'}), 400
+
         available_quantity = int(available_row[0] or 0)
-        if quantity > available_quantity:
+        strips_per_box = max(int(pricing_row[1] or 1), 1)
+        strips_per_unit = strips_per_box if unit_type == 'box' and stock_unit_type == 'strip' else 1
+        required_stock_quantity = quantity * strips_per_unit
+        strip_price = float(pricing_row[2] if pricing_row[2] is not None else pricing_row[0] or 0)
+        box_price = float(pricing_row[3] if pricing_row[3] is not None else strip_price * strips_per_box)
+        unit_price = box_price if unit_type == 'box' else strip_price
+        stock_key = (medicine_name.lower(), batch_no.lower(), stock_unit_type)
+        accumulated_stock_quantity = stock_requirements.get(stock_key, 0) + required_stock_quantity
+        if accumulated_stock_quantity > available_quantity:
+            available_sale_units = available_quantity // strips_per_unit
             return jsonify({
                 'success': False,
-                'error': f'Only {available_quantity} {unit_type}(s) available for {medicine_name} batch {batch_no}.'
+                'error': f'Only {available_sale_units} {unit_type}(s) available for {medicine_name} batch {batch_no}.'
             }), 400
+        stock_requirements[stock_key] = accumulated_stock_quantity
 
         line_total = max((quantity * unit_price) - line_discount, 0)
         cleaned_items.append({
@@ -3821,6 +4406,9 @@ def save_medicine_sale():
             'unit_type': unit_type,
             'quantity': quantity,
             'unit_price': unit_price,
+            'strips_per_unit': strips_per_unit,
+            'stock_unit_type': stock_unit_type,
+            'stock_quantity': required_stock_quantity,
             'discount': line_discount,
             'line_total': line_total,
         })
@@ -3897,12 +4485,13 @@ def save_medicine_sale():
                 '''
                 INSERT INTO medicine_sale_items (
                     sale_id, medicine_name, batch_no, unit_type, quantity,
-                    unit_price, discount, line_total
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    unit_price, strips_per_unit, discount, line_total
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     sale_id, item['medicine_name'], item['batch_no'], item['unit_type'],
-                    item['quantity'], item['unit_price'], item['discount'], item['line_total']
+                    item['quantity'], item['unit_price'], item['strips_per_unit'],
+                    item['discount'], item['line_total']
                 )
             )
             db.execute(
@@ -3913,8 +4502,8 @@ def save_medicine_sale():
                 ) VALUES (?, ?, ?, 'out', ?, ?, ?, ?, ?, ?)
                 ''',
                 (
-                    item['medicine_name'], item['batch_no'], item['unit_type'],
-                    item['quantity'], item['unit_price'], sale_date,
+                    item['medicine_name'], item['batch_no'], item['stock_unit_type'],
+                    item['stock_quantity'], item['unit_price'], sale_date,
                     f'Sold on invoice {invoice_no}', str(session.get('user_id')), created_at
                 )
             )
@@ -3944,7 +4533,10 @@ def save_medicine_sale():
             'sale_date': sale_date,
             'created_at': created_at,
             'print_url': url_for('medicine_sales_print', sale_id=sale_id),
-            'items': cleaned_items,
+            'items': [
+                {key: value for key, value in item.items() if key not in ('stock_unit_type', 'stock_quantity')}
+                for item in cleaned_items
+            ],
         }
     })
 
@@ -4083,6 +4675,174 @@ def medicine_return():
     invoice_query = request.args.get('invoice', '').strip()
 
     if request.method == 'POST':
+        if request.form.get('return_mode') == 'medicine':
+            medicine_name = request.form.get('medicine_name', '').strip()
+            return_unit = request.form.get('return_unit', '').strip().lower()
+            reason = request.form.get('reason', '').strip()
+            try:
+                requested_quantity = int(request.form.get('return_quantity', '').strip())
+            except (TypeError, ValueError):
+                requested_quantity = 0
+
+            if not medicine_name or return_unit not in {'box', 'strip'} or requested_quantity <= 0:
+                return redirect(url_for(
+                    'medicine_return',
+                    message='Select a medicine, choose Box or Strip, and enter a valid return quantity.'
+                ))
+            return_unit_label = (
+                ('Box' if requested_quantity == 1 else 'Boxes')
+                if return_unit == 'box'
+                else ('Strip' if requested_quantity == 1 else 'Strips')
+            )
+
+            candidate_rows = db.execute(
+                '''
+                SELECT
+                    msi.id, msi.sale_id, msi.medicine_name, msi.batch_no,
+                    msi.unit_type, msi.quantity, msi.unit_price, msi.discount,
+                    msi.line_total, msi.strips_per_unit,
+                    COALESCE((
+                        SELECT SUM(mri.quantity)
+                        FROM medicine_return_items mri
+                        WHERE mri.sale_item_id = msi.id
+                    ), 0) AS returned_quantity,
+                    ms.invoice_no, ms.customer_name, ms.customer_phone
+                FROM medicine_sale_items msi
+                JOIN medicine_sales ms ON ms.id = msi.sale_id
+                WHERE msi.medicine_name = ? COLLATE NOCASE
+                  AND LOWER(msi.unit_type) = ?
+                ORDER BY datetime(ms.created_at) DESC, msi.id DESC
+                ''',
+                (medicine_name, return_unit)
+            ).fetchall()
+            available_quantity = sum(
+                max(int(row[5] or 0) - int(row[10] or 0), 0)
+                for row in candidate_rows
+            )
+            if available_quantity <= 0:
+                return redirect(url_for(
+                    'medicine_return',
+                    message=f'No returnable sold {return_unit}(s) were found for {medicine_name}.'
+                ))
+            if requested_quantity > available_quantity:
+                return redirect(url_for(
+                    'medicine_return',
+                    message=(
+                        f'Only {available_quantity} sold {return_unit}(s) of '
+                        f'{medicine_name} can be returned.'
+                    )
+                ))
+
+            remaining_request = requested_quantity
+            allocations_by_sale = {}
+            for row in candidate_rows:
+                row_remaining = max(int(row[5] or 0) - int(row[10] or 0), 0)
+                if row_remaining <= 0 or remaining_request <= 0:
+                    continue
+                allocated_quantity = min(row_remaining, remaining_request)
+                original_quantity = max(int(row[5] or 0), 1)
+                item = {
+                    'sale_item_id': row[0],
+                    'medicine_name': row[2],
+                    'batch_no': row[3] or 'General',
+                    'unit_type': row[4] or 'strip',
+                    'quantity': allocated_quantity,
+                    'unit_price': float(row[6] or 0),
+                    'strips_per_unit': max(int(row[9] or 1), 1),
+                    'discount': round((float(row[7] or 0) / original_quantity) * allocated_quantity, 2),
+                    'line_total': round((float(row[8] or 0) / original_quantity) * allocated_quantity, 2),
+                }
+                sale_group = allocations_by_sale.setdefault(row[1], {
+                    'invoice_no': row[11],
+                    'customer_name': row[12] or 'Walk-in Customer',
+                    'customer_phone': row[13] or '',
+                    'items': [],
+                })
+                sale_group['items'].append(item)
+                remaining_request -= allocated_quantity
+
+            return_date = current_calendar_date_text()
+            created_at = current_timestamp_text()
+            return_count = db.execute(
+                "SELECT COUNT(*) FROM medicine_returns WHERE date(return_date) = ?",
+                (return_date,)
+            ).fetchone()[0]
+            saved_return_numbers = []
+            try:
+                for group_index, (sale_id, sale_group) in enumerate(allocations_by_sale.items(), start=1):
+                    return_no = f"MR-{current_invoice_date_code()}-{return_count + group_index:03d}"
+                    return_items = sale_group['items']
+                    subtotal = sum(item['quantity'] * item['unit_price'] for item in return_items)
+                    discount_amount = sum(item['discount'] for item in return_items)
+                    refund_amount = sum(item['line_total'] for item in return_items)
+                    cursor = db.execute(
+                        '''
+                        INSERT INTO medicine_returns (
+                            return_no, sale_id, invoice_no, customer_name, customer_phone,
+                            reason, subtotal, discount_amount, refund_amount, return_date,
+                            created_by, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''',
+                        (
+                            return_no, sale_id, sale_group['invoice_no'],
+                            sale_group['customer_name'], sale_group['customer_phone'],
+                            reason or f'Direct return by medicine name: {medicine_name}',
+                            subtotal, discount_amount, refund_amount, return_date,
+                            str(session.get('user_id')), created_at
+                        )
+                    )
+                    return_id = cursor.lastrowid
+                    for item in return_items:
+                        db.execute(
+                            '''
+                            INSERT INTO medicine_return_items (
+                                return_id, sale_item_id, medicine_name, batch_no, unit_type,
+                                quantity, unit_price, discount, line_total
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''',
+                            (
+                                return_id, item['sale_item_id'], item['medicine_name'],
+                                item['batch_no'], item['unit_type'], item['quantity'],
+                                item['unit_price'], item['discount'], item['line_total']
+                            )
+                        )
+                        db.execute(
+                            '''
+                            INSERT INTO medicine_transactions (
+                                medicine_name, batch_no, unit_type, transaction_type,
+                                quantity, price, transaction_date, note, created_by, created_at
+                            ) VALUES (?, ?, ?, 'in', ?, ?, ?, ?, ?, ?)
+                            ''',
+                            (
+                                item['medicine_name'], item['batch_no'],
+                                'strip' if item['strips_per_unit'] > 1 else item['unit_type'],
+                                item['quantity'] * item['strips_per_unit'], item['unit_price'],
+                                return_date,
+                                f'Returned on {return_no} from invoice {sale_group["invoice_no"]}',
+                                str(session.get('user_id')), created_at
+                            )
+                        )
+                    saved_return_numbers.append(return_no)
+                db.commit()
+                add_system_log(
+                    f'Direct medicine return saved: {medicine_name}, quantity {requested_quantity}, '
+                    f'unit {return_unit}, returns {", ".join(saved_return_numbers)}'
+                )
+                return redirect(url_for(
+                    'medicine_return',
+                    success=(
+                        f'{requested_quantity} {return_unit_label} of '
+                        f'{medicine_name} returned successfully. '
+                        'Stock and reports updated.'
+                    )
+                ))
+            except sqlite3.Error:
+                db.rollback()
+                return redirect(url_for(
+                    'medicine_return',
+                    message='Could not save medicine return. Please try again.'
+                ))
+
         sale_id = request.form.get('sale_id', '').strip()
         reason = request.form.get('reason', '').strip()
         if not sale_id.isdigit():
@@ -4110,6 +4870,7 @@ def medicine_return():
                 msi.unit_price,
                 msi.discount,
                 msi.line_total,
+                msi.strips_per_unit,
                 COALESCE((
                     SELECT SUM(mri.quantity)
                     FROM medicine_return_items mri
@@ -4133,7 +4894,7 @@ def medicine_return():
                 return_qty = int(request.form.get(f'return_qty_{sale_item_id}', 0) or 0)
             except (TypeError, ValueError):
                 return_qty = 0
-            remaining_qty = max(int(row[4] or 0) - int(row[8] or 0), 0)
+            remaining_qty = max(int(row[4] or 0) - int(row[9] or 0), 0)
             if return_qty <= 0:
                 continue
             if return_qty > remaining_qty:
@@ -4153,6 +4914,7 @@ def medicine_return():
                 'unit_type': row[3] or 'strip',
                 'quantity': return_qty,
                 'unit_price': float(row[5] or 0),
+                'strips_per_unit': max(int(row[8] or 1), 1),
                 'discount': round(discount_per_unit * return_qty, 2),
                 'line_total': round(line_total_per_unit * return_qty, 2),
             })
@@ -4208,9 +4970,9 @@ def medicine_return():
                         transaction_date, note, created_by, created_at
                     ) VALUES (?, ?, ?, 'in', ?, ?, ?, ?, ?, ?)
                     ''',
-                    (
-                        item['medicine_name'], item['batch_no'], item['unit_type'],
-                        item['quantity'], item['unit_price'], return_date,
+                (
+                        item['medicine_name'], item['batch_no'], 'strip' if item['strips_per_unit'] > 1 else item['unit_type'],
+                        item['quantity'] * item['strips_per_unit'], item['unit_price'], return_date,
                         f'Returned on {return_no} from invoice {sale_row[1]}',
                         str(session.get('user_id')), created_at
                     )
@@ -4297,6 +5059,37 @@ def medicine_return():
             else:
                 message = 'No medicine sale invoice, customer name, or phone number found.'
 
+    return_medicine_rows = db.execute(
+        '''
+        SELECT medicine_name, LOWER(unit_type), SUM(remaining_quantity)
+        FROM (
+            SELECT
+                msi.medicine_name,
+                msi.unit_type,
+                MAX(msi.quantity - COALESCE((
+                    SELECT SUM(mri.quantity)
+                    FROM medicine_return_items mri
+                    WHERE mri.sale_item_id = msi.id
+                ), 0), 0) AS remaining_quantity
+            FROM medicine_sale_items msi
+        )
+        WHERE remaining_quantity > 0
+        GROUP BY medicine_name COLLATE NOCASE, LOWER(unit_type)
+        ORDER BY medicine_name COLLATE NOCASE, LOWER(unit_type)
+        '''
+    ).fetchall()
+    return_medicine_map = {}
+    for row in return_medicine_rows:
+        medicine = return_medicine_map.setdefault(
+            row[0],
+            {'medicine_name': row[0], 'available_boxes': 0, 'available_strips': 0}
+        )
+        if str(row[1]).lower() == 'box':
+            medicine['available_boxes'] += int(row[2] or 0)
+        elif str(row[1]).lower() == 'strip':
+            medicine['available_strips'] += int(row[2] or 0)
+    return_medicines = list(return_medicine_map.values())
+
     recent_returns = db.execute(
         '''
         SELECT return_no, invoice_no, customer_name, refund_amount, return_date, created_at
@@ -4313,6 +5106,7 @@ def medicine_return():
         selected_sale=selected_sale,
         selected_items=selected_items,
         sale_search_results=sale_search_results,
+        return_medicines=return_medicines,
         recent_returns=recent_returns,
         message=message or request.args.get('message'),
         success=success or request.args.get('success'),
@@ -4412,7 +5206,7 @@ def build_medicine_sales_list_report(selected_date):
 
     return_rows = db.execute(
         '''
-        SELECT return_no, invoice_no, customer_name, customer_phone, subtotal,
+        SELECT id, return_no, invoice_no, customer_name, customer_phone, subtotal,
                discount_amount, refund_amount, reason, return_date, created_at
         FROM medicine_returns
         WHERE date(return_date) = ?
@@ -4420,21 +5214,72 @@ def build_medicine_sales_list_report(selected_date):
         ''',
         (selected_date,)
     ).fetchall()
-    returns = [
-        {
-            'return_no': row[0],
-            'invoice_no': row[1],
-            'customer_name': row[2],
-            'customer_phone': row[3],
-            'subtotal': float(row[4] or 0),
-            'discount_amount': float(row[5] or 0),
-            'refund_amount': float(row[6] or 0),
-            'reason': row[7],
-            'return_date': row[8],
-            'created_at': row[9],
-        }
-        for row in return_rows
-    ]
+    returns = []
+    total_return_quantity = 0
+    for row in return_rows:
+        return_item_rows = db.execute(
+            '''
+            SELECT medicine_name, batch_no, unit_type, quantity, unit_price, discount, line_total
+            FROM medicine_return_items
+            WHERE return_id = ?
+            ORDER BY id ASC
+            ''',
+            (row[0],)
+        ).fetchall()
+        return_items = []
+        for return_item in return_item_rows:
+            quantity = int(return_item[3] or 0)
+            unit_price = float(return_item[4] or 0)
+            item_discount = float(return_item[5] or 0)
+            line_total = float(return_item[6] or 0)
+            item_data = {
+                'medicine_name': return_item[0],
+                'batch_no': return_item[1],
+                'unit_type': return_item[2],
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'discount': item_discount,
+                'line_total': line_total,
+            }
+            return_items.append(item_data)
+            total_return_quantity += quantity
+
+            summary_key = (
+                item_data['medicine_name'] or 'Unknown Medicine',
+                item_data['batch_no'] or '-',
+                item_data['unit_type'] or '-',
+            )
+            if summary_key not in medicine_summary_map:
+                medicine_summary_map[summary_key] = {
+                    'medicine_name': summary_key[0],
+                    'batch_no': summary_key[1],
+                    'unit_type': summary_key[2],
+                    'quantity': 0,
+                    'gross_amount': 0.0,
+                    'discount_amount': 0.0,
+                    'net_amount': 0.0,
+                    'invoice_count': set(),
+                }
+            medicine_summary_map[summary_key]['quantity'] -= quantity
+            medicine_summary_map[summary_key]['gross_amount'] -= quantity * unit_price
+            medicine_summary_map[summary_key]['discount_amount'] -= item_discount
+            medicine_summary_map[summary_key]['net_amount'] -= line_total
+            medicine_summary_map[summary_key]['invoice_count'].add(row[2])
+
+        returns.append({
+            'id': row[0],
+            'return_no': row[1],
+            'invoice_no': row[2],
+            'customer_name': row[3],
+            'customer_phone': row[4],
+            'subtotal': float(row[5] or 0),
+            'discount_amount': float(row[6] or 0),
+            'refund_amount': float(row[7] or 0),
+            'reason': row[8],
+            'return_date': row[9],
+            'created_at': row[10],
+            'items': return_items,
+        })
     total_returns = sum(item['refund_amount'] for item in returns)
     medicine_summary = []
     for item in medicine_summary_map.values():
@@ -4455,6 +5300,8 @@ def build_medicine_sales_list_report(selected_date):
         'return_count': len(returns),
         'total_line_items': total_line_items,
         'total_medicine_quantity': total_medicine_quantity,
+        'total_return_quantity': total_return_quantity,
+        'net_medicine_quantity': total_medicine_quantity - total_return_quantity,
     }
 
 
@@ -6588,7 +7435,8 @@ def registered_users():
             permission_groups=PERMISSION_GROUPS,
             user_permissions=user_permissions,
             success=request.args.get('success'),
-            delete_message=request.args.get('delete_message')
+            delete_message=request.args.get('delete_message'),
+            message=request.args.get('message')
         )
     else:
         return redirect(url_for('login'))
@@ -6616,6 +7464,100 @@ def update_user_permissions():
     db.commit()
     add_system_log(f"Employee permissions updated: {user_row[0]}")
     return redirect(url_for('registered_users', success="Employee permissions updated successfully."))
+
+
+@app.route('/update_account', methods=['POST'])
+def update_account():
+    """Edit a regular user or admin account without exposing its stored password."""
+    if not isadmin():
+        return redirect(url_for('login'))
+
+    account_type = request.form.get('account_type', '').strip().lower()
+    account_id = request.form.get('account_id', '').strip()
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    if account_type not in {'user', 'admin'} or not account_id.isdigit():
+        return redirect(url_for('registered_users', message="Invalid account selected."))
+    if not username or not email:
+        return redirect(url_for('registered_users', message="Username and email are required."))
+    if len(username) < 3:
+        return redirect(url_for('registered_users', message="Username must contain at least 3 characters."))
+    if '@' not in email or email.startswith('@') or email.endswith('@'):
+        return redirect(url_for('registered_users', message="Please enter a valid email address."))
+    if new_password and len(new_password) < 6:
+        return redirect(url_for('registered_users', message="The new password must contain at least 6 characters."))
+    if new_password != confirm_password:
+        return redirect(url_for('registered_users', message="The new password confirmation does not match."))
+    if username.lower() == root_admin_username.lower():
+        return redirect(url_for('registered_users', message="This username is reserved for the root administrator."))
+
+    table_name = 'users' if account_type == 'user' else 'admins'
+    account_row = db.execute(
+        f'SELECT username, email FROM {table_name} WHERE id = ?',
+        (account_id,)
+    ).fetchone()
+    if not account_row:
+        return redirect(url_for('registered_users', message="Account not found."))
+
+    username_conflict = db.execute(
+        '''
+        SELECT 1
+        FROM users
+        WHERE LOWER(username) = LOWER(?) AND NOT (? = 'user' AND id = ?)
+        UNION ALL
+        SELECT 1
+        FROM admins
+        WHERE LOWER(username) = LOWER(?) AND NOT (? = 'admin' AND id = ?)
+        LIMIT 1
+        ''',
+        (username, account_type, account_id, username, account_type, account_id)
+    ).fetchone()
+    email_conflict = db.execute(
+        '''
+        SELECT 1
+        FROM users
+        WHERE LOWER(COALESCE(email, '')) = LOWER(?) AND NOT (? = 'user' AND id = ?)
+        UNION ALL
+        SELECT 1
+        FROM admins
+        WHERE LOWER(COALESCE(email, '')) = LOWER(?) AND NOT (? = 'admin' AND id = ?)
+        LIMIT 1
+        ''',
+        (email, account_type, account_id, email, account_type, account_id)
+    ).fetchone()
+    if username_conflict:
+        return redirect(url_for('registered_users', message="That username is already in use."))
+    if email_conflict:
+        return redirect(url_for('registered_users', message="That email address is already in use."))
+
+    try:
+        if new_password:
+            db.execute(
+                f'UPDATE {table_name} SET username = ?, email = ?, password = ? WHERE id = ?',
+                (username, email, generate_password_hash(new_password), account_id)
+            )
+        else:
+            db.execute(
+                f'UPDATE {table_name} SET username = ?, email = ? WHERE id = ?',
+                (username, email, account_id)
+            )
+        db.commit()
+    except sqlite3.IntegrityError:
+        db.rollback()
+        return redirect(url_for(
+            'registered_users',
+            message="Username or email already exists. Please use different account details."
+        ))
+
+    role_label = 'Employee' if account_type == 'user' else 'Admin'
+    password_note = ' and password' if new_password else ''
+    add_system_log(
+        f"{role_label} account updated: {account_row[0]} -> {username}; email{password_note} updated"
+    )
+    return redirect(url_for('registered_users', success=f"{role_label} account updated successfully."))
 
 
 @app.route('/delete', methods=['POST'])

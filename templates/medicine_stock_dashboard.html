@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Stock Dashboard</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_stock_dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_stock_dashboard.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
 </head>
 <body>
 
@@ -13,7 +14,10 @@
 	<div class="brand">
 		<a href="{{ url_for('dashboard') }}" class="brand-link">
 			<img src="{{ url_for('assets', filename='logo.png') }}" alt="AJH Logo" class="brand-logo">
-			<span class="brand-text">AJH</span>
+			<span class="brand-text" aria-label="AL-JUMIRA HOSPITAL">
+				<span>AL-JUMIRA</span>
+				<span>HOSPITAL</span>
+			</span>
 		</a>
 	</div>
 
@@ -41,6 +45,7 @@
 				{% if can_access_page('medicine_return') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
 				{% endif %}
+				<a class="sub-link" href="{{ url_for('medicine_payments') }}"><i class="fas fa-money-check-dollar"></i> Payments</a>
 			</div>
 		</li>
 
@@ -138,26 +143,49 @@
 				<div class="field-grid">
 					<label>
 						Medicine Name
-						<input type="text" name="medicine_name" placeholder="Paracetamol 500mg" required>
+						<input type="search" name="medicine_name" id="medicineNameSearch" list="medicineNameOptions" placeholder="Search or enter medicine name" autocomplete="off" required>
+						<datalist id="medicineNameOptions">
+							{% for medicine_name in existing_medicine_names %}
+							<option value="{{ medicine_name }}">{{ medicine_name }}</option>
+							{% endfor %}
+						</datalist>
+					</label>
+					<label>
+						Supplier
+						<input type="search" name="supplier" id="supplierSearch" list="supplierOptions" placeholder="Search or enter supplier name" autocomplete="off" required>
+						<datalist id="supplierOptions">
+							{% for supplier_name in existing_supplier_names %}
+							<option value="{{ supplier_name }}">{{ supplier_name }}</option>
+							{% endfor %}
+						</datalist>
 					</label>
 					<label>
 						Batch
 						<input type="text" name="batch_no" placeholder="B-1024">
 					</label>
 					<label>
-						Unit
-						<select name="unit_type" required>
-							<option value="strip">Strip</option>
-							<option value="box">Box</option>
-						</select>
+						Box Quantity
+						<input type="number" name="box_quantity" id="boxQuantity" min="1" placeholder="10" required>
 					</label>
 					<label>
-						Quantity
-						<input type="number" name="quantity" min="1" placeholder="100" required>
+						Strips per Box
+						<input type="number" name="strips_per_box" id="stripsPerBox" min="1" placeholder="3" required>
 					</label>
 					<label>
-						Price per Unit
-						<input type="number" name="price" min="0.01" step="0.01" placeholder="12.50" required>
+						Total Strips (Auto)
+						<input type="number" id="totalStrips" value="0" readonly>
+					</label>
+					<label>
+						Selling Price per Strip
+						<input type="number" name="strip_price" min="0.01" step="0.01" placeholder="580.00" required>
+					</label>
+					<label>
+						Selling Price per Box
+						<input type="number" name="box_price" min="0.01" step="0.01" placeholder="1700.00" required>
+					</label>
+					<label>
+						Total Buy Amount
+						<input type="number" name="purchase_amount" min="0.01" step="0.01" placeholder="Total supplier purchase cost" required>
 					</label>
 					<label>
 						Date
@@ -189,8 +217,9 @@
 					<thead>
 						<tr>
 							<th>Medicine</th>
+							<th>Supplier</th>
 							<th>Batch</th>
-							<th>Unit</th>
+							<th>Packaging</th>
 							<th>Stock In</th>
 							<th>Return In</th>
 							<th>Sold / Issued</th>
@@ -205,8 +234,15 @@
 							{% for item in summary_rows %}
 							<tr>
 								<td>{{ item.medicine_name }}</td>
+								<td>{{ item.supplier or '-' }}</td>
 								<td>{{ item.batch_no }}</td>
-								<td>{{ item.unit_type|title }}</td>
+								<td>
+									{% if item.strips_per_box > 1 %}
+										{{ item.strips_per_box }} strips / box
+									{% else %}
+										{{ item.unit_type|title }}
+									{% endif %}
+								</td>
 								<td>{{ item.stock_in }}</td>
 								<td>{{ item.return_in }}</td>
 								<td>{{ item.stock_out }}</td>
@@ -215,7 +251,12 @@
 										{{ item.balance }}
 									</span>
 								</td>
-								<td>TK {{ '%.2f'|format(item.latest_price) }}</td>
+								<td>
+									TK {{ '%.2f'|format(item.strip_price) }} / strip
+									{% if item.strips_per_box > 1 %}
+									<br><small>TK {{ '%.2f'|format(item.box_price) }} / box</small>
+									{% endif %}
+								</td>
 								<td>{{ format_date_display(item.latest_date) }}</td>
 								<td>
 									<form class="summary-delete-form" method="POST" action="{{ url_for('delete_medicine_balance') }}" onsubmit="return confirm('Delete all stock movements for this medicine batch and unit?');">
@@ -229,7 +270,7 @@
 							{% endfor %}
 						{% else %}
 							<tr>
-								<td colspan="10" class="empty-state">No medicine transactions yet. Add incoming stock to populate this table.</td>
+								<td colspan="11" class="empty-state">No medicine transactions yet. Add incoming stock to populate this table.</td>
 							</tr>
 						{% endif %}
 					</tbody>
@@ -246,6 +287,21 @@ const adminDropdown = document.getElementById('adminDropdown');
 const chevron = document.querySelector('.chevron');
 const medicineToggle = document.getElementById('medicineToggle');
 const medicineMenu = document.getElementById('medicineMenu');
+const boxQuantity = document.getElementById('boxQuantity');
+const stripsPerBox = document.getElementById('stripsPerBox');
+const totalStrips = document.getElementById('totalStrips');
+
+function updateTotalStrips() {
+	if (!totalStrips) return;
+	const boxes = Math.max(parseInt(boxQuantity && boxQuantity.value, 10) || 0, 0);
+	const strips = Math.max(parseInt(stripsPerBox && stripsPerBox.value, 10) || 0, 0);
+	totalStrips.value = boxes * strips;
+}
+
+[boxQuantity, stripsPerBox].forEach(function (input) {
+	if (input) input.addEventListener('input', updateTotalStrips);
+});
+updateTotalStrips();
 
 if (medicineToggle && medicineMenu) {
 	medicineToggle.addEventListener('click', function () {

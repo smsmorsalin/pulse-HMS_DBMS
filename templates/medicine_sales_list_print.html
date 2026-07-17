@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Medicine Sales List Print</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/medicine_sales_list_print.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v=1">
 </head>
 <body>
 <main class="report-page">
@@ -34,9 +35,9 @@
 				<small>Total invoices</small>
 			</div>
 			<div class="summary-box">
-				<span>Medicine Qty</span>
-				<strong>{{ total_medicine_quantity }}</strong>
-				<small>{{ total_line_items }} line items</small>
+				<span>Net Medicine Qty</span>
+				<strong>{{ net_medicine_quantity }}</strong>
+				<small>Sold {{ total_medicine_quantity }} − Returned {{ total_return_quantity }}</small>
 			</div>
 			<div class="summary-box">
 				<span>Gross Sales</span>
@@ -60,8 +61,8 @@
 
 		<section>
 			<div class="section-title">
-				<h2>Medicine-Wise Sales Summary</h2>
-				<span>Which medicine sold and how many</span>
+				<h2>Medicine-Wise Net Summary</h2>
+				<span>Sales quantities and amounts after returns</span>
 			</div>
 			<table>
 				<thead>
@@ -69,7 +70,7 @@
 						<th class="w-med">Medicine Name</th>
 						<th class="w-batch">Batch</th>
 						<th class="w-unit">Unit</th>
-						<th class="w-small text-center">Qty Sold</th>
+						<th class="w-small text-center">Net Qty</th>
 						<th class="w-small text-center">Invoices</th>
 						<th class="w-amount text-right">Gross</th>
 						<th class="w-amount text-right">Discount</th>
@@ -165,6 +166,7 @@
 						<th class="w-return">Return No</th>
 						<th class="w-invoice">Invoice</th>
 						<th class="w-customer">Customer</th>
+						<th class="w-medicine-detail">Returned Medicine / Unit / Qty</th>
 						<th class="w-reason">Reason</th>
 						<th class="w-date">Return Date</th>
 						<th class="w-total text-right">Refund</th>
@@ -177,6 +179,20 @@
 						<td>{{ item.return_no }}</td>
 						<td>{{ item.invoice_no }}</td>
 						<td>{{ item.customer_name or '-' }}<br><span class="muted">{{ item.customer_phone or '-' }}</span></td>
+						<td>
+							<div class="medicine-lines">
+								{% for return_item in item['items'] %}
+								<div class="medicine-line return-medicine-line">
+									<span><strong>{{ return_item.medicine_name }}</strong><br><span class="muted">Batch: {{ return_item.batch_no or '-' }}</span></span>
+									<span>{{ return_item.unit_type|title }}</span>
+									<span>Qty {{ return_item.quantity }}</span>
+									<span class="text-right">{{ '%.2f'|format(return_item.line_total) }}</span>
+								</div>
+								{% else %}
+								<span class="muted">No return items found.</span>
+								{% endfor %}
+							</div>
+						</td>
 						<td>{{ item.reason or '-' }}</td>
 						<td>{{ format_date_display(item.return_date) }}</td>
 						<td class="text-right">{{ '%.2f'|format(item.refund_amount) }}</td>

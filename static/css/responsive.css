@@ -1,0 +1,391 @@
+/*
+ * Project-wide responsive safety layer.
+ *
+ * Page-specific styles continue to control the visual design. These rules only
+ * remove fixed-width assumptions, make navigation/forms reflow, and keep wide
+ * data tables usable on tablet and phone screens.
+ */
+
+html {
+	max-width: 100%;
+	overflow-x: hidden;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+	max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+	max-width: 100%;
+}
+
+.table-wrap,
+.table-wrapper,
+.responsive-table,
+.table-container,
+.records-table,
+.list-table,
+.cart-table-wrap,
+.transaction-table-wrap {
+	max-width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.main-content,
+.content,
+.page-content,
+.dashboard-content,
+.workspace,
+.panel,
+.card {
+	min-width: 0;
+}
+
+@media screen and (max-width: 1100px) {
+	.dashboard,
+	.app-shell,
+	.page-shell,
+	.layout {
+		max-width: 100%;
+	}
+
+	.top-header,
+	.page-header,
+	.section-head,
+	.panel-header,
+	.header-row,
+	.title-row,
+	.header-actions,
+	.filter-row,
+	.filters,
+	.toolbar,
+	.action-row,
+	.actions {
+		flex-wrap: wrap;
+	}
+
+	.stats-grid,
+	.summary-grid,
+	.summary-cards,
+	.stat-grid,
+	.cards-grid,
+	.report-summary,
+	.payment-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.form-grid,
+	.fields-grid,
+	.field-grid,
+	.details-grid,
+	.filter-grid,
+	.report-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.full-width,
+	.wide,
+	.span-2,
+	.col-span-2 {
+		grid-column: 1 / -1;
+	}
+}
+
+@media screen and (max-width: 900px) {
+	.dashboard,
+	.app-shell,
+	.page-shell,
+	.layout {
+		width: 100%;
+		max-width: 100%;
+		min-height: 100vh;
+		margin: 0;
+		border-radius: 0;
+		grid-template-columns: minmax(0, 1fr);
+		flex-direction: column;
+	}
+
+	.main-content,
+	main.main-content,
+	.content,
+	main.content,
+	.page-content,
+	.dashboard-content,
+	.workspace {
+		width: 100%;
+		max-width: 100%;
+		margin-left: 0;
+		padding-right: clamp(12px, 3vw, 22px);
+		padding-left: clamp(12px, 3vw, 22px);
+	}
+
+	/* Keep navigation available instead of letting a fixed sidebar cover content. */
+	.sidebar {
+		position: relative;
+		inset: auto;
+		width: 100%;
+		max-width: 100%;
+		height: auto;
+		min-height: 0;
+		margin: 0;
+		border-right: 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+		overflow: visible;
+	}
+
+	.sidebar .brand,
+	.sidebar .brand-link,
+	.sidebar .hospital-brand {
+		margin-bottom: 12px;
+	}
+
+	.sidebar nav,
+	.sidebar ul,
+	.sidebar-menu,
+	.nav-list,
+	.sub-nav {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		width: 100%;
+	}
+
+	.sidebar li,
+	.sidebar nav a,
+	.sidebar-item,
+	.nav-link,
+	.sub-link {
+		min-width: 0;
+	}
+
+	.sidebar .logout,
+	.sidebar .logout-btn {
+		margin-top: 10px;
+	}
+
+	.top-header,
+	.page-header,
+	.section-head,
+	.panel-header {
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	.header-actions,
+	.page-actions,
+	.toolbar,
+	.filters,
+	.filter-row,
+	.action-row {
+		max-width: 100%;
+	}
+
+	.modal,
+	.modal-content,
+	.dialog,
+	.dialog-content,
+	.popup,
+	.popup-content {
+		width: min(94vw, 720px);
+		max-width: 94vw;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+
+	.print-actions {
+		width: 100%;
+		flex-wrap: wrap;
+	}
+
+	.report-page,
+	.report-sheet,
+	.invoice,
+	.invoice-sheet,
+	.bill-paper,
+	.prescription-sheet {
+		max-width: 100%;
+	}
+}
+
+@media screen and (max-width: 680px) {
+	body {
+		font-size: 14px;
+	}
+
+	.main-content,
+	main.main-content,
+	.content,
+	main.content,
+	.page-content,
+	.dashboard-content,
+	.workspace {
+		padding: 12px;
+	}
+
+	.sidebar {
+		padding: 14px 12px;
+	}
+
+	.sidebar nav,
+	.sidebar ul,
+	.sidebar-menu,
+	.nav-list,
+	.sub-nav {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.top-header,
+	.page-header,
+	.section-head,
+	.panel-header,
+	.header-row,
+	.title-row {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.top-header h1,
+	.page-header h1,
+	.page-title,
+	h1 {
+		font-size: clamp(1.35rem, 7vw, 1.8rem);
+		line-height: 1.2;
+		overflow-wrap: anywhere;
+	}
+
+	.stats-grid,
+	.summary-grid,
+	.summary-cards,
+	.stat-grid,
+	.cards-grid,
+	.report-summary,
+	.payment-stats,
+	.form-grid,
+	.fields-grid,
+	.field-grid,
+	.details-grid,
+	.filter-grid,
+	.report-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.header-actions,
+	.page-actions,
+	.toolbar,
+	.filters,
+	.filter-row,
+	.action-row,
+	.actions {
+		width: 100%;
+	}
+
+	.header-actions > a,
+	.header-actions > button,
+	.page-actions > a,
+	.page-actions > button,
+	.toolbar > a,
+	.toolbar > button,
+	.action-row > a,
+	.action-row > button,
+	.actions > a,
+	.actions > button {
+		flex: 1 1 100%;
+		justify-content: center;
+	}
+
+	input,
+	select,
+	textarea {
+		width: 100%;
+		font-size: 16px;
+	}
+
+	button,
+	.btn,
+	.action-btn,
+	.nav-link,
+	.sidebar-item {
+		min-height: 44px;
+	}
+
+	.panel,
+	.card,
+	.glass-panel,
+	.form-card,
+	.table-card,
+	.summary-card,
+	.stat-card {
+		max-width: 100%;
+		padding-right: clamp(12px, 4vw, 18px);
+		padding-left: clamp(12px, 4vw, 18px);
+	}
+
+	table {
+		font-size: 0.8rem;
+	}
+
+	th,
+	td {
+		padding: 10px 8px;
+	}
+
+	.modal,
+	.modal-content,
+	.dialog,
+	.dialog-content,
+	.popup,
+	.popup-content {
+		width: calc(100vw - 20px);
+		max-width: calc(100vw - 20px);
+		margin: 10px;
+		border-radius: 14px;
+	}
+
+	.flash-message,
+	.alert,
+	.toast {
+		max-width: calc(100vw - 24px);
+		overflow-wrap: anywhere;
+	}
+}
+
+@media screen and (max-width: 420px) {
+	.main-content,
+	main.main-content,
+	.content,
+	main.content,
+	.page-content,
+	.dashboard-content,
+	.workspace {
+		padding: 9px;
+	}
+
+	.panel,
+	.card,
+	.glass-panel,
+	.form-card,
+	.table-card {
+		border-radius: 14px;
+	}
+
+	th,
+	td {
+		padding: 9px 7px;
+	}
+}
