@@ -232,7 +232,8 @@
 			</div>
 		</section>
 
-		<aside class="panel summary-panel">
+		<div class="summary-column" id="summaryColumn">
+		<aside class="panel summary-panel" id="saleSummaryPanel">
 			<div class="panel-header">
 				<div>
 					<p class="panel-kicker">Payment</p>
@@ -315,6 +316,7 @@
 				<p class="save-note" id="saleStatus"></p>
 			</div>
 		</aside>
+		</div>
 	</section>
 </main>
 
@@ -369,7 +371,33 @@ const cartMedicineSearch = document.getElementById('cartMedicineSearch');
 const clearCartSearch = document.getElementById('clearCartSearch');
 const selectedItemsList = document.getElementById('selectedItemsList');
 const selectedItemQuantity = document.getElementById('selectedItemQuantity');
+const summaryColumn = document.getElementById('summaryColumn');
+const saleSummaryPanel = document.getElementById('saleSummaryPanel');
 const cartColumnCount = Number(document.body.dataset.cartColumnCount || 7);
+let summaryStartPosition = 0;
+
+function syncFloatingSaleSummary() {
+	if (!summaryColumn || !saleSummaryPanel) return;
+	if (window.innerWidth <= 980) {
+		saleSummaryPanel.classList.remove('is-floating');
+		return;
+	}
+	saleSummaryPanel.classList.toggle(
+		'is-floating',
+		window.scrollY + 10 >= summaryStartPosition
+	);
+}
+
+function measureSaleSummaryPosition() {
+	if (!summaryColumn || !saleSummaryPanel) return;
+	saleSummaryPanel.classList.remove('is-floating');
+	summaryStartPosition = summaryColumn.getBoundingClientRect().top + window.scrollY;
+	syncFloatingSaleSummary();
+}
+
+window.addEventListener('scroll', syncFloatingSaleSummary, { passive: true });
+window.addEventListener('resize', measureSaleSummaryPosition);
+window.addEventListener('load', measureSaleSummaryPosition);
 
 function money(value) {
 	return 'Tk ' + Number(value || 0).toFixed(2);
