@@ -80,7 +80,7 @@
                             <td>{{ user[3] or '-' }}</td>
                             <td>User</td>
                             <td>
-                                <details class="permission-details">
+                                <details class="permission-details" {% if updated_user_id == user[0] %}open{% endif %}>
                                     <summary>
                                         <span><i class="fas fa-shield-halved"></i> Manage permissions</span>
                                         <strong><span class="permission-summary-count">{{ user_permissions.get(user[0], [])|length }}</span> / {{ page_options|length }}</strong>
@@ -120,7 +120,7 @@
                                             </fieldset>
                                             {% endfor %}
                                         </div>
-                                        <button class="save-btn" type="submit"><i class="fas fa-floppy-disk"></i> Save Permissions</button>
+                                        <button class="save-btn" type="submit"><i class="fas fa-floppy-disk"></i> <span>Save Permissions</span></button>
                                     </form>
                                 </details>
                             </td>
@@ -221,6 +221,12 @@
 
             checkboxes.forEach(function (checkbox) {
                 checkbox.addEventListener("change", updateCount);
+            });
+
+            form.addEventListener("submit", function () {
+                const saveButton = form.querySelector(".save-btn");
+                saveButton.disabled = true;
+                saveButton.querySelector("span").textContent = "Saving...";
             });
 
             search.addEventListener("input", function () {

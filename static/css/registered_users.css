@@ -366,6 +366,11 @@ tbody tr:hover {
 	filter: brightness(1.08);
 }
 
+.save-btn:disabled {
+	opacity: 0.65;
+	cursor: wait;
+}
+
 .modal-open {
 	overflow: hidden;
 }

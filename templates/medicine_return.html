@@ -32,7 +32,7 @@
 				<i class="fas fa-chevron-down dropdown-icon"></i>
 			</button>
 			<div class="sub-nav">
-				{% if admin %}
+				{% if can_access_page('medicine_stock_dashboard') %}
 				<a class="sub-link" href="{{ url_for('medicine_stock_dashboard') }}"><i class="fas fa-boxes-stacked"></i> Stock</a>
 				{% endif %}
 				{% if can_access_page('medicine_sales') %}
@@ -41,11 +41,11 @@
 				{% if can_access_page('medicine_sales_list') %}
 				<a class="sub-link" href="{{ url_for('medicine_sales_list') }}"><i class="fas fa-calendar-days"></i> Sales List</a>
 				{% endif %}
-				{% if can_access_page('medicine_monthly_report') or can_access_page('medicine_sales') or can_access_page('medicine_sales_list') %}
+				{% if can_access_page('medicine_monthly_report') %}
 				<a class="sub-link" href="{{ url_for('medicine_monthly_report') }}"><i class="fas fa-chart-column"></i> Monthly Report</a>
 				{% endif %}
 				<a class="sub-link active" href="{{ url_for('medicine_return') }}"><i class="fas fa-rotate-left"></i> Medi Return</a>
-				{% if can_access_page('medicine_payments') or can_access_page('medicine_sales') or can_access_page('medicine_stock_dashboard') %}
+				{% if can_access_page('medicine_payments') %}
 				<a class="sub-link" href="{{ url_for('medicine_payments') }}"><i class="fas fa-money-check-dollar"></i> Payments</a>
 				{% endif %}
 			</div>

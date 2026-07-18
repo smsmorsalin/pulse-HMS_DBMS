@@ -141,6 +141,62 @@ class RegisteredUserManagementTests(unittest.TestCase):
         username = self.db.execute("SELECT username FROM users WHERE id = 1").fetchone()[0]
         self.assertEqual(username, "employee-one")
 
+    def test_user_permissions_can_be_updated_and_remain_selected(self):
+        response = self.client.post(
+            "/update_user_permissions",
+            data={
+                "user_id": "1",
+                "page_permissions": ["medicine_sales", "medicine_return"],
+            },
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Employee permissions updated successfully", response.data)
+        saved_permissions = {
+            row[0]
+            for row in self.db.execute(
+                "SELECT page_key FROM user_permissions WHERE user_id = 1"
+            ).fetchall()
+        }
+        self.assertEqual(saved_permissions, {"medicine_sales", "medicine_return"})
+        self.assertIn(b'value="medicine_sales" checked', response.data)
+        self.assertIn(b'value="medicine_return" checked', response.data)
+        self.assertIn(b'class="permission-details" open', response.data)
+
+    def test_all_user_permissions_can_be_cleared(self):
+        response = self.client.post(
+            "/update_user_permissions",
+            data={"user_id": "1"},
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Employee permissions cleared", response.data)
+        saved_count = self.db.execute(
+            "SELECT COUNT(*) FROM user_permissions WHERE user_id = 1"
+        ).fetchone()[0]
+        self.assertEqual(saved_count, 0)
+        self.assertIn(b'class="permission-details" open', response.data)
+
+    def test_medicine_permissions_are_enforced_individually(self):
+        hospital_app.set_user_page_permissions(1, ["medicine_sales"])
+        self.db.commit()
+        with self.client.session_transaction() as session:
+            session["user_id"] = 1
+            session["role"] = "user"
+
+        page_response = self.client.get("/medicine_payments")
+        purchase_edit_response = self.client.post("/medicine_payments/purchase/1/edit")
+        payment_edit_response = self.client.post("/medicine_payments/payment/1/edit")
+
+        self.assertEqual(page_response.status_code, 302)
+        self.assertTrue(page_response.headers["Location"].endswith("/medicine_sales"))
+        self.assertEqual(purchase_edit_response.status_code, 302)
+        self.assertTrue(purchase_edit_response.headers["Location"].endswith("/medicine_sales"))
+        self.assertEqual(payment_edit_response.status_code, 302)
+        self.assertTrue(payment_edit_response.headers["Location"].endswith("/medicine_sales"))
+
 
 if __name__ == "__main__":
     unittest.main()

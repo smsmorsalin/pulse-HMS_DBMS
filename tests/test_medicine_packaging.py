@@ -467,6 +467,17 @@ class MedicinePackagingFlowTest(unittest.TestCase):
         ).fetchall()
         self.assertEqual(sale_items, [('box', 1, 1700.0), ('strip', 2, 580.0)])
         self.assertEqual(hospital_app.get_medicine_balance_rows()[0]['balance'], 25)
+        sale_date = self.db.execute(
+            'SELECT date(sale_date) FROM medicine_sales ORDER BY id DESC LIMIT 1'
+        ).fetchone()[0]
+        report = hospital_app.build_medicine_sales_list_report(sale_date)
+        self.assertEqual(len(report['medicine_summary']), 1)
+        self.assertEqual(report['medicine_summary'][0]['quantity_display'], '1 Box 2 Strips')
+        print_report = self.client.get(
+            '/medicine_sales_list/print',
+            query_string={'date': sale_date},
+        )
+        self.assertIn(b'1 Box 2 Strips', print_report.data)
 
 
 if __name__ == '__main__':

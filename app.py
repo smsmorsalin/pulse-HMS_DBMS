@@ -202,7 +202,9 @@ ENDPOINT_PERMISSIONS = {
     'medicine_sales_list_print': ('medicine_sales_list',),
     'medicine_monthly_report': ('medicine_monthly_report',),
     'medicine_return': ('medicine_return',),
-    'medicine_payments': ('medicine_payments', 'medicine_sales', 'medicine_stock_dashboard'),
+    'medicine_payments': ('medicine_payments',),
+    'edit_medicine_purchase': ('medicine_payments',),
+    'edit_supplier_payment': ('medicine_payments',),
     'medicine_stock_movements': ('medicine_stock_dashboard',),
     'delete_medicine_monthly_day_sales': ('medicine_monthly_report',),
     'delete_medicine_monthly_product_sales': ('medicine_monthly_report',),
@@ -5153,10 +5155,20 @@ def build_medicine_sales_list_report(selected_date):
     for row in sales_rows:
         item_rows = db.execute(
             '''
-            SELECT medicine_name, batch_no, unit_type, quantity, unit_price, discount, line_total
-            FROM medicine_sale_items
-            WHERE sale_id = ?
-            ORDER BY id ASC
+            SELECT msi.medicine_name, msi.batch_no, msi.unit_type, msi.quantity,
+                   msi.unit_price, msi.discount, msi.line_total,
+                   MAX(COALESCE(msi.strips_per_unit, 1), 1),
+                   COALESCE((
+                       SELECT MAX(mt.strips_per_box, 1)
+                       FROM medicine_transactions mt
+                       WHERE mt.medicine_name = msi.medicine_name COLLATE NOCASE
+                         AND mt.batch_no = msi.batch_no COLLATE NOCASE
+                       ORDER BY mt.id DESC
+                       LIMIT 1
+                   ), MAX(COALESCE(msi.strips_per_unit, 1), 1))
+            FROM medicine_sale_items msi
+            WHERE msi.sale_id = ?
+            ORDER BY msi.id ASC
             ''',
             (row[0],)
         ).fetchall()
@@ -5166,36 +5178,45 @@ def build_medicine_sales_list_report(selected_date):
             unit_price = float(item[4] or 0)
             discount = float(item[5] or 0)
             line_total = float(item[6] or 0)
+            strips_per_unit = max(int(item[7] or 1), 1)
+            strips_per_box = max(int(item[8] or strips_per_unit), strips_per_unit, 1)
+            strip_quantity = quantity * strips_per_unit
             sale_item = {
                 'medicine_name': item[0],
                 'batch_no': item[1],
                 'unit_type': item[2],
                 'quantity': quantity,
+                'strip_quantity': strip_quantity,
+                'strips_per_unit': strips_per_unit,
+                'strips_per_box': strips_per_box,
                 'unit_price': unit_price,
                 'discount': discount,
                 'line_total': line_total,
             }
             sale_items.append(sale_item)
-            total_medicine_quantity += quantity
+            total_medicine_quantity += strip_quantity
             total_line_items += 1
 
             summary_key = (
                 sale_item['medicine_name'] or 'Unknown Medicine',
                 sale_item['batch_no'] or '-',
-                sale_item['unit_type'] or '-',
             )
             if summary_key not in medicine_summary_map:
                 medicine_summary_map[summary_key] = {
                     'medicine_name': summary_key[0],
                     'batch_no': summary_key[1],
-                    'unit_type': summary_key[2],
                     'quantity': 0,
+                    'strips_per_box': strips_per_box,
                     'gross_amount': 0.0,
                     'discount_amount': 0.0,
                     'net_amount': 0.0,
                     'invoice_count': set(),
                 }
-            medicine_summary_map[summary_key]['quantity'] += quantity
+            medicine_summary_map[summary_key]['strips_per_box'] = max(
+                medicine_summary_map[summary_key]['strips_per_box'],
+                strips_per_box,
+            )
+            medicine_summary_map[summary_key]['quantity'] += strip_quantity
             medicine_summary_map[summary_key]['gross_amount'] += quantity * unit_price
             medicine_summary_map[summary_key]['discount_amount'] += discount
             medicine_summary_map[summary_key]['net_amount'] += line_total
@@ -5236,10 +5257,30 @@ def build_medicine_sales_list_report(selected_date):
     for row in return_rows:
         return_item_rows = db.execute(
             '''
-            SELECT medicine_name, batch_no, unit_type, quantity, unit_price, discount, line_total
-            FROM medicine_return_items
-            WHERE return_id = ?
-            ORDER BY id ASC
+            SELECT mri.medicine_name, mri.batch_no, mri.unit_type, mri.quantity,
+                   mri.unit_price, mri.discount, mri.line_total,
+                   MAX(COALESCE(msi.strips_per_unit,
+                       CASE WHEN LOWER(mri.unit_type) = 'box' THEN (
+                           SELECT MAX(mt.strips_per_box, 1)
+                           FROM medicine_transactions mt
+                           WHERE mt.medicine_name = mri.medicine_name COLLATE NOCASE
+                             AND mt.batch_no = mri.batch_no COLLATE NOCASE
+                           ORDER BY mt.id DESC
+                           LIMIT 1
+                       ) ELSE 1 END
+                   ), 1),
+                   COALESCE((
+                       SELECT MAX(mt.strips_per_box, 1)
+                       FROM medicine_transactions mt
+                       WHERE mt.medicine_name = mri.medicine_name COLLATE NOCASE
+                         AND mt.batch_no = mri.batch_no COLLATE NOCASE
+                       ORDER BY mt.id DESC
+                       LIMIT 1
+                   ), MAX(COALESCE(msi.strips_per_unit, 1), 1))
+            FROM medicine_return_items mri
+            LEFT JOIN medicine_sale_items msi ON msi.id = mri.sale_item_id
+            WHERE mri.return_id = ?
+            ORDER BY mri.id ASC
             ''',
             (row[0],)
         ).fetchall()
@@ -5249,35 +5290,44 @@ def build_medicine_sales_list_report(selected_date):
             unit_price = float(return_item[4] or 0)
             item_discount = float(return_item[5] or 0)
             line_total = float(return_item[6] or 0)
+            strips_per_unit = max(int(return_item[7] or 1), 1)
+            strips_per_box = max(int(return_item[8] or strips_per_unit), strips_per_unit, 1)
+            strip_quantity = quantity * strips_per_unit
             item_data = {
                 'medicine_name': return_item[0],
                 'batch_no': return_item[1],
                 'unit_type': return_item[2],
                 'quantity': quantity,
+                'strip_quantity': strip_quantity,
+                'strips_per_unit': strips_per_unit,
+                'strips_per_box': strips_per_box,
                 'unit_price': unit_price,
                 'discount': item_discount,
                 'line_total': line_total,
             }
             return_items.append(item_data)
-            total_return_quantity += quantity
+            total_return_quantity += strip_quantity
 
             summary_key = (
                 item_data['medicine_name'] or 'Unknown Medicine',
                 item_data['batch_no'] or '-',
-                item_data['unit_type'] or '-',
             )
             if summary_key not in medicine_summary_map:
                 medicine_summary_map[summary_key] = {
                     'medicine_name': summary_key[0],
                     'batch_no': summary_key[1],
-                    'unit_type': summary_key[2],
                     'quantity': 0,
+                    'strips_per_box': strips_per_box,
                     'gross_amount': 0.0,
                     'discount_amount': 0.0,
                     'net_amount': 0.0,
                     'invoice_count': set(),
                 }
-            medicine_summary_map[summary_key]['quantity'] -= quantity
+            medicine_summary_map[summary_key]['strips_per_box'] = max(
+                medicine_summary_map[summary_key]['strips_per_box'],
+                strips_per_box,
+            )
+            medicine_summary_map[summary_key]['quantity'] -= strip_quantity
             medicine_summary_map[summary_key]['gross_amount'] -= quantity * unit_price
             medicine_summary_map[summary_key]['discount_amount'] -= item_discount
             medicine_summary_map[summary_key]['net_amount'] -= line_total
@@ -5301,6 +5351,23 @@ def build_medicine_sales_list_report(selected_date):
     medicine_summary = []
     for item in medicine_summary_map.values():
         item['invoice_count'] = len(item['invoice_count'])
+        net_strip_quantity = int(item['quantity'])
+        strips_per_box = max(int(item['strips_per_box'] or 1), 1)
+        quantity_sign = '-' if net_strip_quantity < 0 else ''
+        absolute_quantity = abs(net_strip_quantity)
+        if strips_per_box > 1:
+            box_quantity, loose_strip_quantity = divmod(absolute_quantity, strips_per_box)
+            box_label = 'Box' if box_quantity == 1 else 'Boxes'
+            strip_label = 'Strip' if loose_strip_quantity == 1 else 'Strips'
+            item['quantity_display'] = (
+                f'{quantity_sign}{box_quantity} {box_label} '
+                f'{loose_strip_quantity} {strip_label}'
+            )
+            item['unit_type'] = 'Box + Strip'
+        else:
+            strip_label = 'Strip' if absolute_quantity == 1 else 'Strips'
+            item['quantity_display'] = f'{quantity_sign}{absolute_quantity} {strip_label}'
+            item['unit_type'] = 'Strip'
         medicine_summary.append(item)
     medicine_summary.sort(key=lambda item: item['medicine_name'].lower())
 
@@ -7453,7 +7520,8 @@ def registered_users():
             user_permissions=user_permissions,
             success=request.args.get('success'),
             delete_message=request.args.get('delete_message'),
-            message=request.args.get('message')
+            message=request.args.get('message'),
+            updated_user_id=request.args.get('updated_user_id', type=int)
         )
     else:
         return redirect(url_for('login'))
@@ -7473,14 +7541,35 @@ def update_user_permissions():
     if not user_row:
         return redirect(url_for('registered_users', delete_message="Employee not found."))
 
-    page_keys = request.form.getlist('page_permissions')
-    if not page_keys:
-        return redirect(url_for('registered_users', delete_message="Please choose at least one page for this employee."))
+    page_keys = list(dict.fromkeys(
+        page_key
+        for page_key in request.form.getlist('page_permissions')
+        if page_key in PAGE_BY_KEY
+    ))
+    try:
+        set_user_page_permissions(user_id, page_keys)
+        db.commit()
+    except sqlite3.Error:
+        db.rollback()
+        return redirect(url_for(
+            'registered_users',
+            message="Could not update employee permissions. Please try again.",
+            updated_user_id=user_id,
+        ))
 
-    set_user_page_permissions(user_id, page_keys)
-    db.commit()
-    add_system_log(f"Employee permissions updated: {user_row[0]}")
-    return redirect(url_for('registered_users', success="Employee permissions updated successfully."))
+    add_system_log(
+        f"Employee permissions updated: {user_row[0]} ({len(page_keys)} pages)"
+    )
+    access_message = (
+        f"Employee permissions updated successfully: {len(page_keys)} page(s) allowed."
+        if page_keys
+        else "Employee permissions cleared. This employee cannot sign in until access is assigned."
+    )
+    return redirect(url_for(
+        'registered_users',
+        success=access_message,
+        updated_user_id=user_id,
+    ))
 
 
 @app.route('/update_account', methods=['POST'])
